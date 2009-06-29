@@ -24,6 +24,9 @@
 // define to disable caching
 //#define NO_CACHING
 
+// define to disable pruning
+//#define NO_PRUNING
+
 #ifdef NOTHREADS
 #undef USE_THREADS
 #endif

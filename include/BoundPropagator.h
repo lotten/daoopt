@@ -10,6 +10,7 @@
 
 #include "SearchSpace.h"
 #include "SearchNode.h"
+#include "Pseudotree.h"
 
 #include "debug.h"
 
@@ -23,7 +24,9 @@ public:
   void operator () ();
 #endif
 
- void propagate(SearchNode*);
+  void propagate(SearchNode*);
+private:
+  void mergePrevAssignment(SearchNode* prev, SearchNode* cur);
 
 public:
  BoundPropagator(SearchSpace* s) : m_space(s) {}

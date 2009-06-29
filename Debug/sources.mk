@@ -6,7 +6,7 @@ O_SRCS :=
 CPP_SRCS := 
 C_UPPER_SRCS := 
 C_SRCS := 
-S_SRCS := 
+S_UPPER_SRCS := 
 OBJ_SRCS := 
 ASM_SRCS := 
 CXX_SRCS := 
@@ -25,5 +25,8 @@ C_UPPER_DEPS :=
 SUBDIRS := \
 source \
 lib \
+lib/boost.src/thread/src \
+lib/boost.src/thread/src/pthread \
+lib/boost.src/program_options/src \
 . \
 

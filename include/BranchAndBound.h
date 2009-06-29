@@ -69,6 +69,8 @@ protected:
 public:
   // returns true if the search space has been explored fully
   bool isDone() const;
+  double getCurOptValue() const;
+  const vector<val_t>& getCurOptTuple() const;
 
   size_t getNodesOR() const { return m_nodesOR; }
   size_t getNodesAND() const { return m_nodesAND; }
@@ -87,5 +89,15 @@ public:
 // Inline definitions
 
 inline bool BranchAndBound::isDone() const { return m_stack.empty(); }
+
+inline double BranchAndBound::getCurOptValue() const {
+  assert(m_space);
+  return m_space->getTrueRoot()->getValue();
+}
+
+inline const vector<val_t>& BranchAndBound::getCurOptTuple() const {
+  assert(m_space);
+  return m_space->getTrueRoot()->getOptAssig();
+}
 
 #endif /* BRANCHANDBOUND_H_ */

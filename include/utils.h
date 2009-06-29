@@ -33,6 +33,9 @@ inline int memoryusage() {
 ostream& operator <<(ostream& os, const vector<int>& s);
 ostream& operator <<(ostream& os, const vector<uint>& s);
 
+ostream& operator <<(ostream& os, const vector<signed short>& s);
+ostream& operator <<(ostream& os, const vector<signed char>& s);
+
 ostream& operator <<(ostream& os, const set<int>& s);
 ostream& operator <<(ostream& os, const set<uint>& s);
 
@@ -187,6 +190,26 @@ inline ostream& operator <<(ostream& os, const vector<uint>& s) {
   os << '[';
   for (vector<uint>::const_iterator it = s.begin(); it != s.end(); ) {
     os << *it;
+    if (++it != s.end()) os << ',';
+  }
+  os << ']';
+  return os;
+}
+
+inline ostream& operator <<(ostream& os, const vector<signed short>& s) {
+  os << '[';
+  for (vector<signed short>::const_iterator it = s.begin(); it != s.end(); ) {
+    os << (int) *it;
+    if (++it != s.end()) os << ',';
+  }
+  os << ']';
+  return os;
+}
+
+inline ostream& operator <<(ostream& os, const vector<signed char>& s) {
+  os << '[';
+  for (vector<signed char>::const_iterator it = s.begin(); it != s.end(); ) {
+    os << (int) *it;
     if (++it != s.end()) os << ',';
   }
   os << ']';

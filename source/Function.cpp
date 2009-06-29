@@ -153,10 +153,6 @@ Function* FunctionBayes::clone() const {
 
 Function* FunctionBayes::substitute(const map<int,val_t>& assignment) const {
 
-#ifdef DEBUG
-  cout << "Substituting in function " << m_id << endl;
-#endif
-
   set<int> newScope;
   double* newTable = NULL;
   size_t newTableSize;

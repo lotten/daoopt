@@ -133,6 +133,8 @@ public:
 
   int getVar() const { return m_var; }
   int getDepth() const { return m_depth; }
+  size_t getSubprobSize() const { return m_subproblemVars.size(); }
+  const set<int>& getSubprobVars() const { return m_subproblemVars; }
 #ifdef USE_THREADS
   int getSubwidth() const { assert(m_complexity); return m_complexity->subwidth; }
   bigint getSubsize() const { assert(m_complexity); return m_complexity->subsize; }

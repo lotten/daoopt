@@ -104,6 +104,13 @@ void BoundPropagator::propagate(SearchNode* n) {
 
   // going all the way to the root, if we have to
   do {
+#ifdef DEBUG
+    {
+      GETLOCK(mtx_io, lk);
+      cout << "PROP  " << *prev << " + " << *cur << endl;
+    }
+#endif
+
     if (cur->getType() == NODE_AND) {
       // ===========================================================================
 
@@ -119,11 +126,18 @@ void BoundPropagator::propagate(SearchNode* n) {
           // prev is OR node, try to cache
           if ( prev->isCachable() && !prev->isNotOpt() ) {
             try {
-              m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue());
+              m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue(), prev->getOptAssig() );
+#ifdef DEBUG
+              {
+                GETLOCK(mtx_io, lk);
+                cout << "-Cached " << *prev << " with opt. solution " << prev->getOptAssig() << endl;
+              }
+#endif
             } catch (...) {}
           }
 #endif
-          cur->eraseChild(prev);
+          mergePrevAssignment(prev, cur); // merge opt. solutions
+          cur->eraseChild(prev); // finally, delete
       } else {
         del = false;
       }
@@ -143,8 +157,13 @@ void BoundPropagator::propagate(SearchNode* n) {
           d *= (*it)->getValue();
 #endif
         }
+
         cur->setValue(d);
+
       }
+
+      if (prop && !del)
+        mergePrevAssignment(prev, cur);
 
       // ===========================================================================
     } else { // cur is OR node
@@ -157,11 +176,12 @@ void BoundPropagator::propagate(SearchNode* n) {
 #endif
 
       if (prop) {
-        if (v > cur->getValue())
+        if (v > cur->getValue()) {
           cur->setValue(v); // update max. value
-          // TODO update opt. subproblem assignment
-        else
+          mergePrevAssignment(prev, cur); // update opt. subproblem assignment
+        } else {
           prop = false; // no more value propagation upwards in this call
+        }
       }
 
       if (prev->getChildren().empty()) { // prev has no children?
@@ -184,7 +204,86 @@ void BoundPropagator::propagate(SearchNode* n) {
       break;
     }
 
-  } while (cur);
+  } while (cur); // until cur==NULL, i.e. parent of root
+
+#ifdef DEBUG
+  myprint("! Prop done.\n");
+//  cout << "! Prop done." << endl;
+#endif
+
+}
+
+
+
+void BoundPropagator::mergePrevAssignment(SearchNode* prev, SearchNode* cur) {
+  assert(prev);
+  assert(cur);
+
+#ifdef DEBUG
+  GETLOCK(mtx_io, lk); // will block during full function body
+  cout << "MERGE " << *prev << " + " << *cur << endl;
+#endif
+
+  int curVar = cur->getVar();
+  const set<int>& curSubprob = m_space->pseudotree->getNode(curVar)->getSubprobVars();
+
+  if (cur->getType() == NODE_AND) { // current is AND node, child OR
+
+    int prevVar = prev->getVar();
+    const set<int>& prevSubprob = m_space->pseudotree->getNode(prevVar)->getSubprobVars();
+
+    set<int>::const_iterator itCurVar = curSubprob.begin();
+    set<int>::const_iterator itPrevVar = prevSubprob.begin();
+
+    vector<val_t>::iterator itCurVal = cur->getOptAssig().begin();
+    vector<val_t>::iterator itPrevVal = prev->getOptAssig().begin();
+
+    // iterate over current and previous optimal assignment, updating respective
+    // parts of current with values from previous
+    while (itCurVar!=curSubprob.end() || itPrevVar!=prevSubprob.end()) {
+
+      if (*itCurVar == curVar) {
+        *itCurVal = cur->getVal();
+        ++itCurVar; ++itCurVal;
+        continue;
+      } else if (itPrevVar == prevSubprob.end()) {
+        ++itCurVar; ++itCurVal;
+        continue;
+      }
+      if (*itCurVar == *itPrevVar) {
+        *itCurVal = *itPrevVal;
+        ++itCurVar; ++itCurVal; ++itPrevVar; ++itPrevVal;
+      } else if (*itCurVar < *itPrevVar) {
+        ++itCurVar; ++itCurVal;
+      } else { // *itCurVar > *itPrevVar
+        ++itPrevVar; ++itPrevVal;
+      }
+
+    }
+
+#ifdef DEBUG
+    itCurVar = curSubprob.begin();
+    itCurVal = cur->getOptAssig().begin();
+    for (;itCurVar != curSubprob.end(); ++itCurVar, ++itCurVal )
+      cout << " " << *itCurVar << "=" << (int) *itCurVal << flush;
+    cout << endl;
+#endif
+
+  } else { // cur->getType() == NODE_OR
+
+    // this means subprobVars of current and previous are identical
+    // just need to copy values 1 by 1
+    copy(prev->getOptAssig().begin(), prev->getOptAssig().end(), cur->getOptAssig().begin());
+
+#ifdef DEBUG
+    set<int>::const_iterator itCurVar = curSubprob.begin();
+    vector<val_t>::iterator itCurVal = cur->getOptAssig().begin();
+    for (;itCurVar != curSubprob.end(); ++itCurVar, ++itCurVal )
+      cout << " " << *itCurVar << "=" << (int) *itCurVal << flush;
+    cout << endl;
+#endif
+
+  }
 
 }
 

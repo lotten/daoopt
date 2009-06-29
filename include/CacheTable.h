@@ -13,7 +13,8 @@
 #include <string>
 #include <malloc.h>
 
-typedef hash_map <context_t, double> context_hash_map;
+//typedef hash_map <context_t, double> context_hash_map;
+typedef hash_map <context_t, pair<double,vector<val_t> > > context_hash_map;
 
 class CacheTable {
 
@@ -33,9 +34,9 @@ private:
   vector< context_hash_map* > m_tables;
 
 public:
-  void write(int n, size_t inst, const context_t& ctxt, double v) throw (int);
+  void write(int n, size_t inst, const context_t& ctxt, double v, vector<val_t> sol) throw (int);
 //  bool hasEntry(int n, const std::string& ctxt);
-  double read(int n, size_t inst, const context_t& ctxt) const throw (int);
+  pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int);
   void reset(int n);
 #ifdef USE_THREADS
   size_t getInstCounter(int n) const;
@@ -55,7 +56,7 @@ public:
 
 // inserts a value into the respective cache table
 // throws an int if insert non successful (memory limit or index out of bounds)
-inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v) throw (int) {
+inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v, vector<val_t> sol) throw (int) {
   assert(n < m_size);
 #ifdef USE_THREADS
   // check instance counter
@@ -80,11 +81,11 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
 #endif
   }
   // this will write only if entry not present yet
-  m_tables[n]->insert(make_pair(ctxt,v));
+  m_tables[n]->insert(make_pair(ctxt, make_pair(v,sol) ) );
 }
 
 // throws an int (UNKNOWN) if not found
-inline double CacheTable::read(int n, size_t inst, const context_t& ctxt) const throw (int) {
+inline pair<double, vector<val_t> > CacheTable::read(int n, size_t inst, const context_t& ctxt) const throw (int) {
   assert(n < m_size);
   // does cache table exist?
   if (!m_tables[n])

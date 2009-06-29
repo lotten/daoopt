@@ -18,7 +18,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.93c alpha"
+#define VERSIONINFO "0.95 alpha"
 
 // define to enable diagnostic output of memory stats
 //#define MEMDEBUG
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
 
 
   // The central search space
-  SearchSpace* space = new SearchSpace(&opt);
+  SearchSpace* space = new SearchSpace(&pt,&opt);
 
   // Mini bucket heuristic
   MiniBucketElim mbe(&p,&pt,opt.ibound);
@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
   double time_passed = difftime(time_end,time_start);
   cout << "Time elapsed: " << time_passed << " seconds" << endl;
 
-  double mpeCost = space->getSolutionCost();
+  double mpeCost = bab.getCurOptValue();//space->getSolutionCost();
 
   // account for global constant (but not if solving subproblem)
   if (opt.in_subproblemFile.empty()) {
@@ -241,13 +241,25 @@ int main(int argc, char** argv) {
 #endif
   }
 
-  cout << "--------------------------\n" <<
+  cout << "--------------------------\n"
 #ifdef USE_LOG
-  mpeCost << " (" << EXPFUN( mpeCost ) << ')'
+  << mpeCost << " (" << EXPFUN( mpeCost ) << ')' << endl
+  << "s " << mpeCost << " " << p.getNOrg();
 #else
-  log10(mpeCost) << " (" << mpeCost << ')'
+  << log10(mpeCost) << " (" << mpeCost << ')' << endl
+  << "s " << log10(mpeCost) << ' ' << p.getNOrg();
 #endif
-  << endl;
+
+  /*
+  vector<val_t> mpeTuple = bab.getCurOptTuple();
+  for (size_t i=0; i<mpeTuple.size(); ++i) {
+    cout << ' ' << (int) mpeTuple[i];
+  }
+  cout << endl;
+  */
+
+  p.outputAndSaveSolution(opt.in_problemFile + ".sol.gz", bab.getCurOptTuple());
+  cout << endl;
 
   // write solution file, if requested
   if (!opt.out_solutionFile.empty()) {

@@ -356,3 +356,39 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   return true;
 
 }
+
+void Problem::outputAndSaveSolution(const string& file, const vector<val_t>& sol) const {
+
+	  assert( (int) sol.size() == m_n);
+
+	  ogzstream out(file.c_str());
+
+	  if (!out) {
+	    cerr << "Error writing ordering to file " << file << endl;
+	    exit(1);
+	  }
+
+	  out << m_nOrg << endl;
+
+	  for (int i=0; i<m_nOrg; ++i) {
+		  out << i << '\t';
+		  map<int,int>::const_iterator itRen = m_old2new.find(i);
+		  if (itRen != m_old2new.end()) {
+			  cout << ' ' << (int) sol.at( itRen->second );
+			  out << (int) sol.at( itRen->second ) << endl;
+		  } else {
+			  map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
+			  if (itEvid != m_evidence.end()) {
+				  cout << ' ' << (int) itEvid->second;
+				  out << (int) itEvid->second << endl;
+			  } else {
+				  cout << " 0";
+				  out << '0' << endl;
+			  }
+		  }
+	  }
+
+	  out.close();
+
+}
+

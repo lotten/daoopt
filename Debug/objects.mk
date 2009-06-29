@@ -4,4 +4,4 @@
 
 USER_OBJS :=
 
-LIBS := -lboost_program_options -lboost_thread -lgmpxx -lgmp
+LIBS := -lgmpxx -lgmp -lpthread

@@ -45,6 +45,7 @@ public:
   double getGlobalConstant() const;
 
   int getN() const { return m_n; }
+  int getNOrg() const { return m_nOrg; }
   val_t getK() const { return m_k; }
   int getE() const { return m_e; }
   int getC() const { return m_c; }
@@ -67,6 +68,8 @@ public:
 
   // removes evidence and unary-domain variables
   void removeEvidence();
+
+  void outputAndSaveSolution(const string& file, const vector<val_t>& sol) const;
 
   // adds the dummy variable to connect disconnected pseudo tree components
   void addDummy();

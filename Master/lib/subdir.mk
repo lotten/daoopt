@@ -64,7 +64,7 @@ lib/%.o: ../lib/%.c
 lib/%.o: ../lib/%.C
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	ccache g++ -DLINUX -DUSE_THREADS -I"/home/lars/workspace/daoopt/include" -I"/home/lars/workspace/daoopt/lib" -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	ccache g++ -DLINUX -DUSE_THREADS -I../include -I../lib -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

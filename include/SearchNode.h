@@ -37,6 +37,8 @@ protected:
   double m_nodeValue;                // node value (as in cost)
   double m_heurValue;                // heuristic estimate of the node's value
   CHILDLIST m_children;              // Child nodes
+  vector<val_t> m_optAssignment;     // stores the optimal solution to the subproblem
+
 public:
 //  static size_t noNodes;
 
@@ -72,6 +74,9 @@ public:
   void eraseChild(SearchNode* node);
   void clearChildren();
 
+  vector<val_t>& getOptAssig() { return m_optAssignment; }
+  void setOptAssig(const vector<val_t>& assign) { m_optAssignment = assign; }
+
   void setLeaf() { m_flags |= FLAG_LEAF; }
   bool isLeaf() const { return m_flags & FLAG_LEAF; }
   void setCachable() { m_flags |= FLAG_CACHABLE; }
@@ -88,7 +93,8 @@ public:
   virtual void clearHeurCache() = 0;
 
 protected:
-  SearchNode(SearchNode* parent);
+//  SearchNode(SearchNode* parent);
+  SearchNode(SearchNode* parent, size_t subprobSize);
 public:
   virtual ~SearchNode();
 };
@@ -130,7 +136,7 @@ public:
   void clearHeurCache() {}
 
 public:
-  SearchNodeAND(SearchNode* p, val_t val);
+  SearchNodeAND(SearchNode* p, size_t subprobSize, val_t val);
   ~SearchNodeAND() {}
 };
 
@@ -143,7 +149,6 @@ protected:
 #endif
   double* m_heurCache;   // Stores the precomputed heuristic values of the AND children
   context_t* m_cacheContext; // stores the context (for caching)
-//  vector<val_t> m_optSolution; // stores the optimal solution to the subproblem
 
 #ifdef USE_THREADS
   context_t* m_subprobContext;     // Stores the context values to this subproblem
@@ -187,7 +192,7 @@ public:
   void clearHeurCache();
 
 public:
-  SearchNodeOR(SearchNode* parent, int var);
+  SearchNodeOR(SearchNode* parent, size_t subprobSize, int var);
   ~SearchNodeOR();
 };
 
@@ -199,12 +204,14 @@ ostream& operator << (ostream&, const SearchNode&);
 
 // Inline definitions
 
-inline SearchNode::SearchNode(SearchNode* parent) :
+inline SearchNode::SearchNode(SearchNode* parent, size_t subprobSize) :
+    m_flags(0), m_parent(parent),
 #ifdef USE_LOG
-    m_flags(0), m_parent(parent), m_nodeValue(-INFINITY), m_heurValue(INFINITY)
+    m_nodeValue(-INFINITY), m_heurValue(INFINITY),
 #else
-    m_flags(0), m_parent(parent), m_nodeValue(0.0), m_heurValue(INFINITY)
+    m_nodeValue(0.0), m_heurValue(INFINITY),
 #endif
+    m_optAssignment(subprobSize, UNKNOWN)
   { /* ++noNodes; */ }
 
 inline SearchNode::~SearchNode() {
@@ -263,21 +270,24 @@ inline double SearchNodeOR::getHeur() const {
 }
 
 
-inline SearchNodeAND::SearchNodeAND(SearchNode* parent, val_t val) :
+inline SearchNodeAND::SearchNodeAND(SearchNode* parent, size_t subprobSize, val_t val) :
 #ifdef USE_LOG
-    SearchNode(parent), m_val(val), m_nodeLabel(0.0)
+    SearchNode(parent, subprobSize), m_val(val), m_nodeLabel(0.0)
 {
   m_nodeValue = 0.0;
 #else
-    SearchNode(parent), m_val(val), m_nodeLabel(1.0)
+    SearchNode(parent, subprobSize), m_val(val), m_nodeLabel(1.0)
 {
   m_nodeValue = 1.0;
 #endif
+  // leaf node, set (trivial) optimal assignment
+  if (subprobSize==1)
+    m_optAssignment[0] = val;
 }
 
 
-inline SearchNodeOR::SearchNodeOR(SearchNode* parent, int var) :
-  SearchNode(parent), m_var(var), m_heurCache(NULL), m_cacheContext(NULL)
+inline SearchNodeOR::SearchNodeOR(SearchNode* parent, size_t subprobSize, int var) :
+  SearchNode(parent, subprobSize), m_var(var), m_heurCache(NULL), m_cacheContext(NULL)
 #ifdef USE_THREADS
   , m_subprobContext(NULL)
 #endif

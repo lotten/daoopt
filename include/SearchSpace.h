@@ -34,7 +34,8 @@ struct CondorSubmission;
 struct ProgramOptions;
 #endif
 
-
+// forward declaration
+class Pseudotree;
 
 struct SearchSpace {
   friend class Search;
@@ -49,6 +50,7 @@ protected:
   SearchNode* root;
   SearchNode* subproblem;
   ProgramOptions* options;
+  Pseudotree* pseudotree;
 
 #ifndef NO_CACHING
 protected:
@@ -57,8 +59,12 @@ protected:
 #endif
 
 public:
+  // returns a pointer to the the true root node (potentially a subproblem)
+  SearchNode* getTrueRoot() const;
+/*
   // returns the current cost of the root node, i.e. the current optimal solution
   double getSolutionCost() const;
+*/
 
 #ifdef USE_THREADS
 
@@ -100,14 +106,14 @@ protected:
 
 public:
 #ifdef USE_THREADS
-  SearchSpace(ProgramOptions* opt) : root(NULL), subproblem(NULL), options(opt), allowedThreads(MAX_THREADS), searchDone(false) {
+  SearchSpace(Pseudotree* pt, ProgramOptions* opt) : root(NULL), subproblem(NULL), options(opt), pseudotree(pt), allowedThreads(MAX_THREADS), searchDone(false) {
 #ifndef NO_CACHING
     cache = NULL;
 #endif
     if (options) allowedThreads = opt->threads;
   }
 #else
-  SearchSpace(ProgramOptions* opt) : root(NULL), subproblem(NULL), options(opt) {
+  SearchSpace(Pseudotree* pt, ProgramOptions* opt) : root(NULL), subproblem(NULL), options(opt), pseudotree(pt) {
 #ifndef NO_CACHING
     cache = NULL;
 #endif
@@ -122,6 +128,14 @@ public:
 };
 
 
+inline SearchNode* SearchSpace::getTrueRoot() const {
+  assert(root);
+  if (subproblem)
+    return subproblem;
+  else
+    return root;
+}
+/*
 inline double SearchSpace::getSolutionCost() const {
   assert(root);
   if (subproblem)
@@ -129,5 +143,5 @@ inline double SearchSpace::getSolutionCost() const {
   else
     return root->getValue();
 }
-
+*/
 #endif /* SEARCHSPACE_H_ */
