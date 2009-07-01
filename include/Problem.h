@@ -69,7 +69,15 @@ public:
   // removes evidence and unary-domain variables
   void removeEvidence();
 
-  void outputAndSaveSolution(const string& file, const vector<val_t>& sol) const;
+  // outputs the solution to the screen and, if file!="", writes it to file
+  // cost is the MPE tuple value
+  // sol is the optimal solution tuple
+  // if subprobOnly is true, only the variables from sol will be output to file (for subproblem solving)
+#ifndef NO_ASSIGNMENT
+  void outputAndSaveSolution(const string& file, double cost, const vector<val_t>& sol, bool subprobOnly = false) const;
+#else
+  void outputAndSaveSolution(const string& file, double cost, bool subprobOnly = false) const;
+#endif
 
   // adds the dummy variable to connect disconnected pseudo tree components
   void addDummy();

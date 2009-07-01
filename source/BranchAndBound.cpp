@@ -7,7 +7,7 @@
 
 #include "BranchAndBound.h"
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 #undef DEBUG
 #endif
 
@@ -15,7 +15,7 @@
 
 typedef PseudotreeNode PtNode;
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 void BranchAndBound::operator ()() {
 
   try { while (!m_stack.empty()) {
@@ -296,8 +296,10 @@ void BranchAndBound::expandNext() {
         it!=ptnode->getChildren().end(); ++it)
     {
       int v = (*it)->getVar();
+#ifndef NO_ASSIGNMENT
       size_t subprobSize = (*it)->getSubprobSize();
-      SearchNodeOR* n = new SearchNodeOR(node, subprobSize, v);
+#endif
+      SearchNodeOR* n = NEWNODEOR(node, subprobSize, v);
 
       // Compute and set heuristic estimate
       heuristicOR(n);
@@ -345,9 +347,14 @@ void BranchAndBound::expandNext() {
       // try to get value from cache
       try {
         // will throw int(UNKNOWN) if not found
+#ifndef NO_ASSIGNMENT
         pair<double,vector<val_t> > entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
         node->setValue( entry.first ); // set value
         node->setOptAssig( entry.second ); // set assignment
+#else
+        double entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+        node->setValue( entry ); // set value
+#endif
         node->setLeaf(); // mark as leaf
         m_nextLeaf = node;
         node->clearHeurCache(); // clear precomputed heur./labels
@@ -388,7 +395,7 @@ void BranchAndBound::expandNext() {
 #endif
 
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
     // TODO currently outsource at fixed depth
 //    if (ptnode->getDepth() == m_space->options->cutoff_depth) {
     if ( ptnode->getDepth() == m_space->options->cutoff_depth ||
@@ -412,10 +419,14 @@ void BranchAndBound::expandNext() {
     /////////////////////////////////////
     // actually create new AND children
     double* heur = node->getHeurCache();
+
+#ifndef NO_ASSIGNMENT
     size_t subprobSize = ptnode->getSubprobSize();
+#endif
 
     for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
-      SearchNodeAND* n = new SearchNodeAND(node, subprobSize, i);
+
+      SearchNodeAND* n = NEWNODEAND(node, subprobSize, i);
 
       // get cached heur. value
       n->setHeur( heur[2*i] );
@@ -493,7 +504,7 @@ void BranchAndBound::addCacheContext(SearchNode* node, const set<int>& ctxt) con
 #endif
 
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 void BranchAndBound::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
 
   context_t* sig = new context_t();
@@ -535,7 +546,7 @@ void BranchAndBound::addSubprobContext(SearchNode* node, const set<int>& ctxt) c
 #endif
 
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 void BranchAndBound::addPSTlist(SearchNode* node) const {
 
   // assume OR node
@@ -576,7 +587,7 @@ void BranchAndBound::addPSTlist(SearchNode* node) const {
 #endif
 
 
-#ifndef USE_THREADS
+#ifndef PARALLEL_MODE
 SearchNode* BranchAndBound::nextLeaf() {
 
 //  assert(!m_stack.empty());
@@ -625,7 +636,9 @@ void BranchAndBound::restrictSubproblem(const string& file) {
 
   // re-adjust the root of the pseudo tree
   m_pseudotree->restrictSubproblem(rootVar);
+#ifndef NO_ASSIGNMENT
   size_t subprobSize = m_pseudotree->getRoot()->getSubprobSize();
+#endif
 
   int x = UNKNOWN;
   // context size
@@ -655,8 +668,10 @@ void BranchAndBound::restrictSubproblem(const string& file) {
   SearchNode* next = m_stack.top(); // dummy AND node on top of stack
   SearchNode* node = NULL;
 
+#ifndef NO_ASSIGNMENT
   // update size of optimal tuple for root node
   next->getOptAssig().resize(subprobSize, UNKNOWN);
+#endif
 
   int pstSize = UNKNOWN;
   BINREAD(fs,pstSize);
@@ -667,13 +682,13 @@ void BranchAndBound::restrictSubproblem(const string& file) {
 
     // add dummy OR node with proper value
     node = next;
-    next = new SearchNodeOR(node,subprobSize,node->getVar());
+    next = NEWNODEOR(node, subprobSize, node->getVar()) ;
     next->setValue(d1);
 //    cout << " Added dummy OR node with value " << d1 << endl;
     node->addChild(next);
 
     node = next;
-    next = new SearchNodeAND(node,subprobSize,0);
+    next = NEWNODEAND(node, subprobSize, 0) ;
     next->setLabel(d2);
 //    cout << " Added dummy AND node with label " << d2 << endl;
     node->addChild(next);
@@ -684,11 +699,11 @@ void BranchAndBound::restrictSubproblem(const string& file) {
   // since the previous dummy nodes might have non-empty labels from
   // from the parent problem)
   node = next;
-  next = new SearchNodeOR(node,subprobSize,node->getVar());
+  next = NEWNODEOR(node, subprobSize, node->getVar());
   node->addChild(next);
   m_space->subproblem = next;
   node = next;
-  next = new SearchNodeAND(node,subprobSize,0);
+  next = NEWNODEAND(node, subprobSize, 0);
   node->addChild(next);
 
   // remove old dummy node from stack
@@ -713,17 +728,10 @@ BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space
 
   // create first node (dummy variable)
   PseudotreeNode* ptroot = m_pseudotree->getRoot();
-  SearchNode* node = new SearchNodeOR(NULL, prob->getN(), ptroot->getVar() );
+  SearchNode* node = NEWNODEOR(NULL, prob->getN(), ptroot->getVar() );
   m_space->root = node;
   // create dummy variable's AND node (domain size 1)
-  SearchNode* next = new SearchNodeAND(m_space->root, prob->getN(), 0);
-/*
-#ifdef USE_LOG
-  node->setLabel(0.0);
-#else
-  node->setLabel(1.0);
-#endif
-*/
+  SearchNode* next = NEWNODEAND(m_space->root, prob->getN(), 0);
   m_space->root->addChild(next);
 
   m_stack.push(next);

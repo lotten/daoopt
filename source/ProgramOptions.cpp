@@ -24,14 +24,14 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("evid-file,e", po::value<string>(), "path to evidence file")
       ("ordering,o", po::value<string>(), "read elimination ordering from this file")
       ("subproblem,s", po::value<string>(), "limit search to subproblem specified in file")
-      ("cost-file,c", po::value<string>(), "path to output optimal cost to")
+      ("sol-file,c", po::value<string>(), "path to output optimal solution to")
       ("ibound,i", po::value<int>()->default_value(10), "i-bound for mini bucket heuristics")
       ("cbound,j", po::value<int>()->default_value(1000), "context size bound for caching")
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
       ("cbound-worker,k", po::value<int>()->default_value(1000), "context size bound for caching in worker nodes")
 #endif
       ("iterations,t", po::value<int>()->default_value(25), "iterations for finding ordering")
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
       ("cutoff-size,l", po::value<double>()->default_value(-1), "cutoff subproblem size (log10) for central search")
       ("procs,p", po::value<int>()->default_value(5), "max. number of concurrent subproblem processes")
@@ -67,8 +67,8 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     if (vm.count("subproblem"))
       opt.in_subproblemFile = vm["subproblem"].as<string>();
 
-    if (vm.count("cost-file"))
-      opt.out_solutionFile = vm["cost-file"].as<string>();
+    if (vm.count("sol-file"))
+      opt.out_solutionFile = vm["sol-file"].as<string>();
 
     if (vm.count("ibound"))
       opt.ibound = vm["ibound"].as<int>();

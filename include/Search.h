@@ -25,7 +25,7 @@ protected:
   Heuristic* m_heuristic;
 
 public:
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   virtual void operator () () = 0;
 #else
   virtual SearchNode* nextLeaf() = 0;

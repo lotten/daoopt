@@ -11,7 +11,7 @@
 // some customizable definitions
 #include "DEFINES.h"
 
-// either LINUX or WINDOWS has to be defined
+// either LINUX or WINDOWS has to be defined -> should happen in the Makefile
 //#define LINUX
 //#define WINDOWS
 #if !defined(LINUX) && !defined(WINDOWS)
@@ -27,11 +27,14 @@
 // define to disable pruning
 //#define NO_PRUNING
 
+// define to not compute the optimal assignment, just solution value
+//#define NO_ASSIGNMENT
+
 #ifdef NOTHREADS
-#undef USE_THREADS
+#undef PARALLEL_MODE
 #endif
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 // Boost thread libraries
 #import "boost/thread.hpp"
@@ -166,7 +169,7 @@ template<> struct hash<std::string> {
 
 
 // LibGMP C++ interface
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 #include <gmpxx.h>
 typedef mpz_class bigint;
 typedef mpf_class bigfloat;
@@ -340,7 +343,7 @@ inline double mylog10(unsigned long a) {
   return log10(a);
 }
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 double mylog10(bigint a);
 #endif
 

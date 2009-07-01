@@ -58,7 +58,7 @@ public:
   // augments the pseudo tree with function information
   void addFunctionInfo(const vector<Function*>& fns);
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   // computes the subproblem complexity parameters for all subtrees
   void computeComplexities(const Problem& problem);
 #endif
@@ -81,7 +81,7 @@ public:
 
 class PseudotreeNode {
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 protected:
   // internal container class for subproblem complexity information
   class Complexity {
@@ -101,7 +101,7 @@ protected:
   int m_var; // The node variable
   int m_depth; // The node's depth in the tree
   PseudotreeNode* m_parent; // The parent node
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   Complexity* m_complexity; // Contains information about subproblem complexity
 #endif
   set<int> m_subproblemVars; // The variables in the subproblem (including self)
@@ -135,14 +135,14 @@ public:
   int getDepth() const { return m_depth; }
   size_t getSubprobSize() const { return m_subproblemVars.size(); }
   const set<int>& getSubprobVars() const { return m_subproblemVars; }
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   int getSubwidth() const { assert(m_complexity); return m_complexity->subwidth; }
   bigint getSubsize() const { assert(m_complexity); return m_complexity->subsize; }
   bigint getOwnsize() const { assert(m_complexity); return m_complexity->ownsize; }
   bigint getNumContexts() const { assert(m_complexity); return m_complexity->numContexts; }
 #endif
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   void initSubproblemComplexity(const vector<val_t>& domains);
 #endif
   const set<int>& updateSubprobVars();
@@ -154,7 +154,7 @@ public:
 public:
   PseudotreeNode(int v, const set<int>& s);
   ~PseudotreeNode() {
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
     if (m_complexity) delete m_complexity;
 #endif
     }
@@ -190,7 +190,7 @@ inline Pseudotree::~Pseudotree() {
 
 // Constructor
 inline PseudotreeNode::PseudotreeNode(int v, const set<int>& s) :
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   m_var(v), m_depth(UNKNOWN), m_parent(NULL), m_complexity(NULL), m_context(s) {}
 #else
   m_var(v), m_depth(UNKNOWN), m_parent(NULL), m_context(s) {}

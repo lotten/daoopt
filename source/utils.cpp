@@ -8,7 +8,7 @@
 #include "utils.h"
 
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 double mylog10(bigint a) {
   double l = 0;
   while (!a.fits_sint_p()) {

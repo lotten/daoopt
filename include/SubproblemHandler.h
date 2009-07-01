@@ -12,7 +12,7 @@
 
 #include "SearchSpace.h"
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 #include "debug.h"
 
@@ -68,6 +68,6 @@ inline void SubproblemStraight::operator() () {
 }
 
 
-#endif /* USE_THREADS */
+#endif /* PARALLEL_MODE */
 
 #endif /* SUBPROBLEMHANDLER_H_ */

@@ -12,7 +12,7 @@
 #include "SearchSpace.h"
 #include "ProgramOptions.h"
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 #include "SubproblemHandler.h"
 #include "SubproblemCondor.h"
 #endif
@@ -32,7 +32,7 @@ protected:
 public:
 
   // operator for thread execution
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   // operator for calling as a separate thread
   void operator() ();
 #else
@@ -51,13 +51,13 @@ protected:
   void addCacheContext(SearchNode*, const set<int>&) const;
 #endif
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   void addSubprobContext(SearchNode*, const set<int>&) const;
 #endif
 
   // checks if the node can be pruned (only meant for AND nodes)
   bool canBePruned(SearchNode*) const;
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   // adds PST information for advanced pruning in (external) subproblem
   void addPSTlist(SearchNode* node) const;
 #endif
@@ -70,7 +70,9 @@ public:
   // returns true if the search space has been explored fully
   bool isDone() const;
   double getCurOptValue() const;
+#ifndef NO_ASSIGNMENT
   const vector<val_t>& getCurOptTuple() const;
+#endif
 
   size_t getNodesOR() const { return m_nodesOR; }
   size_t getNodesAND() const { return m_nodesAND; }
@@ -95,9 +97,11 @@ inline double BranchAndBound::getCurOptValue() const {
   return m_space->getTrueRoot()->getValue();
 }
 
+#ifndef NO_ASSIGNMENT
 inline const vector<val_t>& BranchAndBound::getCurOptTuple() const {
   assert(m_space);
   return m_space->getTrueRoot()->getOptAssig();
 }
+#endif
 
 #endif /* BRANCHANDBOUND_H_ */

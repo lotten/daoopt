@@ -14,6 +14,9 @@ void Pseudotree::restrictSubproblem(int i) {
   m_root->setChild(m_nodes[i]);
   m_nodes[i]->setParent(m_root);
 
+  // recompute subproblem variables (recursive)
+  m_root->updateSubprobVars();
+
 }
 
 void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
@@ -198,7 +201,7 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 }
 
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 void Pseudotree::computeComplexities(const Problem& problem) {
 
   // compute subproblem complexity parameters of all nodes
@@ -253,6 +256,9 @@ int PseudotreeNode::updateDepth(int d) {
 
 // recursively updates the set of variables in the current subproblem
 const set<int>& PseudotreeNode::updateSubprobVars() {
+
+  // clear current set
+  m_subproblemVars.clear();
   // add self
   m_subproblemVars.insert(m_var);
 
@@ -271,7 +277,7 @@ const set<int>& PseudotreeNode::updateSubprobVars() {
   return m_subproblemVars;
 }
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 // computes the subproblem complexity parameters for this particular node
 void PseudotreeNode::initSubproblemComplexity(const vector<val_t>& domains) {
 
@@ -328,7 +334,7 @@ void PseudotreeNode::initSubproblemComplexity(const vector<val_t>& domains) {
 #endif
 
 }
-#endif /* USE_THREADS */
+#endif /* PARALLEL_MODE */
 
 /*
 // computes the induced width of the subproblem represented by this ptnode,

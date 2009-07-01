@@ -13,7 +13,7 @@
 #include <csignal>
 #include "_base.h"
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 // watches for signals like SIGINT and SIGTERM, catches them
 // and takes care of processing
@@ -43,6 +43,6 @@ public:
 
 };
 
-#endif /* USE_THREADS */
+#endif /* PARALLEL_MODE */
 
 #endif /* SIGHANDLER_H_ */

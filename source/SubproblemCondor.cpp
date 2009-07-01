@@ -10,7 +10,7 @@
 #include "ProgramOptions.h"
 #include "gzstream.h"
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 // Suppress condor output if not in debug mode
 #ifndef DEBUG
@@ -94,15 +94,30 @@ void SubproblemCondor::operator() () {
     }
   }
   igzstream in(solutionFile.str().c_str(), ios::binary | ios::in);
+
   double d;
-  BINREAD(in, d);
-#ifndef USE_LOG
-  BINREAD(in, d); // second entry is non-log
+  BINREAD(in, d); // read opt. cost
+
+#ifndef NO_ASSIGNMENT
+  int n;
+  BINREAD(in, n); // read length of opt. tuple
+
+  vector<val_t> tup(n,UNKNOWN);
+
+  val_t v;
+  for (int i=0; i<n; ++i) {
+    BINREAD(in, v); // read opt. assignments
+    tup[i] = v;
+  }
 #endif
+
   in.close();
 
-  // Write subproblem solution value into search node
+  // Write subproblem solution value and tuple into search node
   m_subproblem->setValue(d);
+#ifndef NO_ASSIGNMENT
+  m_subproblem->setOptAssig(tup);
+#endif
 
   {
     GETLOCK(mtx_io,lk2);
@@ -474,5 +489,5 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
 }
 
 
-#endif /* USE_THREADS */
+#endif /* PARALLEL_MODE */
 

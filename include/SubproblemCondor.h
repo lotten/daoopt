@@ -14,7 +14,7 @@
 
 //#include "pstream.h"
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 // a container for information exchange between SubproblemCondor and
 // CondorSubmissionEngine

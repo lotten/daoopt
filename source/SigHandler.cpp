@@ -11,7 +11,7 @@
 #include "debug.h"
 #endif
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 volatile sig_atomic_t SigHandler::flag = 1;
 
@@ -56,4 +56,4 @@ void SigHandler::operator ()() {
 
 }
 
-#endif /* USE_THREADS */
+#endif /* PARALLEL_MODE */

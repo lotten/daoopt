@@ -14,7 +14,11 @@
 #include <malloc.h>
 
 //typedef hash_map <context_t, double> context_hash_map;
+#ifndef NO_ASSIGNMENT
 typedef hash_map <context_t, pair<double,vector<val_t> > > context_hash_map;
+#else
+typedef hash_map <context_t, double > context_hash_map;
+#endif
 
 class CacheTable {
 
@@ -28,17 +32,23 @@ private:
   std::string m_cached_ctxt;
   hash_map<std::string, double>::iterator m_cached_it;
 */
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   vector<size_t> m_instCounter;
 #endif
   vector< context_hash_map* > m_tables;
 
 public:
+
+#ifndef NO_ASSIGNMENT
   void write(int n, size_t inst, const context_t& ctxt, double v, vector<val_t> sol) throw (int);
-//  bool hasEntry(int n, const std::string& ctxt);
   pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int);
+#else
+  void write(int n, size_t inst, const context_t& ctxt, double v) throw (int);
+  double read(int n, size_t inst, const context_t& ctxt) const throw (int);
+#endif
+
   void reset(int n);
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   size_t getInstCounter(int n) const;
 #else
   size_t getInstCounter(int n) const { return 0; }
@@ -56,9 +66,13 @@ public:
 
 // inserts a value into the respective cache table
 // throws an int if insert non successful (memory limit or index out of bounds)
+#ifndef NO_ASSIGNMENT
 inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v, vector<val_t> sol) throw (int) {
+#else
+inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v) throw (int) {
+#endif
   assert(n < m_size);
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   // check instance counter
   if (m_instCounter[n] != inst)
     throw UNKNOWN; // mismatch, don't cache
@@ -81,16 +95,27 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
 #endif
   }
   // this will write only if entry not present yet
-  m_tables[n]->insert(make_pair(ctxt, make_pair(v,sol) ) );
+#ifndef NO_ASSIGNMENT
+  m_tables[n]->insert( make_pair(ctxt, make_pair(v,sol) ) );
+#else
+  m_tables[n]->insert( make_pair(ctxt, v) );
+#endif
 }
 
+
 // throws an int (UNKNOWN) if not found
+
+#ifndef NO_ASSIGNMENT
 inline pair<double, vector<val_t> > CacheTable::read(int n, size_t inst, const context_t& ctxt) const throw (int) {
+#else
+inline double CacheTable::read(int n, size_t inst, const context_t& ctxt) const throw (int) {
+#endif
+
   assert(n < m_size);
   // does cache table exist?
   if (!m_tables[n])
     throw UNKNOWN;
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   // check instance counter
   if (m_instCounter[n] != inst)
     throw UNKNOWN; // mismatch, abort
@@ -102,6 +127,7 @@ inline pair<double, vector<val_t> > CacheTable::read(int n, size_t inst, const c
   return it->second;
 }
 
+
 inline void CacheTable::reset(int n) {
   assert(n<m_size);
   if (m_tables[n]) {
@@ -111,13 +137,13 @@ inline void CacheTable::reset(int n) {
     m_full = false;
 //    cout << "Reset cache table " << n << endl;
   }
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   // increase instant counter to invalidate late result reports
   ++m_instCounter[n];
 #endif
 }
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 inline size_t CacheTable::getInstCounter(int n) const {
   assert(n<m_size);
   return m_instCounter[n];
@@ -125,7 +151,7 @@ inline size_t CacheTable::getInstCounter(int n) const {
 #endif
 
 inline CacheTable::CacheTable(int size, int memlimit) :
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
     m_size(size), m_instCounter(size,0), m_tables(size) {
 #else
     m_full(false), m_size(size), m_memlimit(memlimit), m_tables(size) {

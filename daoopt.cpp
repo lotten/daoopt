@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   time(&time_start);
 
   cout << "DAOOPT " << VERSIONINFO ;
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   cout << " PARALLEL (";
 #else
   cout << " STANDALONE (";
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
   cout
   << "+ i-bound:\t" << opt.ibound << endl
   << "+ j-bound:\t" << opt.cbound << endl
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   << "+ Cutoff depth:\t" << opt.cutoff_depth << endl
   << "+ Cutoff size:\t" << opt.cutoff_size << endl
   << "+ Max. workers:\t" << opt.threads << endl
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
   }
 
   // Save order to file?
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   if (!orderFromFile) {
     if (opt.in_orderingFile.empty())
       opt.in_orderingFile = string("elim_") + p.getName() + string(".gz");
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
   pt.build(g,elim,opt.cbound); // will add dummy variable
   p.addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   pt.addFunctionInfo(p.getFunctions());
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   pt.computeComplexities(p);
 #endif
 
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
 
   cout << "--- Starting search ---" << endl;
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 
   // take care of signal handling
@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
 #endif
 
   cout << endl << "--- Search done ---" << endl;
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   cout << "Condor jobs:  " << bab.getThreadCount() << endl;
 #endif
   cout << "OR nodes:     " << bab.getNodesOR() << endl;
@@ -243,11 +243,9 @@ int main(int argc, char** argv) {
 
   cout << "--------------------------\n"
 #ifdef USE_LOG
-  << mpeCost << " (" << EXPFUN( mpeCost ) << ')' << endl
-  << "s " << mpeCost << " " << p.getNOrg();
+  << mpeCost << " (" << EXPFUN( mpeCost ) << ')' << endl;
 #else
-  << log10(mpeCost) << " (" << mpeCost << ')' << endl
-  << "s " << log10(mpeCost) << ' ' << p.getNOrg();
+  << log10(mpeCost) << " (" << mpeCost << ')' << endl;
 #endif
 
   /*
@@ -258,9 +256,17 @@ int main(int argc, char** argv) {
   cout << endl;
   */
 
-  p.outputAndSaveSolution(opt.in_problemFile + ".sol.gz", bab.getCurOptTuple());
+#ifndef NO_ASSIGNMENT
+  p.outputAndSaveSolution(opt.out_solutionFile, mpeCost, bab.getCurOptTuple(),
+                                                !opt.in_subproblemFile.empty() );
+#else
+  p.outputAndSaveSolution(opt.out_solutionFile, mpeCost,
+                                                !opt.in_subproblemFile.empty() );
+#endif
+
   cout << endl;
 
+/*
   // write solution file, if requested
   if (!opt.out_solutionFile.empty()) {
     ogzstream sol(opt.out_solutionFile.c_str(), ios::out | ios::trunc | ios::binary);
@@ -282,6 +288,7 @@ int main(int argc, char** argv) {
       sol.close();
     }
   }
+*/
 
 #ifdef MEMDEBUG
   malloc_stats();

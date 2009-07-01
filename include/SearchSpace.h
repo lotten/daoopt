@@ -20,7 +20,7 @@
 #endif
 
 // forward declarations
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 namespace boost {
   class thread;
 }
@@ -28,7 +28,7 @@ struct CondorSubmission;
 #endif
 
 // declare ProgramOptions
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 #include "ProgramOptions.h"
 #else
 struct ProgramOptions;
@@ -66,7 +66,7 @@ public:
   double getSolutionCost() const;
 */
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 
 protected:
   // queue for information exchange between components
@@ -76,14 +76,14 @@ protected:
   // for pipelining the condor submissions
   queue< CondorSubmission* > condorQueue;
   boost::mutex mtx_condorQueue;
-  boost::condition cond_condorQueue;
+  boost::condition_variable cond_condorQueue;
   // to signal SubproblemHandlers that their job has been submitted
-  boost::condition cond_jobsSubmitted;
+  boost::condition_variable cond_jobsSubmitted;
 
   // limits the number of processing leaves/threads at any time
   volatile size_t allowedThreads;
   boost::mutex mtx_allowedThreads;
-  boost::condition cond_allowedThreads;
+  boost::condition_variable cond_allowedThreads;
 
   // counts the number of active threads
   volatile bool searchDone;
@@ -94,7 +94,7 @@ protected:
 
   // mutex and condition var. for the list of solved leaf nodes
   boost::mutex mtx_solved;
-  boost::condition cond_solved;
+  boost::condition_variable cond_solved;
 
   // mutex for active threads
   boost::mutex mtx_activeThreads;
@@ -105,7 +105,7 @@ protected:
 #endif
 
 public:
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   SearchSpace(Pseudotree* pt, ProgramOptions* opt) : root(NULL), subproblem(NULL), options(opt), pseudotree(pt), allowedThreads(MAX_THREADS), searchDone(false) {
 #ifndef NO_CACHING
     cache = NULL;

@@ -19,14 +19,17 @@ protected:
   SearchSpace* m_space;
 public:
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
   // operator for multithreading
   void operator () ();
 #endif
 
   void propagate(SearchNode*);
+
+#ifndef NO_ASSIGNMENT
 private:
   void mergePrevAssignment(SearchNode* prev, SearchNode* cur);
+#endif
 
 public:
  BoundPropagator(SearchSpace* s) : m_space(s) {}

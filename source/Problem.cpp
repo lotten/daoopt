@@ -357,38 +357,88 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
 }
 
-void Problem::outputAndSaveSolution(const string& file, const vector<val_t>& sol) const {
+#ifndef NO_ASSIGNMENT
+void Problem::outputAndSaveSolution(const string& file, double mpe, const vector<val_t>& sol, bool subprobOnly) const {
+#else
+void Problem::outputAndSaveSolution(const string& file, double mpe, bool subprobOnly) const {
+#endif
 
-	  assert( (int) sol.size() == m_n);
+#ifndef NO_ASSIGNMENT
+	  assert( subprobOnly || (int) sol.size() == m_n );
+#endif
 
-	  ogzstream out(file.c_str());
+	  bool writeFile = false;
+	  if (! file.empty())
+	    writeFile = true;
 
-	  if (!out) {
-	    cerr << "Error writing ordering to file " << file << endl;
-	    exit(1);
+	  ogzstream out;
+	  if (writeFile) {
+	    out.open(file.c_str(), ios::out | ios::trunc | ios::binary);
+	    if (!out) {
+	      cerr << "Error writing optimal solution to file " << file << endl;
+	      exit(1);
+	    }
 	  }
 
-	  out << m_nOrg << endl;
+#ifdef USE_LOG
+	  cout << "s " << mpe;
+#else
+	  cout << "s " << log10(mpe);
+#endif
+#ifndef NO_ASSIGNMENT
+	  cout << ' ' << m_nOrg;
+#endif
 
-	  for (int i=0; i<m_nOrg; ++i) {
-		  out << i << '\t';
-		  map<int,int>::const_iterator itRen = m_old2new.find(i);
-		  if (itRen != m_old2new.end()) {
-			  cout << ' ' << (int) sol.at( itRen->second );
-			  out << (int) sol.at( itRen->second ) << endl;
-		  } else {
-			  map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
-			  if (itEvid != m_evidence.end()) {
-				  cout << ' ' << (int) itEvid->second;
-				  out << (int) itEvid->second << endl;
-			  } else {
-				  cout << " 0";
-				  out << '0' << endl;
-			  }
-		  }
+
+#ifdef NO_ASSIGNMENT
+    if (writeFile) {
+      BINWRITE(out,mpe); // mpe solution cost
+    }
+#else
+
+	  int fileAssigSize = UNKNOWN;
+	  if (subprobOnly)
+	    fileAssigSize = (int) sol.size() -1; // -1 for dummy var.
+	  else
+	    fileAssigSize = m_nOrg;
+
+    if (writeFile) {
+      BINWRITE(out,mpe); // mpe solution cost
+      BINWRITE(out,fileAssigSize); // no. of variables
+    }
+
+    val_t v = UNKNOWN;
+
+	  for (int i=0; i<fileAssigSize; ++i) {
+	    if (subprobOnly) { // only output subproblem assignment
+	      v = sol.at(i);
+	      cout << ' ' << (int) v;
+	      if (writeFile) BINWRITE(out, v);
+	    } else { // ouptut full assignment (incl. evidence)
+	      map<int,int>::const_iterator itRen = m_old2new.find(i);
+	      if (itRen != m_old2new.end()) {
+	        v = sol.at( itRen->second);
+	        cout << ' ' << (int) v;
+	        if (writeFile) BINWRITE(out,v);
+	      } else {
+	        map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
+	        if (itEvid != m_evidence.end()) { // var. i was evidence
+	          v = itEvid->second;
+	          cout << ' ' << (int) v;
+	          if (writeFile) BINWRITE(out,v);
+	        } else { // var. had unary domain and was removed
+	          v = 0;
+	          cout << ' ' << (int) v;
+	          if (writeFile) BINWRITE(out,v);
+	        }
+	      }
+	    }
 	  }
+#endif
 
-	  out.close();
+	  cout << endl;
+	  if (writeFile)
+	    out.close();
 
 }
 

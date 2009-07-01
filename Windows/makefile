@@ -11,8 +11,6 @@ RM := rm -rf
 -include subdir.mk
 -include source/subdir.mk
 -include lib/subdir.mk
--include lib/boost.src/thread/src/subdir.mk
--include lib/boost.src/thread/src/pthread/subdir.mk
 -include lib/boost.src/program_options/src/subdir.mk
 -include objects.mk
 
@@ -42,19 +40,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: daooptM
+all: daooptR
 
 # Tool invocations
-daooptM: $(OBJS) $(USER_OBJS)
+daooptR: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	ccache g++  -o"daooptM" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++  -o"daooptR" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)$(EXECUTABLES)$(CXX_DEPS)$(C_UPPER_DEPS) daooptM
+	-$(RM) $(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)$(EXECUTABLES)$(CXX_DEPS)$(C_UPPER_DEPS) daooptR
 	-@echo ' '
 
 .PHONY: all clean dependents

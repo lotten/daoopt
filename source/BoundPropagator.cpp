@@ -9,7 +9,7 @@
 
 #undef DEBUG
 
-#ifdef USE_THREADS
+#ifdef PARALLEL_MODE
 void BoundPropagator::operator() () {
 
   bool allDone = false;
@@ -126,7 +126,11 @@ void BoundPropagator::propagate(SearchNode* n) {
           // prev is OR node, try to cache
           if ( prev->isCachable() && !prev->isNotOpt() ) {
             try {
+#ifndef NO_ASSIGNMENT
               m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue(), prev->getOptAssig() );
+#else
+              m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue() );
+#endif
 #ifdef DEBUG
               {
                 GETLOCK(mtx_io, lk);
@@ -136,7 +140,9 @@ void BoundPropagator::propagate(SearchNode* n) {
             } catch (...) {}
           }
 #endif
+#ifndef NO_ASSIGNMENT
           mergePrevAssignment(prev, cur); // merge opt. solutions
+#endif
           cur->eraseChild(prev); // finally, delete
       } else {
         del = false;
@@ -162,8 +168,10 @@ void BoundPropagator::propagate(SearchNode* n) {
 
       }
 
+#ifndef NO_ASSIGNMENT
       if (prop && !del)
         mergePrevAssignment(prev, cur);
+#endif
 
       // ===========================================================================
     } else { // cur is OR node
@@ -178,7 +186,9 @@ void BoundPropagator::propagate(SearchNode* n) {
       if (prop) {
         if (v > cur->getValue()) {
           cur->setValue(v); // update max. value
+#ifndef NO_ASSIGNMENT
           mergePrevAssignment(prev, cur); // update opt. subproblem assignment
+#endif
         } else {
           prop = false; // no more value propagation upwards in this call
         }
@@ -214,7 +224,7 @@ void BoundPropagator::propagate(SearchNode* n) {
 }
 
 
-
+#ifndef NO_ASSIGNMENT
 void BoundPropagator::mergePrevAssignment(SearchNode* prev, SearchNode* cur) {
   assert(prev);
   assert(cur);
@@ -286,4 +296,4 @@ void BoundPropagator::mergePrevAssignment(SearchNode* prev, SearchNode* cur) {
   }
 
 }
-
+#endif

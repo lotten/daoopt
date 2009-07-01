@@ -11,7 +11,7 @@
 #ifndef NOTHREADS
 // define if multithreading should be used (for central process)
 // only if NOTHREADS hasn't been set externally
-//#define USE_THREADS
+//#define PARALLEL_MODE
 #endif
 
 // data type for variable values (determines max. domain size)

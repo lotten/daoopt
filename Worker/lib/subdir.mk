@@ -3,8 +3,8 @@
 ################################################################################
 
 # Add inputs and outputs from these tool invocations to the build variables 
-C_UPPER_SRCS += \
-../lib/gzstream.C 
+CPP_SRCS += \
+../lib/gzstream.cpp 
 
 C_SRCS += \
 ../lib/adler32.c \
@@ -49,7 +49,7 @@ C_DEPS += \
 ./lib/uncompr.d \
 ./lib/zutil.d 
 
-C_UPPER_DEPS += \
+CPP_DEPS += \
 ./lib/gzstream.d 
 
 
@@ -61,7 +61,7 @@ lib/%.o: ../lib/%.c
 	@echo 'Finished building: $<'
 	@echo ' '
 
-lib/%.o: ../lib/%.C
+lib/%.o: ../lib/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
 	ccache g++ -DLINUX -DNOTHREADS -I../include -I../lib -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
