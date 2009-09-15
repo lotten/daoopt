@@ -40,7 +40,7 @@ private:
 public:
 
 #ifndef NO_ASSIGNMENT
-  void write(int n, size_t inst, const context_t& ctxt, double v, vector<val_t> sol) throw (int);
+  void write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int);
   pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int);
 #else
   void write(int n, size_t inst, const context_t& ctxt, double v) throw (int);
@@ -67,7 +67,7 @@ public:
 // inserts a value into the respective cache table
 // throws an int if insert non successful (memory limit or index out of bounds)
 #ifndef NO_ASSIGNMENT
-inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v, vector<val_t> sol) throw (int) {
+inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int) {
 #else
 inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v) throw (int) {
 #endif
@@ -152,7 +152,7 @@ inline size_t CacheTable::getInstCounter(int n) const {
 
 inline CacheTable::CacheTable(int size, int memlimit) :
 #ifdef PARALLEL_MODE
-    m_size(size), m_instCounter(size,0), m_tables(size) {
+    m_full(false), m_size(size), m_memlimit(NONE), m_instCounter(size,0), m_tables(size) {
 #else
     m_full(false), m_size(size), m_memlimit(memlimit), m_tables(size) {
 #endif
@@ -166,7 +166,12 @@ inline CacheTable::~CacheTable() {
   }
 }
 
-
+#ifdef WINDOWS
+// not supported under Windows // TODO
+inline int CacheTable::memused() const {
+  return -1;
+}
+#else
 inline int CacheTable::memused() const {
 
   // read mem stats
@@ -178,6 +183,6 @@ inline int CacheTable::memused() const {
 
   return m;
 }
-
+#endif
 
 #endif /* CACHETABLE_H_ */

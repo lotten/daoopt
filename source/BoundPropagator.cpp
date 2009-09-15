@@ -98,6 +98,10 @@ void BoundPropagator::propagate(SearchNode* n) {
   // apart s.t. cur is the parent node of prev
   SearchNode* cur = n->getParent(), *prev=n;
 
+  // Keeps track of the highest node to be deleted during cleanup,
+  // where .second will be deleted as a child of .first
+  pair<SearchNode*,SearchNode*> highestDelete(NULL,NULL);
+
   // 'prop' signals whether we are still propagating values in this call
   // 'del' signals whether we are still deleting nodes in this call
   bool prop = true, del = true;
@@ -114,13 +118,28 @@ void BoundPropagator::propagate(SearchNode* n) {
     if (cur->getType() == NODE_AND) {
       // ===========================================================================
 
-      // clean up fully propagated nodes (i.e. no children)
-      if (prev->getChildren().empty()) {
-#ifdef USE_LOG
-          cur->setLabel(cur->getLabel()+prev->getValue());
-#else
-          cur->setLabel(cur->getLabel()*prev->getValue());
+      if (prop) {
+        double d = ELEM_ONE;
+        for (CHILDLIST::const_iterator it = cur->getChildren().begin();
+            it != cur->getChildren().end(); ++it)
+        {
+          d OP_TIMESEQ (*it)->getValue();
+        }
+
+        cur->setValue(d);
+
+        if ( ISNAN(d) ) {
+          prop = false;
+#ifndef NO_ASSIGNMENT
+          propagateTuple(n,cur); // save (partial) opt. subproblem solution at current AND node
 #endif
+        }
+
+      }
+
+      // clean up fully propagated nodes (i.e. no children)
+      if (del) {
+        if (prev->getChildren().size() <= 1) {
 
 #ifndef NO_CACHING
           // prev is OR node, try to cache
@@ -134,74 +153,68 @@ void BoundPropagator::propagate(SearchNode* n) {
 #ifdef DEBUG
               {
                 GETLOCK(mtx_io, lk);
-                cout << "-Cached " << *prev << " with opt. solution " << prev->getOptAssig() << endl;
+                cout << "-Cached " << *prev
+#ifndef NO_ASSIGNMENT
+                << " with opt. solution " << prev->getOptAssig()
+#endif
+                << endl;
               }
 #endif
-            } catch (...) {}
+            } catch (...) { /* wrong cache instance counter */ }
           }
 #endif
-#ifndef NO_ASSIGNMENT
-          mergePrevAssignment(prev, cur); // merge opt. solutions
-#endif
-          cur->eraseChild(prev); // finally, delete
-      } else {
-        del = false;
-      }
-
-      if (prop) {
-#ifdef USE_LOG
-        double d = 0.0;
-#else
-        double d = 1.0;
-#endif
-        for (CHILDLIST::const_iterator it = cur->getChildren().begin();
-            it != cur->getChildren().end(); ++it)
-        {
-#ifdef USE_LOG
-          d += (*it)->getValue();
-#else
-          d *= (*it)->getValue();
-#endif
+          highestDelete = make_pair(cur,prev);
+          DIAG(cout << " deleting" << endl);
+        } else {
+          del = false;
         }
 
-        cur->setValue(d);
-
       }
-
-#ifndef NO_ASSIGNMENT
-      if (prop && !del)
-        mergePrevAssignment(prev, cur);
-#endif
 
       // ===========================================================================
     } else { // cur is OR node
       // ===========================================================================
 
-#ifdef USE_LOG
-      double v = prev->getValue() + prev->getLabel();
-#else
-      double v = prev->getValue() * prev->getLabel();
-#endif
+      double v = prev->getValue() OP_TIMES prev->getLabel();
 
       if (prop) {
-        if (v > cur->getValue()) {
+        if ( ISNAN( cur->getValue() ) || v > cur->getValue()) {
           cur->setValue(v); // update max. value
-#ifndef NO_ASSIGNMENT
-          mergePrevAssignment(prev, cur); // update opt. subproblem assignment
-#endif
         } else {
           prop = false; // no more value propagation upwards in this call
         }
       }
 
-      if (prev->getChildren().empty()) { // prev has no children?
-        cur->eraseChild(prev); // remove the node
-      } else {
-        del = false;
+      if (del) {
+        if (prev->getChildren().size() <= 1) { // prev has no or one children?
+          highestDelete = make_pair(cur,prev);
+          DIAG(cout << " deleting" << endl);
+        } else {
+          del = false;
+        }
       }
 
-      // Stop at root node
-      if (cur == m_space->subproblem) break;
+#ifndef NO_ASSIGNMENT
+      // save opt. tuple, will be needed for caching later
+      if ( prop && cur->isCachable() && !cur->isNotOpt() ) {
+#ifdef DEBUG
+        myprint("< Cachable OR node found\n");
+#endif
+        propagateTuple(n, cur);
+      }
+#endif
+
+      // Stop at subproblem root node (if defined)
+      if (cur == m_space->subproblem) {
+#ifdef DEBUG
+        myprint("PROP reached ROOT\n");
+#endif
+#ifndef NO_ASSIGNMENT
+        if (prop)
+          propagateTuple(n,cur);
+#endif
+        break;
+      }
 
       // ===========================================================================
     }
@@ -216,15 +229,28 @@ void BoundPropagator::propagate(SearchNode* n) {
 
   } while (cur); // until cur==NULL, i.e. parent of root
 
+#ifndef NO_ASSIGNMENT
+  // propagated up to root node, update tuple as well
+  if (prop && !cur)
+    propagateTuple(n,prev);
+#endif
+
+  // Prepare clean up
+  if(highestDelete.first->getType() == NODE_AND)
+    highestDelete.first->setLabel(
+          highestDelete.first->getLabel() OP_TIMES highestDelete.second->getValue()
+        );
+  // clean up, remove unnecessary nodes from memory
+  highestDelete.first->eraseChild(highestDelete.second);
+
 #ifdef DEBUG
   myprint("! Prop done.\n");
-//  cout << "! Prop done." << endl;
 #endif
 
 }
 
-
 #ifndef NO_ASSIGNMENT
+/*
 void BoundPropagator::mergePrevAssignment(SearchNode* prev, SearchNode* cur) {
   assert(prev);
   assert(cur);
@@ -294,6 +320,77 @@ void BoundPropagator::mergePrevAssignment(SearchNode* prev, SearchNode* cur) {
 #endif
 
   }
+}
+*/
+
+// collects the joint assignment from 'start' upwards until 'end' and
+// records it into 'end' for later use
+void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
+
+  assert(start && end);
+
+#ifdef DEBUG
+  cout << "< REC opt. assignment from " << *start << " to " << *end << endl;
+#endif
+
+  int endVar = end->getVar();
+  const set<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
+
+  // will keep track of the merged assignment
+  map<int,val_t> assig;
+
+  int curVar = UNKNOWN, curVal = UNKNOWN;
+
+  for (SearchNode* cur=start; cur!=end; cur=cur->getParent()) {
+
+    curVar = cur->getVar();
+
+    if (cur->getType() == NODE_AND) {
+      curVal = cur->getVal();
+      if (curVal!=UNKNOWN)
+        assig.insert(make_pair(curVar,curVal));
+    }
+
+    if (cur->getOptAssig().size()) {
+      // check previously saved partial assignment
+      const set<int>& curSubprob = m_space->pseudotree->getNode(cur->getVar())->getSubprobVars();
+      set<int>::const_iterator itVar = curSubprob.begin();
+      vector<val_t>::const_iterator itVal = cur->getOptAssig().begin();
+
+      for(; itVar!= curSubprob.end(); ++itVar, ++itVal ) {
+        if (*itVal != UNKNOWN)
+          assig.insert(make_pair(*itVar, *itVal));
+      }
+
+      // clear optimal assignment of AND node, since now propagated upwards
+      if (cur->getType() == NODE_AND)
+        cur->clearOptAssig(); // TODO ?
+    }
+
+  } // end for
+
+  // now record assignment into end node
+  // TODO dynamically allocate (resize) subprob vector (not upfront)
+  end->getOptAssig().resize(endSubprob.size(), UNKNOWN);
+  set<int>::const_iterator itVar = endSubprob.begin();
+  vector<val_t>::iterator itVal = end->getOptAssig().begin();
+
+  map<int,val_t>::const_iterator itAssig = assig.begin();
+
+  while( itAssig != assig.end() /*&& itVar != endSubprob.end()*/ ) {
+    if (*itVar == itAssig->first) {
+      // record assignment
+      *itVal = itAssig->second;
+      // forward pointers
+      ++itAssig;
+    }
+    ++itVar, ++itVal;
+  }
+
+#ifdef DEBUG
+  cout << "< Tuple for "<< *end << " after recording: " << (end->getOptAssig()) << endl;
+#endif
 
 }
-#endif
+
+#endif // NO_ASSIGNMENT

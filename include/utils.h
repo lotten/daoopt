@@ -15,6 +15,13 @@ int memoryusage();
 
 #include <malloc.h>
 
+#ifdef WINDOWS
+
+inline int memoryusage() {
+  return -1;
+}
+
+#else
 inline int memoryusage() {
 
   struct mallinfo info;
@@ -29,6 +36,7 @@ inline int memoryusage() {
   return info.arena;
 
 }
+#endif
 
 ostream& operator <<(ostream& os, const vector<int>& s);
 ostream& operator <<(ostream& os, const vector<uint>& s);

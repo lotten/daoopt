@@ -21,14 +21,11 @@
 // define if data files (solution and subproblem files) should be written in binary
 #define BINARY_DATAFILES
 
-// define to disable caching
+// define to disable caching (for debugging)
 //#define NO_CACHING
 
-// define to disable pruning
+// define to disable pruning (for debugging)
 //#define NO_PRUNING
-
-// define to not compute the optimal assignment, just solution value
-//#define NO_ASSIGNMENT
 
 #ifdef NOTHREADS
 #undef PARALLEL_MODE
@@ -66,9 +63,39 @@ static boost::mutex mtx_io;
 #define USE_LOG
 
 #ifdef USE_LOG
-#define LOGFUN(X) log10( X )
-#define EXPFUN(X) pow(10.0, X )
+
+#define OP_TIMES +
+#define OP_TIMESEQ +=
+#define ELEM_ZERO (- std::numeric_limits<double>::infinity() )
+#define ELEM_ONE 0.0
+
+#define ELEM_ENCODE(X) log10( X )
+#define ELEM_DECODE(X) pow(10.0, X )
+
+#define SCALE_LOG(X) ( X )
+#define SCALE_NORM(X) pow(10.0, X )
+
+#else
+
+#define OP_TIMES *
+#define OP_TIMESEQ *=
+#define ELEM_ZERO 0.0
+#define ELEM_ONE 1.0
+
+#define ELEM_ENCODE(X) ( X )
+#define ELEM_DECODE(X) ( X )
+
+#define SCALE_LOG(X) log10( X )
+#define SCALE_NORM(X) ( X )
+
 #endif
+
+
+#define ELEM_NAN std::numeric_limits<double>::quiet_NaN()
+#define ISNAN(x) ( x!=x )
+
+
+
 
 //#include <assert.h>
 #include <cassert>
@@ -165,6 +192,12 @@ template<> struct hash<std::string> {
 };
 }
 /* END FIX */
+#endif
+
+
+// Windows-specific definitions
+#ifdef WINDOWS
+#define uint unsigned int
 #endif
 
 

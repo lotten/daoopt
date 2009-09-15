@@ -69,3 +69,14 @@ map<int,set<int> > Graph::connectedComponents(const set<int>& s) {
   return comps;
 }
 
+
+size_t Graph::noComponents() {
+
+  set<int> nodes;
+  for (int i=0; i<m_n; ++i) {
+    nodes.insert(i);
+  }
+
+  return connectedComponents(nodes).size();
+
+}

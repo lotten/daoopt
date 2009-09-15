@@ -115,11 +115,7 @@ bool BranchAndBound::canBePruned(SearchNode* n) const {
 #endif
 
 /*
-#ifdef USE_LOG
-    if (curOR->getValue() == -INFINITY)
-#else
-    if (curOR->getValue() == 0.0)
-#endif
+    if (curOR->getValue() == ELEM_ONE)
       return false; // OR node has value 0, no pruning possible
 */
 
@@ -140,22 +136,14 @@ bool BranchAndBound::canBePruned(SearchNode* n) const {
 
     // climb up, update values
     curAND = curOR->getParent();
-#ifdef USE_LOG
-    curPSTVal += curAND->getLabel();
-#else
-    curPSTVal *= curAND->getLabel();
-#endif
+    curPSTVal OP_TIMESEQ curAND->getLabel();
 
     const CHILDLIST& children = curAND->getChildren();
 
     // incorporate new sibling OR nodes
     for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
       if (*it == curOR) continue; // skip previous or node
-#ifdef USE_LOG
-      else curPSTVal += (*it)->getHeur();
-#else
-      else curPSTVal *= (*it)->getHeur();
-#endif
+      else curPSTVal OP_TIMESEQ (*it)->getHeur();
     }
 
     curOR = curAND->getParent();
@@ -172,37 +160,21 @@ double BranchAndBound::heuristicOR(SearchNode* n) {
   int v = n->getVar();
   double d;
   double* dv = new double[m_problem->getDomainSize(v)*2];
-#ifdef USE_LOG
-  double h = -INFINITY; // the new OR nodes h value
-#else
-  double h = 0.0; // the new OR nodes h value
-#endif
+  double h = ELEM_ZERO; // the new OR nodes h value
   for (val_t i=0;i<m_problem->getDomainSize(v);++i) {
     m_assignment[v] = i;
     // compute heuristic value
     dv[2*i] = m_heuristic->getHeur(v,m_assignment);
     // precompute label value
 
-#ifdef USE_LOG
-    d = 0.0; // = log(1)
-#else
-    d = 1.0;
-#endif
+    d = ELEM_ONE;
     const list<Function*>& funs = m_pseudotree->getFunctions(v);
     for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
     {
-#ifdef USE_LOG
-      d += (*it)->getValue(m_assignment);
-#else
-      d *= (*it)->getValue(m_assignment);
-#endif
+      d OP_TIMESEQ (*it)->getValue(m_assignment);
     }
     dv[2*i+1] = d; // label
-#ifdef USE_LOG
-    dv[2*i] += d; // heuristic
-#else
-    dv[2*i] *= d; // heuristic
-#endif
+    dv[2*i] OP_TIMESEQ d; // heuristic
 
     if (dv[2*i] > h) h = dv[2*i]; // keep max. for OR node heuristic
   }
@@ -244,16 +216,12 @@ void BranchAndBound::expandNext() {
 #ifdef DEBUG
     {
       GETLOCK(mtx_io, lk);
-      cout << *node << " (l=" << node->getLabel() << ") Assig. " << m_assignment << endl;
+      cout << *node << " (l=" << node->getLabel() << ")" << endl;// Assig. " << m_assignment << endl;
     }
 #endif
 
     // dead end (label = 0)?
-#ifdef USE_LOG
-    if (node->getLabel() == -INFINITY) {
-#else
-    if (node->getLabel() == 0.0) {
-#endif
+    if (node->getLabel() == ELEM_ZERO) {
       node->setLeaf(); // mark as leaf
       m_nextLeaf = node;
       return; // and abort
@@ -270,11 +238,7 @@ void BranchAndBound::expandNext() {
 #endif
       node->setLeaf();
       node->setPruned();
-#ifdef USE_LOG
-      node->setValue(-INFINITY);
-#else
-      node->setValue(0.0);
-#endif
+      node->setValue(ELEM_ZERO);
       m_nextLeaf = node;
       return;
     }
@@ -296,10 +260,8 @@ void BranchAndBound::expandNext() {
         it!=ptnode->getChildren().end(); ++it)
     {
       int v = (*it)->getVar();
-#ifndef NO_ASSIGNMENT
-      size_t subprobSize = (*it)->getSubprobSize();
-#endif
-      SearchNodeOR* n = NEWNODEOR(node, subprobSize, v);
+
+      SearchNodeOR* n = new SearchNodeOR(node, v);
 
       // Compute and set heuristic estimate
       heuristicOR(n);
@@ -383,11 +345,7 @@ void BranchAndBound::expandNext() {
 #endif
       node->setLeaf();
       node->setPruned();
-#ifdef USE_LOG
-      node->setValue(-INFINITY);
-#else
-      node->setValue(0.0);
-#endif
+      node->setValue(ELEM_ZERO);
       m_nextLeaf = node;
       node->clearHeurCache();
       return;
@@ -418,15 +376,15 @@ void BranchAndBound::expandNext() {
 
     /////////////////////////////////////
     // actually create new AND children
+
     double* heur = node->getHeurCache();
 
-#ifndef NO_ASSIGNMENT
-    size_t subprobSize = ptnode->getSubprobSize();
-#endif
+    vector<SearchNode*> newNodes;
+    newNodes.reserve(m_problem->getDomainSize(var));
 
     for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
 
-      SearchNodeAND* n = NEWNODEAND(node, subprobSize, i);
+      SearchNodeAND* n = new SearchNodeAND(node, i);
 
       // get cached heur. value
       n->setHeur( heur[2*i] );
@@ -435,19 +393,24 @@ void BranchAndBound::expandNext() {
 
       // add node as successor
       node->addChild(n);
-//      m_stack.push(n);
-#ifdef DEBUG
-      {
-        GETLOCK(mtx_io,lk);
-        cout << '\t' << *n << " (l=" << n->getLabel() << ") Assig. " << m_assignment << endl;
-      }
-#endif
 
+      // remember new node
+      newNodes.push_back(n);
     }
 
-    // add new child nodes to stack (CHILDLIST implies order)
-    for (CHILDLIST::const_iterator it=node->getChildren().begin(); it!=node->getChildren().end(); ++it)
+    // sort new nodes by increasing heuristic value
+    sort(newNodes.begin(), newNodes.end(), SearchNode::heurLess);
+
+    // add new child nodes to stack, highest heur. value will end up on top
+    for (vector<SearchNode*>::iterator it = newNodes.begin(); it!=newNodes.end(); ++it) {
       m_stack.push(*it);
+#ifdef DEBUG
+      {
+        GETLOCK(mtx_io, lk);
+        cout << '\t' << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; // Assig. " << m_assignment << endl;
+      }
+#endif
+    }
 
     node->clearHeurCache(); // clear heur. cache of OR node
 
@@ -461,10 +424,10 @@ void BranchAndBound::expandNext() {
 void BranchAndBound::addCacheContext(SearchNode* node, const set<int>& ctxt) const {
 
 #if true
-  context_t* sig = new context_t();
-  sig->reserve(ctxt.size());
+  context_t sig;
+  sig.reserve(ctxt.size());
   for (set<int>::const_iterator itC=ctxt.begin(); itC!=ctxt.end(); ++itC) {
-    sig->push_back(m_assignment[*itC]);
+    sig.push_back(m_assignment[*itC]);
   }
 #else
   size_t intsz = sizeof(int);
@@ -507,10 +470,10 @@ void BranchAndBound::addCacheContext(SearchNode* node, const set<int>& ctxt) con
 #ifdef PARALLEL_MODE
 void BranchAndBound::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
 
-  context_t* sig = new context_t();
-  sig->reserve(ctxt.size());
+  context_t sig;
+  sig.reserve(ctxt.size());
   for (set<int>::const_iterator itC=ctxt.begin(); itC!=ctxt.end(); ++itC) {
-    sig->push_back(m_assignment[*itC]);
+    sig.push_back(m_assignment[*itC]);
   }
 
 #if false
@@ -567,11 +530,7 @@ void BranchAndBound::addPSTlist(SearchNode* node) const {
     const CHILDLIST& children = curAND->getChildren();
     for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
       if (*it != curOR) // skip previous or node
-#ifdef USE_LOG
-        d += (*it)->getHeur();
-#else
-        d *= (*it)->getHeur();
-#endif
+        d OP_TIMESEQ (*it)->getHeur();
     }
 
     curOR = curAND->getParent();
@@ -636,9 +595,6 @@ void BranchAndBound::restrictSubproblem(const string& file) {
 
   // re-adjust the root of the pseudo tree
   m_pseudotree->restrictSubproblem(rootVar);
-#ifndef NO_ASSIGNMENT
-  size_t subprobSize = m_pseudotree->getRoot()->getSubprobSize();
-#endif
 
   int x = UNKNOWN;
   // context size
@@ -668,11 +624,6 @@ void BranchAndBound::restrictSubproblem(const string& file) {
   SearchNode* next = m_stack.top(); // dummy AND node on top of stack
   SearchNode* node = NULL;
 
-#ifndef NO_ASSIGNMENT
-  // update size of optimal tuple for root node
-  next->getOptAssig().resize(subprobSize, UNKNOWN);
-#endif
-
   int pstSize = UNKNOWN;
   BINREAD(fs,pstSize);
 
@@ -682,13 +633,13 @@ void BranchAndBound::restrictSubproblem(const string& file) {
 
     // add dummy OR node with proper value
     node = next;
-    next = NEWNODEOR(node, subprobSize, node->getVar()) ;
+    next = new SearchNodeOR(node, node->getVar()) ;
     next->setValue(d1);
 //    cout << " Added dummy OR node with value " << d1 << endl;
     node->addChild(next);
 
     node = next;
-    next = NEWNODEAND(node, subprobSize, 0) ;
+    next = new SearchNodeAND(node, 0) ;
     next->setLabel(d2);
 //    cout << " Added dummy AND node with label " << d2 << endl;
     node->addChild(next);
@@ -697,20 +648,19 @@ void BranchAndBound::restrictSubproblem(const string& file) {
 
   // create another dummy node as a buffer for the subproblem value
   // since the previous dummy nodes might have non-empty labels from
-  // from the parent problem)
+  // the parent problem)
   node = next;
-  next = NEWNODEOR(node, subprobSize, node->getVar());
+  next = new SearchNodeOR(node, node->getVar());
   node->addChild(next);
   m_space->subproblem = next;
   node = next;
-  next = NEWNODEAND(node, subprobSize, 0);
+  next = new SearchNodeAND(node, 0);
   node->addChild(next);
 
   // remove old dummy node from stack
   m_stack.pop();
   // replace with new
   m_stack.push(next);
-
 
   fs.close();
 
@@ -728,14 +678,14 @@ BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space
 
   // create first node (dummy variable)
   PseudotreeNode* ptroot = m_pseudotree->getRoot();
-  SearchNode* node = NEWNODEOR(NULL, prob->getN(), ptroot->getVar() );
+  SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
   m_space->root = node;
   // create dummy variable's AND node (domain size 1)
-  SearchNode* next = NEWNODEAND(m_space->root, prob->getN(), 0);
+  SearchNode* next = new SearchNodeAND(m_space->root, 0);
   m_space->root->addChild(next);
 
   m_stack.push(next);
-  // initialize the assignment vector
+  // initialize the local assignment vector for BaB
   m_assignment.resize(m_problem->getN(),NONE);
 }
 

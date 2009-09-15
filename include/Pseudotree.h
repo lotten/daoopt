@@ -45,6 +45,8 @@ public:
 
   int getDepth() const { return m_depth; }
 
+  size_t getN() const { return m_nodes.size(); }
+
   int getComponents() const { return m_components; }
 
   // returns the root node

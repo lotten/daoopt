@@ -91,11 +91,7 @@ public:
 
 
 inline MiniBucketElim::MiniBucketElim(Problem* p, Pseudotree* pt, int ib) :
-#ifdef USE_LOG
-  m_ibound(ib), m_globalUB(0.0), m_problem(p), m_pseudotree(pt)
-#else
-  m_ibound(ib), m_globalUB(1.0), m_problem(p), m_pseudotree(pt)
-#endif
+  m_ibound(ib), m_globalUB(ELEM_ONE), m_problem(p), m_pseudotree(pt)
 // , m_augmented(p->getN()), m_intermediate(p->getN())
   { }
 

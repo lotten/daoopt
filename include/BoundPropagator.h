@@ -28,7 +28,10 @@ public:
 
 #ifndef NO_ASSIGNMENT
 private:
-  void mergePrevAssignment(SearchNode* prev, SearchNode* cur);
+//  void mergePrevAssignment(SearchNode* prev, SearchNode* cur);
+
+  void propagateTuple(SearchNode* start, SearchNode* end);
+
 #endif
 
 public:

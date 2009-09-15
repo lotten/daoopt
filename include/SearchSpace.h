@@ -47,8 +47,8 @@ struct SearchSpace {
   friend class CondorSubmissionEngine;
 
 protected:
-  SearchNode* root;
-  SearchNode* subproblem;
+  SearchNode* root; // true root node of search space, always a dummy OR node
+  SearchNode* subproblem; // pseudo root node when processing subproblem (NULL otherwise)
   ProgramOptions* options;
   Pseudotree* pseudotree;
 
@@ -76,14 +76,14 @@ protected:
   // for pipelining the condor submissions
   queue< CondorSubmission* > condorQueue;
   boost::mutex mtx_condorQueue;
-  boost::condition_variable cond_condorQueue;
+  boost::condition_variable_any cond_condorQueue;
   // to signal SubproblemHandlers that their job has been submitted
-  boost::condition_variable cond_jobsSubmitted;
+  boost::condition_variable_any cond_jobsSubmitted;
 
   // limits the number of processing leaves/threads at any time
   volatile size_t allowedThreads;
   boost::mutex mtx_allowedThreads;
-  boost::condition_variable cond_allowedThreads;
+  boost::condition_variable_any cond_allowedThreads;
 
   // counts the number of active threads
   volatile bool searchDone;
@@ -94,7 +94,7 @@ protected:
 
   // mutex and condition var. for the list of solved leaf nodes
   boost::mutex mtx_solved;
-  boost::condition_variable cond_solved;
+  boost::condition_variable_any cond_solved;
 
   // mutex for active threads
   boost::mutex mtx_activeThreads;

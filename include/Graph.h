@@ -96,6 +96,7 @@ public:
 
   // finds the connected components of the given set
   map<int,set<int> > connectedComponents(const set<int>&);
+  size_t noComponents();
 
 };
 

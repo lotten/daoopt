@@ -44,7 +44,7 @@ CPP_DEPS += \
 lib/boost.src/program_options/src/%.o: ../lib/boost.src/program_options/src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ -DWINDOWS -DNOTHREADS -I../include -I../lib -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	ccache i586-mingw32msvc-g++ -DWINDOWS -DNOTHREADS -I../include -I../lib -I/home/lars/workspace/boost_1_39_0 -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

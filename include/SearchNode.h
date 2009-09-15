@@ -10,32 +10,27 @@
 
 #include "_base.h"
 
-#ifdef NO_ASSIGNMENT
-#define NEWNODEOR(parent, size, var) new SearchNodeOR(parent, var)
-#define NEWNODEAND(parent, size ,val) new SearchNodeAND(parent, val)
-#else
-#define NEWNODEOR(parent, size, var) new SearchNodeOR(parent, size, var)
-#define NEWNODEAND(parent, size ,val) new SearchNodeAND(parent, size, val)
-#endif
-
 class Problem;
 class PseudotreeNode;
 
 // some constants for aggregating the boolean flags
 #define FLAG_LEAF 1 // node is a leaf node
-#define FLAG_CACHABLE 2 // node can/should be cached
-#define FLAG_EXTERN 4 // subproblem was processed externally
+#define FLAG_CACHABLE 2 // node is candidate for caching
+#define FLAG_EXTERN 4 // subproblem was processed externally (in parallel setting)
 #define FLAG_PRUNED 8 // subproblem below was pruned
-#define FLAG_NOTOPT 16 // subproblem possibly not optimally solved
+#define FLAG_NOTOPT 16 // subproblem possibly not optimally solved (-> don't cache)
 
 class SearchNode;
 
+/*
 struct SearchNodeComp {
   bool operator() (const SearchNode* a, const SearchNode* b) const;
 };
+*/
 
 // data type to store child pointers
-typedef set<SearchNode*,SearchNodeComp> CHILDLIST;
+//typedef set<SearchNode*,SearchNodeComp> CHILDLIST;
+typedef set<SearchNode*> CHILDLIST; // TODO
 
 
 class SearchNode {
@@ -64,14 +59,14 @@ public:
   void setHeur(double d) { m_heurValue = d; }
   virtual double getHeur() const { return m_heurValue; }
 
-  virtual void setCacheContext(context_t*) = 0;
+  virtual void setCacheContext(const context_t&) = 0;
   virtual const context_t& getCacheContext() const = 0;
 
   virtual void setCacheInst(size_t i) = 0;
   virtual size_t getCacheInst() const = 0;
 
 #ifdef PARALLEL_MODE
-  virtual void setSubprobContext(context_t*) = 0;
+  virtual void setSubprobContext(const context_t&) = 0;
   virtual const context_t& getSubprobContext() const = 0;
   virtual void addPSTVal(std::pair<double,double>) = 0;
   virtual const std::list<std::pair<double,double> >& getPSTlist() const = 0;
@@ -87,6 +82,7 @@ public:
 #ifndef NO_ASSIGNMENT
   vector<val_t>& getOptAssig() { return m_optAssignment; }
   void setOptAssig(const vector<val_t>& assign) { m_optAssignment = assign; }
+  void clearOptAssig() { vector<val_t> v; m_optAssignment.swap(v); }
 #endif
 
   void setLeaf() { m_flags |= FLAG_LEAF; }
@@ -105,13 +101,10 @@ public:
   virtual void clearHeurCache() = 0;
 
 protected:
-//  SearchNode(SearchNode* parent);
-
-#ifndef NO_ASSIGNMENT
-  SearchNode(SearchNode* parent, size_t subprobSize);
-#else
   SearchNode(SearchNode* parent);
-#endif
+
+public:
+  static bool heurLess(const SearchNode* a, const SearchNode* b);
 
 public:
   virtual ~SearchNode();
@@ -120,7 +113,7 @@ public:
 
 class SearchNodeAND : public SearchNode {
 protected:
-  val_t m_val;          // Node value
+  val_t m_val;          // Node value, assignment to OR parent variable
   double m_nodeLabel; // Label of arc <X_i,a>, i.e. instantiated function costs
   //static std::string emptyString;
   static context_t emptyCtxt;
@@ -137,12 +130,12 @@ public:
   double getLabel() const { return m_nodeLabel; }
 
   // empty implementations, functions meaningless for AND nodes
-  void setCacheContext(context_t* c) { assert(false); }
+  void setCacheContext(const context_t& c) { assert(false); }
   const context_t& getCacheContext() const { assert(false); return emptyCtxt; }
   void setCacheInst(size_t i) { assert(false); }
   size_t getCacheInst() const { assert(false); return 0; }
 #ifdef PARALLEL_MODE
-  void setSubprobContext(context_t* t) { assert(false); }
+  void setSubprobContext(const context_t& t) { assert(false); }
   const context_t& getSubprobContext() const { assert(false); return emptyCtxt; }
   void addPSTVal(std::pair<double,double>) { assert(false); };
   const std::list<std::pair<double,double> >& getPSTlist() const {assert(false); return emptyPSTList;}
@@ -154,12 +147,8 @@ public:
   void clearHeurCache() {}
 
 public:
-  SearchNodeAND(SearchNode* p
-#ifndef NO_ASSIGNMENT
-      , size_t subprobSize
-#endif
-      , val_t val);
-  ~SearchNodeAND() {}
+  SearchNodeAND(SearchNode* p, val_t val);
+  ~SearchNodeAND() { /* empty */ }
 };
 
 
@@ -170,10 +159,10 @@ protected:
   size_t m_cacheInst;    // Cache instance counter
 #endif
   double* m_heurCache;   // Stores the precomputed heuristic values of the AND children
-  context_t* m_cacheContext; // stores the context (for caching)
+  context_t m_cacheContext; // stores the context (for caching)
 
 #ifdef PARALLEL_MODE
-  context_t* m_subprobContext;     // Stores the context values to this subproblem
+  context_t m_subprobContext;     // Stores the context values to this subproblem
   // For external subproblems: Holds the labels and values needed for
   // more effective pruning (i.e, from the central part of the search tree)
   std::list<pair<double,double> > m_PSTlist;
@@ -191,8 +180,8 @@ public:
 
   double getHeur() const;
 
-  void setCacheContext(context_t* t) { assert(t); m_cacheContext = t; }
-  const context_t& getCacheContext() const { assert(m_cacheContext); return *m_cacheContext; }
+  void setCacheContext(const context_t& t) { m_cacheContext = t; }
+  const context_t& getCacheContext() const { return m_cacheContext; }
 
 #ifdef PARALLEL_MODE
   void setCacheInst(size_t i) { m_cacheInst = i; }
@@ -203,8 +192,8 @@ public:
 #endif
 
 #ifdef PARALLEL_MODE
-  void setSubprobContext(context_t* c) { assert(c); m_subprobContext = c; }
-  const context_t& getSubprobContext() const { return *m_subprobContext; }
+  void setSubprobContext(const context_t& c) { m_subprobContext = c; }
+  const context_t& getSubprobContext() const { return m_subprobContext; }
   void addPSTVal(std::pair<double,double> p) { m_PSTlist.push_front(p); }
   const std::list<std::pair<double,double> >& getPSTlist() const { return m_PSTlist; }
 #endif
@@ -214,11 +203,7 @@ public:
   void clearHeurCache();
 
 public:
-  SearchNodeOR(SearchNode* parent
-#ifndef NO_ASSIGNMENT
-      , size_t subprobSize
-#endif
-      , int var);
+  SearchNodeOR(SearchNode* parent, int var);
   ~SearchNodeOR();
 };
 
@@ -229,22 +214,9 @@ ostream& operator << (ostream&, const SearchNode&);
 
 
 // Inline definitions
-
-#ifndef NO_ASSIGNMENT
-inline SearchNode::SearchNode(SearchNode* parent, size_t subprobSize) :
-#else
 inline SearchNode::SearchNode(SearchNode* parent) :
-#endif
-  m_flags(0), m_parent(parent)
-#ifdef USE_LOG
-    ,m_nodeValue(-INFINITY), m_heurValue(INFINITY)
-#else
-    ,m_nodeValue(0.0), m_heurValue(INFINITY)
-#endif
-
-#ifndef NO_ASSIGNMENT
-    ,m_optAssignment(subprobSize, UNKNOWN)
-#endif
+  m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY)
+  // TODO? , m_nodeValue(ELEM_ZERO)
   { /* ++noNodes; */ }
 
 inline SearchNode::~SearchNode() {
@@ -267,6 +239,16 @@ inline bool SearchNode::hasChild(SearchNode* node) const {
       return true;
   }
   return false;
+}
+
+inline ostream& operator << (ostream& os, const CHILDLIST& set) {
+  os << '{' ;
+  for (CHILDLIST::const_iterator it=set.begin(); it!=set.end();) {
+    os << *it;
+    if (++it != set.end()) os << ',';
+  }
+  cout << '}';
+  return os;
 }
 
 inline void SearchNode::eraseChild(SearchNode* node) {
@@ -302,64 +284,30 @@ inline double SearchNodeOR::getHeur() const {
   return h;
 }
 
-#ifndef NO_ASSIGNMENT
-inline SearchNodeAND::SearchNodeAND(SearchNode* parent, size_t subprobSize , val_t val) :
-#ifdef USE_LOG
-    SearchNode(parent, subprobSize), m_val(val), m_nodeLabel(0.0)
-{
-  m_nodeValue = 0.0;
-#else
-    SearchNode(parent, subprobSize), m_val(val), m_nodeLabel(1.0)
-{
-  m_nodeValue = 1.0;
-#endif
 
-
-  // leaf node, set (trivial) optimal assignment
-  if (subprobSize==1)
-    m_optAssignment[0] = val;
-
-}
-#else
 inline SearchNodeAND::SearchNodeAND(SearchNode* parent, val_t val) :
-#ifdef USE_LOG
-    SearchNode(parent), m_val(val), m_nodeLabel(0.0)
+    SearchNode(parent), m_val(val), m_nodeLabel(ELEM_ONE)
 {
-  m_nodeValue = 0.0;
-#else
-    SearchNode(parent), m_val(val), m_nodeLabel(1.0)
-{
-  m_nodeValue = 1.0;
-#endif // USE_LOG
+  m_nodeValue = ELEM_ONE;
 }
-#endif // NO_ASSIGNMENT
 
-#ifndef NO_ASSIGNMENT
-inline SearchNodeOR::SearchNodeOR(SearchNode* parent, size_t subprobSize, int var) :
-  SearchNode(parent, subprobSize), m_var(var), m_heurCache(NULL), m_cacheContext(NULL)
-#ifdef PARALLEL_MODE
-  , m_subprobContext(NULL)
-#endif // PARALLEL_MODE
-  {}
-#else
+
 inline SearchNodeOR::SearchNodeOR(SearchNode* parent, int var) :
-  SearchNode(parent), m_var(var), m_heurCache(NULL), m_cacheContext(NULL)
+  SearchNode(parent), m_var(var), m_heurCache(NULL) //, m_cacheContext(NULL)
 #ifdef PARALLEL_MODE
-  , m_subprobContext(NULL)
+  //, m_subprobContext(NULL)
 #endif // PARALLEL_MODE
   {}
-#endif // NO_ASSIGNMENT
+
 
 inline SearchNodeOR::~SearchNodeOR() {
-  if (m_cacheContext) delete m_cacheContext;
+//  if (m_cacheContext) delete m_cacheContext;
 #ifdef PARALLEL_MODE
-  if (m_subprobContext) delete m_subprobContext;
+//  if (m_subprobContext) delete m_subprobContext;
 #endif
 }
 
-
-
-
+/*
 inline bool SearchNodeComp::operator ()(const SearchNode* a, const SearchNode* b) const {
 //  return a->getHeur() < b->getHeur();
   if (a->getHeur() == b->getHeur())
@@ -367,5 +315,12 @@ inline bool SearchNodeComp::operator ()(const SearchNode* a, const SearchNode* b
   else
     return a->getHeur() < b->getHeur();
 }
+*/
+
+inline bool SearchNode::heurLess(const SearchNode* a, const SearchNode* b) {
+  assert(a && b);
+  return a->getHeur() < b->getHeur();
+}
+
 
 #endif /* SEARCHNODE_H_ */

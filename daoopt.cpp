@@ -18,7 +18,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.95 alpha"
+#define VERSIONINFO "0.95.2"
 
 // define to enable diagnostic output of memory stats
 //#define MEMDEBUG
@@ -69,13 +69,14 @@ int main(int argc, char** argv) {
   cout << "Max. domain size:\t" << (int) p.getK() << endl;
   cout << "Max. function arity:\t" << p.getR() << endl;
 
-  // Create primal graph
+  // Create primal graph of *reduced* problem
   Graph g(p.getN());
   const vector<Function*>& fns = p.getFunctions();
   for (vector<Function*>::const_iterator it = fns.begin(); it != fns.end(); ++it) {
     g.addClique((*it)->getScope());
   }
   cout << "Graph with " << g.getStatNodes() << " nodes and " << g.getStatEdges() << " edges created." << endl;
+//  cout << "Graph has " << g.noComponents() << " disconnected components." << endl;
 
   rand::seed(time(0));
 
@@ -234,19 +235,11 @@ int main(int argc, char** argv) {
 
   // account for global constant (but not if solving subproblem)
   if (opt.in_subproblemFile.empty()) {
-#ifdef USE_LOG
-    mpeCost += p.getGlobalConstant();
-#else
-    mpeCost *= p.getGlobalConstant();
-#endif
+    mpeCost OP_TIMESEQ p.getGlobalConstant();
   }
 
   cout << "--------------------------\n"
-#ifdef USE_LOG
-  << mpeCost << " (" << EXPFUN( mpeCost ) << ')' << endl;
-#else
-  << log10(mpeCost) << " (" << mpeCost << ')' << endl;
-#endif
+    << SCALE_LOG(mpeCost) << " (" << SCALE_NORM(mpeCost) << ')' << endl;
 
   /*
   vector<val_t> mpeTuple = bab.getCurOptTuple();
@@ -265,30 +258,6 @@ int main(int argc, char** argv) {
 #endif
 
   cout << endl;
-
-/*
-  // write solution file, if requested
-  if (!opt.out_solutionFile.empty()) {
-    ogzstream sol(opt.out_solutionFile.c_str(), ios::out | ios::trunc | ios::binary);
-    //sol.precision(16);
-    if (!sol)
-      cerr << "Error writing optimal cost to file " << opt.out_solutionFile <<"." << endl;
-    else {
-#ifdef USE_LOG
-      double aa = mpeCost;
-      BINWRITE(sol, aa);
-      aa = EXPFUN(mpeCost);
-      BINWRITE(sol, aa);
-#else
-      double aa = log10(mpeCost);
-      BINWRITE(sol, aa);
-      aa = mpeCost;
-      BINWRITE(sol, aa);
-#endif
-      sol.close();
-    }
-  }
-*/
 
 #ifdef MEMDEBUG
   malloc_stats();

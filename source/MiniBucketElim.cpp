@@ -31,29 +31,17 @@ double MiniBucketElim::getHeur(int var, const vector<val_t>& assignment) const {
 
   assert( var >= 0 && var < m_problem->getN());
 
-#ifdef USE_LOG
-  double h = 0.0;
-#else
-  double h = 1.0;
-#endif
+  double h = ELEM_ONE;
 
   // go over augmented and intermediate lists and combine all values
   list<Function*>::const_iterator itF = m_augmented[var].begin();
   for (; itF!=m_augmented[var].end(); ++itF) {
-#ifdef USE_LOG
-    h += (*itF)->getValue(assignment);
-#else
-    h *= (*itF)->getValue(assignment);
-#endif
+    h OP_TIMESEQ (*itF)->getValue(assignment);
   }
 
   itF = m_intermediate[var].begin();
   for (; itF!=m_intermediate[var].end(); ++itF) {
-#ifdef USE_LOG
-    h += (*itF)->getValue(assignment);
-#else
-    h *= (*itF)->getValue(assignment);
-#endif
+    h OP_TIMESEQ (*itF)->getValue(assignment);
   }
 
   return h;
@@ -97,26 +85,12 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
     if (*itV == elimOrder[0]) {// variable is dummy root variable
       if (computeTables && assignment) { // compute upper bound if assignment is given
         for (vector<Function*>::iterator itF=funs.begin(); itF!=funs.end(); ++itF)
-#ifdef USE_LOG
-          m_globalUB += (*itF)->getValue(*assignment); // all constant functions, tablesize==1
-#else
-          m_globalUB *= (*itF)->getValue(*assignment); // constant functions, tablesize==1
-#endif
+          m_globalUB OP_TIMESEQ (*itF)->getValue(*assignment); // all constant functions, tablesize==1
 
 //#ifdef DEBUG
-#ifdef USE_LOG
-        double mbval = m_globalUB + m_problem->getGlobalConstant();
-#else
-        double mbval = m_globalUB * m_problem->getGlobalConstant())''
-#endif
+        double mbval = m_globalUB OP_TIMES m_problem->getGlobalConstant();
 
-        cout << "    MBE-UB = " <<
-#ifdef USE_LOG
-        mbval << " (" << EXPFUN(mbval) << ")"
-#else
-        log10(mbval) << " (" << mbval << ")"
-#endif
-        << endl;
+        cout << "    MBE-UB = " << SCALE_LOG(mbval) << " (" << SCALE_NORM(mbval) << ")" << endl;
 //#endif
 
       }
@@ -294,11 +268,7 @@ Function* MiniBucket::eliminate(bool buildTable) {
   double* newTable = NULL;
   if (buildTable) {
     newTable = new double[tablesize];
-#ifdef USE_LOG
-    for (j=0; j<tablesize; ++j) newTable[j] = -INFINITY;
-#else
-    for (j=0; j<tablesize; ++j) newTable[j] = 0.0;
-#endif
+    for (j=0; j<tablesize; ++j) newTable[j] = ELEM_ZERO;
 
     // this keeps track of the tuple assignment
     val_t* tuple = new val_t[n+1];
@@ -348,15 +318,9 @@ Function* MiniBucket::eliminate(bool buildTable) {
     for (*elimVal = 0; *elimVal < problem->getDomainSize(m_bucketVar); ++(*elimVal) ) {
       idx=0; // go over the full new table
       do {
-#ifdef USE_LOG
-        z = 0.0;
+        z = ELEM_ONE;
         for (j=0; j<m_functions.size(); ++j)
-          z += m_functions[j]->getValuePtr(idxMap[j]);
-#else
-        z = 1.0;
-        for (j=0; j<m_functions.size(); ++j)
-          z *= m_functions[j]->getValuePtr(idxMap[j]);
-#endif
+          z OP_TIMESEQ m_functions[j]->getValuePtr(idxMap[j]);
         newTable[idx] = max(newTable[idx],z);
       } while ( increaseTuple(idx,tuple,domains) );
 

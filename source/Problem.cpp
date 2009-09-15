@@ -58,11 +58,7 @@ void Problem::removeEvidence() {
   }
 
   // Substitute evidence to get reduced functions
-#ifdef USE_LOG
-  double globalConstant = 0.0;
-#else
-  double globalConstant = (PROB_MULT == m_prob) ? 1.0 : 0.0;
-#endif
+  double globalConstant = ELEM_ONE;
   new_r = 0; // max. arity
   vector<Function*>::iterator fi = m_functions.begin();
   for (; fi != m_functions.end(); ++fi) {
@@ -70,16 +66,7 @@ void Problem::removeEvidence() {
     // Substitute evidence variables
     Function* new_fn = fn->substitute(m_evidence);
     if (new_fn->isConstant()) {
-#ifdef USE_LOG
-      globalConstant += new_fn->getTable()[0];
-#else
-      if (m_prob==PROB_MULT)
-        globalConstant *= new_fn->getTable()[0];
-      else if (m_prob==PROB_ADD)
-        globalConstant += new_fn->getTable()[0];
-      else
-        assert(false);
-#endif
+      globalConstant OP_TIMESEQ new_fn->getTable()[0];
       delete new_fn;
     } else {
       new_fn->translateScope(m_old2new); // translate variable indexes
@@ -195,7 +182,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   string fname = prob;
   size_t len, start, pos1, pos2;
   static const basic_string <char>::size_type npos = -1;
-#if defined(WIN32)
+#if defined(WINDOWS)
   pos1 = fname.find_last_of("\\");
 #elif defined(LINUX)
   pos1 = fname.find_last_of("/");
@@ -314,11 +301,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
         pos += tuple[reidx[k]] * offset;
         offset *= m_domains[scopes[i][reidx[k]]];
       }
-#ifdef USE_LOG
-      table[pos] = LOGFUN( temp[j] );
-#else
-      table[pos] = temp[j];
-#endif
+      table[pos] = ELEM_ENCODE( temp[j] );
       increaseTuple(j,tuple,limit);
     }
 
@@ -380,21 +363,13 @@ void Problem::outputAndSaveSolution(const string& file, double mpe, bool subprob
 	    }
 	  }
 
-#ifdef USE_LOG
-	  cout << "s " << mpe;
-#else
-	  cout << "s " << log10(mpe);
-#endif
+	  cout << "s " << SCALE_LOG(mpe);
 #ifndef NO_ASSIGNMENT
 	  cout << ' ' << m_nOrg;
 #endif
 
 
-#ifdef NO_ASSIGNMENT
-    if (writeFile) {
-      BINWRITE(out,mpe); // mpe solution cost
-    }
-#else
+#ifndef NO_ASSIGNMENT
 
 	  int fileAssigSize = UNKNOWN;
 	  if (subprobOnly)
@@ -434,6 +409,10 @@ void Problem::outputAndSaveSolution(const string& file, double mpe, bool subprob
 	      }
 	    }
 	  }
+#else
+    if (writeFile) {
+      BINWRITE(out,mpe); // mpe solution cost
+    }
 #endif
 
 	  cout << endl;
