@@ -164,7 +164,9 @@ void BoundPropagator::propagate(SearchNode* n) {
           }
 #endif
           highestDelete = make_pair(cur,prev);
-          DIAG(cout << " deleting" << endl);
+#ifdef DEBUG
+          cout << " deleting" << endl;
+#endif
         } else {
           del = false;
         }
@@ -188,7 +190,9 @@ void BoundPropagator::propagate(SearchNode* n) {
       if (del) {
         if (prev->getChildren().size() <= 1) { // prev has no or one children?
           highestDelete = make_pair(cur,prev);
-          DIAG(cout << " deleting" << endl);
+#ifdef DEBUG
+          cout << " deleting" << endl;
+#endif
         } else {
           del = false;
         }

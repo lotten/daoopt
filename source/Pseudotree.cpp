@@ -202,7 +202,7 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 
 
 #ifdef PARALLEL_MODE
-void Pseudotree::computeComplexities(const Problem& problem) {
+int Pseudotree::computeComplexities(const Problem& problem, int workers) {
 
   // compute subproblem complexity parameters of all nodes
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!= m_nodes.end(); ++it)
@@ -212,25 +212,50 @@ void Pseudotree::computeComplexities(const Problem& problem) {
 
   cout << "Complexity bound:\t" << mylog10(c) << " (" << c << ")" << endl;
 
-  // iterate over levels and compute estimated bound on parallelized search space
-  bigint cutset = 0, tmax=0, tsum=0, tnum=0;
+  /*
+   * iterate over levels, assuming cutoff, and compute upper bounds as follows:
+   *   central - number of nodes explored by master down to this level
+   *   tmax - max. subproblem size when conditioning at this level
+   *   tsum - sum of all conditioned subproblems
+   *   tnum - number of subproblems resulting from conditioning at this level
+   */
+  bigint central = 0, tmax=0, tsum=0, tnum=0, bound=0;
+  vector<bigint> bounds; bounds.reserve(m_levels.size());
   for (vector<list<PseudotreeNode*> >::const_iterator it=m_levels.begin();
        it!=m_levels.end(); ++it) {
-    cout << "# " << cutset << '\t';
+    cout << "# " << central << '\t';
     tmax = 0; tsum=0; tnum=0;
     for (list<PseudotreeNode*>::const_iterator itL = it->begin(); itL!=it->end(); ++itL) {
       tmax = max(tmax, (*itL)->getSubsize() );
       tsum += (*itL)->getSubsize() * (*itL)->getNumContexts();
       tnum += (*itL)->getNumContexts();
     }
-    cout << tnum << '\t' << (tmax) << '\t' << (tsum) << endl;
+
+    bound = central + (tsum / min(tnum,bigint(workers)));
+    bounds.push_back( bound );
+
+    cout << tnum << '\t' << (tmax) << '\t' << (tsum) << '\t' << (bound) << endl;
     for (list<PseudotreeNode*>::const_iterator itL = it->begin(); itL!=it->end(); ++itL) {
 //      cout << " + " << (*itL)->getVar();
-      cutset += (*itL)->getOwnsize();
+      central += (*itL)->getOwnsize();
     }
 //    cout << endl;
   }
-  cout << "# " << cutset << "\t0\t0\t0" << endl;
+  cout << "# " << central << "\t0\t0\t0\t" << central << endl;
+
+  int curDepth = -1, minDepth=UNKNOWN;
+  bigint min = bounds.at(0)+1;
+  for (vector<bigint>::iterator it = bounds.begin(); it != bounds.end(); ++it, ++curDepth) {
+    if (*it < min) {
+      min = *it;
+      minDepth = curDepth;
+    }
+  }
+
+  // TODO: Heuristically add 1 to minimizing level
+  minDepth += 1;
+
+  return minDepth;
 
 }
 #endif
@@ -288,7 +313,7 @@ void PseudotreeNode::initSubproblemComplexity(const vector<val_t>& domains) {
   bigint s = 0;
   PseudotreeNode* node = NULL;
 
-  const set<int>& B = this->m_context;
+  const set<int>& ctxt = this->getFullContext();
 
   while (!Q.empty()) {
     node = Q.front();
@@ -301,19 +326,19 @@ void PseudotreeNode::initSubproblemComplexity(const vector<val_t>& domains) {
     // compute parameters for current node
     int w2 = 0;
     bigint s2 = domains.at(node->getVar());
-    const set<int>& A = node->getFullContext();
-    set<int>::const_iterator ita = A.begin(), itb = B.begin();
-    while (ita != A.end() && itb != B.end()) {
-      if (*ita == *itb) {
-        ++ita; ++itb;
-      } else if (*ita < *itb) {
-        ++w2; s2 *= domains.at(*ita); ++ita;
+    const set<int>& fullCtxt = node->getFullContext();
+    set<int>::const_iterator itFC = fullCtxt.begin(), itC = ctxt.begin();
+    while (itFC != fullCtxt.end() && itC != ctxt.end()) {
+      if (*itFC == *itC) {
+        ++itFC; ++itC;
+      } else if (*itFC < *itC) {
+        ++w2; s2 *= domains.at(*itFC); ++itFC;
       } else { // *ita > *itb
-        ++itb;
+        ++itC;
       }
     }
-    while (ita != A.end()) {
-      ++w2; s2 *= domains.at(*ita); ++ita;
+    while (itFC != fullCtxt.end()) {
+      ++w2; s2 *= domains.at(*itFC); ++itFC;
     }
     if (w2>w) w=w2; // update max. induced width
     s += s2; // add cluster size to subproblem size
@@ -321,13 +346,14 @@ void PseudotreeNode::initSubproblemComplexity(const vector<val_t>& domains) {
   }
 
   // compute own cluster size only
-  bigint csize = 1;
-  for (set<int>::const_iterator itb = B.begin(); itb!=B.end(); ++itb)
-    csize *= domains.at(*itb);
+  bigint ctxtsize = 1;
+  for (set<int>::const_iterator itb = ctxt.begin(); itb!=ctxt.end(); ++itb)
+    ctxtsize *= domains.at(*itb); // context variable
 
-  bigint own = csize*domains.at(this->getVar());
+  // multiply by own domain size for cluster size
+  bigint own = ctxtsize*domains.at(this->getVar());
 
-  m_complexity = new Complexity(w,s,own,csize);
+  m_complexity = new Complexity(w,s,own,ctxtsize);
 
 #ifdef DEBUG
   cout << "Subproblem at node " << m_var << ": w = " << w << ", twb = " << s << endl;

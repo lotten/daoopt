@@ -22,7 +22,7 @@
 // define PARALLEL_MODE if multithreading should be used (for central
 // process), used only if NOTHREADS hasn't been set externally
 
-#define PARALLEL_MODE
+//#define PARALLEL_MODE
 
 //*****************************************************************
 

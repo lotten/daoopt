@@ -34,10 +34,11 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 #ifdef PARALLEL_MODE
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
       ("cutoff-size,l", po::value<double>()->default_value(-1), "cutoff subproblem size (log10) for central search")
+      ("cutoff-auto,a", "determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(5), "max. number of concurrent subproblem processes")
 #endif
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit (in MByte)")
-      ("nosearch,n", "performs only preprocessing")
+      ("nosearch,n", "perform only preprocessing")
       ("help,h", "produces this help message")
       ;
 
@@ -90,6 +91,11 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     if (vm.count("cutoff-depth"))
       opt.cutoff_depth = vm["cutoff-depth"].as<int>();
 
+    if (vm.count("cutoff-auto"))
+      opt.autoCutoff = true;
+    else
+      opt.autoCutoff = false;
+
     if (vm.count("procs"))
       opt.threads = vm["procs"].as<int>();
 
@@ -98,6 +104,8 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 
     if(vm.count("nosearch"))
       opt.nosearch = true;
+    else
+      opt.nosearch = false;
 
     if (vm.count("subproblem") && !vm.count("ordering")) {
       cerr << "Error: Specifying a subproblem requires reading a fixed ordering from file." << endl;

@@ -62,7 +62,7 @@ public:
 
 #ifdef PARALLEL_MODE
   // computes the subproblem complexity parameters for all subtrees
-  void computeComplexities(const Problem& problem);
+  int computeComplexities(const Problem& problem, int workers);
 #endif
 
   const list<Function*>& getFunctions(int i) const;
@@ -80,16 +80,29 @@ public:
 };
 
 
-
+/*
+ * represents a single problem variable in the pseudotree
+ */
 class PseudotreeNode {
 
 #ifdef PARALLEL_MODE
 protected:
   // internal container class for subproblem complexity information
   class Complexity {
+    /*
+     * If X is the current variable, then:
+     * subwidth - is the induced width of the subproblem below, when conditioned
+     *     on context(X).
+     * subsize - is an upper bound on the size of the subproblem (in number of
+     *     AND nodes) below *one* OR node for variable X in the search space.
+     * ownsize - is the full cluster size of X, i.e. the product of its domain
+     *     size with the domain sizes of a variables in context(X).
+     * numContexts - is the number of max. possible context instantiations for X,
+     *     i.e. the product of the domain sizes of the variables in context(X)
+     */
   public:
-    int subwidth; // Induced width of subproblem if conditioned on context
-    bigint subsize; // Upper bound on subproblem size if conditioned on context
+    int subwidth; // Induced width of subproblem if conditioned on this variable's context
+    bigint subsize; // Upper bound on subproblem size below one OR node if conditioned on context
     bigint ownsize; // Own cluster size, i.e. product of cluster variable domain sizes
     bigint numContexts; // Number of possible context instantiations
   public:

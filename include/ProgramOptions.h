@@ -19,6 +19,7 @@ namespace po = boost::program_options;
 struct ProgramOptions {
 public:
   bool nosearch; // abort before starting the actual search
+  bool autoCutoff; // enable automatic cutoff
   int ibound; // bucket elim. i-bound
   int cbound; // cache context size bound
   int cbound_worker; // cache bound for worker processes

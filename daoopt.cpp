@@ -18,7 +18,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.95.2"
+#define VERSIONINFO "0.95.3"
 
 // define to enable diagnostic output of memory stats
 //#define MEMDEBUG
@@ -123,7 +123,11 @@ int main(int argc, char** argv) {
   p.addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   pt.addFunctionInfo(p.getFunctions());
 #ifdef PARALLEL_MODE
-  pt.computeComplexities(p);
+  int cutoff = pt.computeComplexities(p, opt.threads);
+  if (opt.autoCutoff) {
+    cout << "Auto cutoff set at depth " << cutoff << endl;
+    opt.cutoff_depth = cutoff;
+  }
 #endif
 
 #ifdef DEBUG
