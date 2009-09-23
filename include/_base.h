@@ -24,6 +24,9 @@
 // define to disable caching (for debugging)
 //#define NO_CACHING
 
+// define to enable memory limitation for caching (experimental)
+//#define CACHE_MEMLIMIT
+
 // define to disable pruning (for debugging)
 //#define NO_PRUNING
 

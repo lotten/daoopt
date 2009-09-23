@@ -48,11 +48,24 @@ double MiniBucketElim::getHeur(int var, const vector<val_t>& assignment) const {
 }
 
 
+void MiniBucketElim::reset() {
+
+  vector<list<Function*> > empty;
+  m_augmented.swap(empty);
+
+  vector<list<Function*> > empty2;
+  m_intermediate.swap(empty2);
+
+}
+
+
 size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTables) {
 
 #ifdef DEBUG
   cout << "$ Building MBE(" << m_ibound << ")" << endl;
 #endif
+
+  this->reset();
 
   vector<int> elimOrder; // will hold dfs order
   findDfsOrder(elimOrder); // computes dfs ordering of relevant subtree
@@ -330,6 +343,27 @@ Function* MiniBucket::eliminate(bool buildTable) {
   }
 
   return new FunctionBayes(-m_bucketVar,problem,scope,newTable,tablesize);
+}
+
+
+int MiniBucketElim::limitIbound(int ibound, size_t memlimit, const vector<val_t> * assignment) {
+
+  // convert to bits
+  memlimit *= 1024 *1024 / sizeof(double);
+
+  cout << "Adjusting mini bucket i-bound..." << endl;
+  this->setIbound(ibound);
+  size_t mem = this->build(assignment, false);
+  cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) ) << " MBytes" << endl;
+
+  while (mem > memlimit && ibound > 1) {
+    this->setIbound(--ibound);
+    mem = this->build(assignment, false);
+    cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) ) << " MBytes" << endl;
+  }
+
+  return ibound;
+
 }
 
 

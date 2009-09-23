@@ -78,11 +78,13 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
     throw UNKNOWN; // mismatch, don't cache
 #endif
 
+#ifdef CACHE_MEMLIMIT
   // check if mem limit hit
   if (m_memlimit != NONE && (m_full || memused() > m_memlimit)) {
     m_full = true;
     throw NONE;
   }
+#endif
 
   // create hash table if needed
   if (!m_tables[n]) {

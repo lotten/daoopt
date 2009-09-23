@@ -18,7 +18,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.95.3"
+#define VERSIONINFO "0.95.3b"
 
 // define to enable diagnostic output of memory stats
 //#define MEMDEBUG
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
 #ifdef PARALLEL_MODE
   int cutoff = pt.computeComplexities(p, opt.threads);
   if (opt.autoCutoff) {
-    cout << "Auto cutoff set at depth " << cutoff << endl;
+    cout << "Auto cutoff:\t\t" << cutoff << endl;
     opt.cutoff_depth = cutoff;
   }
 #endif
@@ -157,6 +157,14 @@ int main(int argc, char** argv) {
 #ifdef MEMDEBUG
   malloc_stats();
 #endif
+
+  int ibound = opt.ibound;
+  if (opt.memlimit != NONE) {
+    ibound = mbe.limitIbound(ibound, opt.memlimit, & bab.getAssignment() );
+    cout << "Enforcing memory limit resulted in i-bound " << ibound << endl;
+    opt.ibound = ibound; // Write back into options object
+  }
+
 
   // Build the MBE *after* restricting the subproblem
   size_t sz = 0;

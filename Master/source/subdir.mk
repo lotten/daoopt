@@ -13,6 +13,7 @@ CPP_SRCS += \
 ../source/ProgramOptions.cpp \
 ../source/Pseudotree.cpp \
 ../source/Random.cpp \
+../source/Search.cpp \
 ../source/SearchNode.cpp \
 ../source/SigHandler.cpp \
 ../source/SubproblemCondor.cpp \
@@ -29,6 +30,7 @@ OBJS += \
 ./source/ProgramOptions.o \
 ./source/Pseudotree.o \
 ./source/Random.o \
+./source/Search.o \
 ./source/SearchNode.o \
 ./source/SigHandler.o \
 ./source/SubproblemCondor.o \
@@ -45,6 +47,7 @@ CPP_DEPS += \
 ./source/ProgramOptions.d \
 ./source/Pseudotree.d \
 ./source/Random.d \
+./source/Search.d \
 ./source/SearchNode.d \
 ./source/SigHandler.d \
 ./source/SubproblemCondor.d \

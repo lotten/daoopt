@@ -43,7 +43,15 @@ protected:
   // Compares the size of the scope of two functions
   //bool scopeIsLarger(Function*, Function*) const;
 
+  // reset the data structures
+  void reset() ;
+
 public:
+
+  // checks if the given i-bound would exceed the memlimit, in that
+  // case compute highest possible i-bound that 'fits'
+  int limitIbound(int ibound, size_t memlimit, const vector<val_t> * assignment);
+
   // builds the heuristic, limited to the relevant subproblem, if applicable.
   // if computeTables=false, only returns size estimate (no tables computed)
   size_t build(const vector<val_t>* assignment = NULL, bool computeTables = true);
@@ -53,6 +61,9 @@ public:
 
   // computes the heuristic for variable var given a (partial) assignment
   double getHeur(int var, const vector<val_t>& assignment) const;
+
+  // reset the i-bound
+  void setIbound(int ibound) { m_ibound = ibound; }
 
 public:
   MiniBucketElim(Problem* p, Pseudotree* pt, int ib);
