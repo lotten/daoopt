@@ -5,16 +5,11 @@
  *      Author: lars
  */
 
+#include <iostream>
 #include "_base.h"
 
 #ifndef DEBUG_H_
 #define DEBUG_H_
-
-#ifdef DEBUG
-#define DIAG(X) X
-#else
-#define DIAG(X) ;
-#endif
 
 inline void myprint(std::string s) {
   {

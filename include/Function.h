@@ -8,7 +8,7 @@
 #ifndef FUNCTION_H_
 #define FUNCTION_H_
 
-// define to enable precomputation of the offsets for value lookup
+/* define to enable precomputation of the offsets for value lookup */
 #define PRECOMP_OFFSETS
 
 #include "_base.h"
@@ -87,13 +87,27 @@ public:
   // gets static tightness
   size_t getTightness() const { return m_tightness; }
 
-#ifdef TIGHTNESS
-  // gets tightness when projected down to proj
-  virtual size_t getTightness(const set<int>& proj) = 0;
+#ifdef PARALLEL_MODE
+  // tightness when projected down to 'proj'
+  size_t getTightness(const set<int>& proj, const set<int>& cond,
+                       const vector<val_t>* assig = NULL);
+
+  /*
+   * computes the gain ratio for greedy covering algorithm
+   *  uncovered: the set of still uncovered variables in this iteration
+   *  proj: Set of vars to project function scope to
+   *  cond: Set of vars whose assignment is checked
+   *  assig: Actual assignment to vars named in 'cond'
+   */
+  bigfloat gainRatio(const set<int>& uncovered, const set<int>& proj,
+                      const set<int>& cond, const vector<val_t>* assig = NULL);
+  // computes and returns the average value, conditioned on the variables indicated
+  // in the set, where the actual assignments are pulled from the assignment vector
+  double getAverage(const set<int>&, const vector<val_t>&);
+
 #endif
 
-//  size_t getTightness( const set<int>& context, const set<int>& conditioning, const vector<int>& assignment ) = 0;
-
+public:
   virtual int getType() const = 0;
 
   virtual ~Function();
@@ -103,7 +117,7 @@ protected:
 
 };
 
-/////////////////////////////////////////////////////////////////////////////
+/***************************************************************************/
 
 class FunctionBayes : public Function {
 
@@ -118,13 +132,14 @@ public:
 
 };
 
-
+# ifdef false
 class FunctionWCSP : public Function {
   // TODO
 };
+#endif
 
 
-// Inline implementations
+/* Inline implementations */
 
 inline Function::~Function() {
   if (m_table) delete[] m_table;
@@ -144,13 +159,13 @@ inline FunctionBayes::FunctionBayes(const int& id, Problem* p, const set<int>& s
   size_t t = 0;
   if (T)
     for (size_t i=0; i<size; ++i) {
-      if (T[i]) ++t;
+      if (T[i] != ELEM_ZERO) ++t;
     }
   m_tightness = t;
 }
 
 
-// cout operator
+/* cout operator */
 inline ostream& operator << (ostream& os, const Function& f) {
   os << 'f' << f.getId() << ':' << f.getScope();
   return os;

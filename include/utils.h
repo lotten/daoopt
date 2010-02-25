@@ -65,7 +65,7 @@ inline bool increaseTuple(size_t& idx, vector<val_t>& tuple, const vector<val_t>
   else return false;
 }
 
-// same as above, but with int* as the tuple (used by mini bucket elimination)
+/* same as above, but with int* as the tuple (used by mini bucket elimination) */
 inline bool increaseTuple(size_t& idx, val_t* tuple, const vector<val_t>& limit) {
 
   size_t i=limit.size();
@@ -79,8 +79,8 @@ inline bool increaseTuple(size_t& idx, val_t* tuple, const vector<val_t>& limit)
   else return false;
 }
 
-/*
-// Convert an int/size_t into a std::string
+#ifdef false
+/* Convert an int/size_t into a std::string */
 inline char* myitoa(size_t x) {
   size_t z = x;
   size_t size = 2;
@@ -99,10 +99,10 @@ inline char* myitoa(int x) {
   return s;
 //  return std::string(s);
 }
-*/
+#endif
 
-/*
-// Convert an int/size_t into a std::string
+#ifdef false
+/* Convert an int/size_t into a std::string */
 inline std::string myitoa(size_t x) {
   size_t z = x;
   size_t size = 2;
@@ -119,7 +119,7 @@ inline std::string myitoa(int x) {
   snprintf(s,size,"%d",x);
   return std::string(s);
 }
-*/
+#endif
 
 /*
  * returns true iff the intersection of X and Y is empty
@@ -181,8 +181,8 @@ inline int setminusSize(const set<int>& a, const set<int>& b) {
 }
 
 
-///////////////////////
-// some cout functions
+/***************************************/
+/*        some cout functions          */
 
 inline ostream& operator <<(ostream& os, const vector<int>& s) {
   os << '[';
@@ -255,7 +255,7 @@ inline ostream& operator <<(ostream& os, const set<uint>& s) {
 }
 
 
-// hex output of values (e.g., doubles)
+/* hex output of values (e.g., doubles) */
 template<typename _T>
 void print_hex(const _T* d) {
   const unsigned char* ar = (const unsigned char*) d;

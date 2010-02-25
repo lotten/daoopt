@@ -8,7 +8,7 @@
 #ifndef SEARCHSPACE_H_
 #define SEARCHSPACE_H_
 
-//max. number of concurrent threads for subproblem processing
+/* max. number of concurrent threads for subproblem processing */
 #define MAX_THREADS 7
 
 //#include <set>
@@ -19,7 +19,7 @@
 #include "CacheTable.h"
 #endif
 
-// forward declarations
+/* forward declarations */
 #ifdef PARALLEL_MODE
 namespace boost {
   class thread;
@@ -27,51 +27,60 @@ namespace boost {
 struct CondorSubmission;
 #endif
 
-// declare ProgramOptions
+/* declare ProgramOptions */
 #ifdef PARALLEL_MODE
 #include "ProgramOptions.h"
 #else
 struct ProgramOptions;
 #endif
 
-// forward declaration
+/* forward declarations */
 class Pseudotree;
+struct Subproblem;
 
-struct SearchSpace {
-  friend class Search;
-  friend class BranchAndBound;
-  friend class BoundPropagator;
-  friend class SubproblemHandler;
-  friend class SubproblemStraight;
-  friend class SubproblemCondor;
-  friend class CondorSubmissionEngine;
+/* main search space structure for worker nodes */
+struct SearchSpace{
+  SearchNode* root;             // true root of the search space, always a dummy OR node
+  SearchNode* subproblemLocal;  // pseudo root node when processing subproblem (NULL otherwise)
+  ProgramOptions* options;      // Pointer to instance of program options container
+  Pseudotree* pseudotree;       // Guiding pseudotree
+  CacheTable* cache;            // Cache table (not used when caching is disabled through preprocessor flag)
 
-protected:
-  SearchNode* root; // true root node of search space, always a dummy OR node
-  SearchNode* subproblem; // pseudo root node when processing subproblem (NULL otherwise)
-  ProgramOptions* options;
-  Pseudotree* pseudotree;
-
-#ifndef NO_CACHING
-protected:
-  // Caching of subproblem solutions
-  CacheTable* cache;
-#endif
-
-public:
-  // returns a pointer to the the true root node (potentially a subproblem)
   SearchNode* getTrueRoot() const;
-/*
-  // returns the current cost of the root node, i.e. the current optimal solution
-  double getSolutionCost() const;
-*/
+  SearchSpace(Pseudotree* pt, ProgramOptions* opt);
+  ~SearchSpace();
+};
+
+
+
+inline SearchSpace::SearchSpace(Pseudotree* pt, ProgramOptions* opt) :
+    root(NULL), subproblemLocal(NULL), options(opt), pseudotree(pt), cache(NULL)
+{ /* intentionally empty at this point */ }
+
+inline SearchSpace::~SearchSpace() {
+  if (root) delete root;
+  if (cache) delete cache;
+}
+
+/* returns the relevant root node in both conditioned and unconditioned cases */
+inline SearchNode* SearchSpace::getTrueRoot() const {
+  assert(root);
+  if (subproblemLocal)
+    return subproblemLocal;
+  else
+    return root;
+}
+
+
 
 #ifdef PARALLEL_MODE
+/* search space for master node, extends worker search space to allow threading */
+struct SearchSpaceMaster : public SearchSpace {
 
-protected:
   // queue for information exchange between components
-  queue< SearchNode* > solved;
-  map< SearchNode*, boost::thread* > activeThreads;
+  queue< Subproblem* > solved; // for externally solved subproblems
+  queue< SearchNode* > leaves; // for fully solved leaf nodes
+  map< Subproblem*, boost::thread* > activeThreads;
 
   // for pipelining the condor submissions
   queue< CondorSubmission* > condorQueue;
@@ -102,46 +111,37 @@ protected:
   // mutex for condor
   boost::mutex mtx_condor;
 
-#endif
+  SearchSpaceMaster(Pseudotree* pt, ProgramOptions* opt);
 
-public:
-#ifdef PARALLEL_MODE
-  SearchSpace(Pseudotree* pt, ProgramOptions* opt) : root(NULL), subproblem(NULL), options(opt), pseudotree(pt), allowedThreads(MAX_THREADS), searchDone(false) {
-#ifndef NO_CACHING
-    cache = NULL;
-#endif
-    if (options) allowedThreads = opt->threads;
-  }
-#else
-  SearchSpace(Pseudotree* pt, ProgramOptions* opt) : root(NULL), subproblem(NULL), options(opt), pseudotree(pt) {
-#ifndef NO_CACHING
-    cache = NULL;
-#endif
-  }
-#endif
-  ~SearchSpace() {
-    if (root) delete root;
-#ifndef NO_CACHING
-    if (cache) delete cache;
-#endif
-  }
 };
 
 
-inline SearchNode* SearchSpace::getTrueRoot() const {
-  assert(root);
-  if (subproblem)
-    return subproblem;
-  else
-    return root;
+inline SearchSpaceMaster::SearchSpaceMaster(Pseudotree* pt, ProgramOptions* opt) :
+    SearchSpace(pt, opt), allowedThreads(MAX_THREADS), searchDone(false)
+{
+  if (options) allowedThreads = opt->threads;
 }
-/*
-inline double SearchSpace::getSolutionCost() const {
-  assert(root);
-  if (subproblem)
-    return subproblem->getValue();
-  else
-    return root->getValue();
-}
-*/
+
+
+/* simple container for an external subproblem and its attributes (for parallelization) */
+struct Subproblem {
+  int         width;      // induced width of the conditioned problem
+  int         depth;      // depth of the root node in original search space
+  int         ptHeight;   // height of the subproblem pseudo tree
+  size_t      threadId;   // thread ID
+  double      lowerBound; // lower bound on solution (from previous subproblems)
+  double      upperBound; // heuristic estimate of the subproblem solution (upper bound)
+  double      avgInc;     // average label value along the path from the root to the subproblem
+  SearchNode* root;       // subproblem root node in master search space
+  bigint      hwb;        // hwb bound for subproblem
+  bigint      twb;        // twb bound for subproblem
+
+  Subproblem(SearchNode* n, int wi, int de, int ptHei, double lBou, double uBou, double avg, bigint hw, bigint tw) :
+    width(wi), depth(de), ptHeight(ptHei), lowerBound(lBou), upperBound(uBou), avgInc(avg),
+    root(n), hwb(hw), twb(tw) {};
+
+};
+#endif /* PARALLEL_MODE */
+
+
 #endif /* SEARCHSPACE_H_ */

@@ -8,22 +8,22 @@
 #ifndef GRAPH_H_
 #define GRAPH_H_
 
-// uncomment to use separate edge list, uses more memory but
-// speeds up the hasEdge() queries
+/* uncomment to use separate edge list, uses more memory but
+ * speeds up the hasEdge() queries */
 //#define USE_EDGE_LIST
-// uncomment to use adjacency matrix, uses even more memory but
-// yields fastest hasEdge() queries
+/* uncomment to use adjacency matrix, uses even more memory but
+ * yields fastest hasEdge() queries */
 #define USE_ADJ_MATRIX
 
-// use at most one of adj. matrix or edge list, prefer matrix
+/* use at most one of adj. matrix or edge list, prefer matrix */
 #ifdef USE_ADJ_MATRIX
 #undef USE_EDGE_LIST
 #endif
 
 
-// class to be used for the neighbor sets, either hash_map or map
-// (in preliminary tests map was faster?)
-// UPDATE: Replaced by TR1 unordered map and set.
+/* class to be used for the neighbor sets, either hash_map or map
+ * (in preliminary tests map was faster?)
+ * UPDATE: Replaced by TR1 unordered map and set. */
 //#define MAPCLASS unordered_map
 #define MAPCLASS hash_map
 //#define SETCLASS unordered_set
@@ -100,11 +100,11 @@ public:
 
 };
 
-////////////////////////////
-// Inline implementations //
-////////////////////////////
+/****************************
+ *  Inline implementations  *
+ ****************************/
 
-// Constructor
+/* Constructor */
 inline Graph::Graph(const int& n) : m_statNumNodes(0), m_statNumEdges(0) {
 #if defined HASH_GOOGLE_DENSE | defined HASH_GOOGLE_SPARSE
   m_neighbors.set_deleted_key(UNKNOWN);
@@ -119,7 +119,7 @@ inline Graph::Graph(const int& n) : m_statNumNodes(0), m_statNumEdges(0) {
 }
 
 
-// Returns a node's neighbors
+/* Returns a node's neighbors */
 inline const set<int>& Graph::getNeighbors(const int& var) {
   MAPCLASS<int,set<int> >::iterator it = m_neighbors.find(var);
   assert(it != m_neighbors.end());
@@ -127,7 +127,7 @@ inline const set<int>& Graph::getNeighbors(const int& var) {
 }
 
 
-// returns the set of graph nodes
+/* returns the set of graph nodes */
 inline set<int> Graph::getNodes() {
   set<int> s;
   for (MAPCLASS<int, set<int> >::iterator it = m_neighbors.begin(); it != m_neighbors.end(); ++it) {
@@ -136,7 +136,7 @@ inline set<int> Graph::getNodes() {
   return s;
 }
 
-// Computes the graph density
+/* Computes the graph density*/
 inline double Graph::getStatDensity() {
   if (m_statNumNodes)
     return 2.0*m_statNumEdges / (m_statNumNodes) / (m_statNumNodes-1);
@@ -144,7 +144,7 @@ inline double Graph::getStatDensity() {
     return 0.0;
 }
 
-// Adds a node to the graph
+/* Adds a node to the graph */
 inline void Graph::addNode(const int& i) {
   if (m_neighbors.find(i) == m_neighbors.end()) {
     m_neighbors.insert(make_pair(i, set<int>() ));
@@ -153,7 +153,7 @@ inline void Graph::addNode(const int& i) {
 }
 
 
-// Adds the edge (i,j) to the graph, also adds the reversed edge.
+/* Adds the edge (i,j) to the graph, also adds the reversed edge. */
 inline void Graph::addEdge(const int& i, const int& j) {
   addAdjacency(i,j);
   addAdjacency(j,i);
@@ -165,7 +165,7 @@ inline void Graph::addEdge(const int& i, const int& j) {
 }
 
 
-// removes the node and all related edges from the graph
+/* removes the node and all related edges from the graph */
 inline void Graph::removeNode(const int& i) {
   MAPCLASS<int,set<int> >::iterator iti = m_neighbors.find(i);
   if (iti != m_neighbors.end()) {
@@ -180,7 +180,7 @@ inline void Graph::removeNode(const int& i) {
 }
 
 
-// removes a single (undirected) edge from the graph
+/* removes a single (undirected) edge from the graph */
 inline void Graph::removeEdge(const int& i, const int& j) {
   removeAdjacency(i,j);
   removeAdjacency(j,i);
@@ -192,14 +192,14 @@ inline void Graph::removeEdge(const int& i, const int& j) {
 }
 
 
-// returns TRUE iff node i is in the graph
+/* returns TRUE iff node i is in the graph */
 inline bool Graph::hasNode(const int& i) {
   MAPCLASS<int,set<int> >::iterator iti = m_neighbors.find(i);
   return (iti != m_neighbors.end());
 }
 
 
-// returns TRUE iff edge between nodes i and j exists
+/* returns TRUE iff edge between nodes i and j exists */
 inline bool Graph::hasEdge(const int& i, const int& j) {
 #ifdef USE_ADJ_MATRIX
   return m_matrix[i*m_n+j];
@@ -218,7 +218,7 @@ inline bool Graph::hasEdge(const int& i, const int& j) {
 }
 
 
-// Adds the edge (i,j) to the adjacency list. Does not add the reversed edge.
+/* Adds the edge (i,j) to the adjacency list. Does not add the reversed edge. */
 inline void Graph::addAdjacency(const int& i, const int& j) {
   // Make sure node exists
   addNode(i);
@@ -233,7 +233,7 @@ inline void Graph::addAdjacency(const int& i, const int& j) {
 }
 
 
-// Removes the adjacency entry (i,j) but NOT the reverse (j,i)
+/* Removes the adjacency entry (i,j) but NOT the reverse (j,i) */
 inline void Graph::removeAdjacency(const int& i, const int& j) {
   MAPCLASS<int,set<int> >::iterator iti = m_neighbors.find(i);
   if (iti != m_neighbors.end()) {
@@ -245,7 +245,7 @@ inline void Graph::removeAdjacency(const int& i, const int& j) {
 }
 
 
-// Adds the nodes in s to the graph and fully connects them
+/* Adds the nodes in s to the graph and fully connects them */
 inline void Graph::addClique(const set<int>& s) {
   for (set<int>::const_iterator it = s.begin(); it != s.end(); ++it) {
     addNode(*it); // insert the node

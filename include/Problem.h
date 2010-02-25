@@ -12,17 +12,18 @@
 #include "_base.h"
 #include "gzstream.h"
 
+/* holds a problem instance with variable domains and function tables */
 class Problem {
 
 protected:
 
-  int m_prob;                     // Problem class (multiplication or summation of costs)
-  int m_task;                     // Type of problem (Minim. or maxim. task)
+  int m_prob;            // Problem class (multiplication or summation of costs)
+  int m_task;            // Type of problem (Minim. or maxim. task)
 
 
   int m_n;               // No. of variables
   int m_nOrg;            // No. of variables (before evidence was removed)
-  val_t m_k;               // Max. domain size
+  val_t m_k;             // Max. domain size
   int m_e;               // No. of evidence
 
   int m_c;               // No. of functions
@@ -32,11 +33,11 @@ protected:
 
   string m_name;                  // Problem name
 
-  vector<val_t> m_domains;          // Domain sizes of variables
+  vector<val_t> m_domains;        // Domain sizes of variables
 
   vector<Function*> m_functions;  // List of functions
 
-  map<int,val_t> m_evidence;        // List of evidence as <index,value>
+  map<int,val_t> m_evidence;      // List of evidence as <index,value>
 
   map<int,int> m_old2new;         // Translation of variable names after removing evidence
 
@@ -61,6 +62,9 @@ public:
   // parses a UAI format input file
   bool parseUAI(const string& prob, const string& evid);
 
+  // writes the current problem to a UAI file
+  void writeUAI(const string& prob) const;
+
   // parses an ordering from file 'file' and stores it in 'elim'
   bool parseOrdering(const string& file, vector<int>& elim) const;
   // stores ordering from 'elim' in file 'file'
@@ -70,13 +74,13 @@ public:
   void removeEvidence();
 
   // outputs the solution to the screen and, if file!="", writes it to file
-  // cost is the MPE tuple value
-  // sol is the optimal solution tuple
+  //  - cost is the MPE tuple value
+  //  - sol is the optimal solution tuple
   // if subprobOnly is true, only the variables from sol will be output to file (for subproblem solving)
 #ifndef NO_ASSIGNMENT
-  void outputAndSaveSolution(const string& file, double cost, const vector<val_t>& sol, bool subprobOnly = false) const;
+  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes, const vector<val_t>& sol, bool subprobOnly = false) const;
 #else
-  void outputAndSaveSolution(const string& file, double cost, bool subprobOnly = false) const;
+  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes, bool subprobOnly = false) const;
 #endif
 
   // adds the dummy variable to connect disconnected pseudo tree components
@@ -88,7 +92,7 @@ public:
 };
 
 
-// Inline definitions
+/* Inline definitions */
 
 inline val_t Problem::getDomainSize(int i) const {
   assert (i<m_n);

@@ -16,73 +16,27 @@
 typedef PseudotreeNode PtNode;
 
 
-void BranchAndBound::expandNext() {
+bool BranchAndBound::doExpand(SearchNode* node) {
 
-//  myprint(".");
-
-  SearchNode* node = m_stack.top();
-  m_stack.pop();
-
+  assert(node);
   int var = node->getVar();
-  // get the node's pseudo tree equivalent
-  PtNode* ptnode = m_pseudotree->getNode(var);
+  PseudotreeNode* ptnode = m_pseudotree->getNode(var);
+  int depth = ptnode->getDepth();
 
-  if (node->getType() == NODE_AND) { //===================== AND NODE =============================
+  if (node->getType() == NODE_AND) {
 
-    val_t val = node->getVal();
-
-    // keep track of assignment
-    m_assignment[var] = val;
-
-#ifdef DEBUG
-    {
-      GETLOCK(mtx_io, lk);
-      cout << *node << " (l=" << node->getLabel() << ")" << endl;// Assig. " << m_assignment << endl;
+    ++m_nodesAND; // count node
+    if (depth >= 0) { // ignores dummy nodes
+      m_nodeProfile.at(depth) += 1; // count node as expanded
     }
-#endif
-
-    // dead end (label = 0)?
-    if (node->getLabel() == ELEM_ZERO) {
-      node->setLeaf(); // mark as leaf
-      m_nextLeaf = node;
-      return; // and abort
-    }
-
-#ifndef NO_PRUNING
-    // check heuristic for pruning
-    if (canBePruned(node)) {
-#ifdef DEBUG
-    {
-      GETLOCK(mtx_io, lk);
-      cout << "\t !pruning " << endl;
-    }
-#endif
-      node->setLeaf();
-      node->setPruned();
-      node->setValue(ELEM_ZERO);
-      m_nextLeaf = node;
-      return;
-    }
-#endif
-
-
-#ifndef NO_CACHING
-    // Reset adaptive cache tables if required
-    {
-      const list<int>& resetList = ptnode->getCacheResetList();
-      for (list<int>::const_iterator it=resetList.begin(); it!=resetList.end(); ++it)
-        m_space->cache->reset(*it);
-    }
-#endif
-
 
     // create new OR children
     for (vector<PtNode*>::const_iterator it=ptnode->getChildren().begin();
         it!=ptnode->getChildren().end(); ++it)
     {
-      int v = (*it)->getVar();
+      int vChild = (*it)->getVar();
 
-      SearchNodeOR* n = new SearchNodeOR(node, v);
+      SearchNodeOR* n = new SearchNodeOR(node, vChild);
 
       // Compute and set heuristic estimate
       heuristicOR(n);
@@ -90,114 +44,28 @@ void BranchAndBound::expandNext() {
       node->addChild(n);
       m_stack.push(n);
 #ifdef DEBUG
-      {
-        GETLOCK(mtx_io,lk);
-        cout << '\t' << *n;
-        if (n->isCachable())
-          cout << " - Cache: " << n->getCacheContext();
-        cout << endl;
-      }
+      ostringstream ss;
+      ss << '\t' << *n;
+      if (n->isCachable())
+        ss << " - Cache: " << n->getCacheContext();
+      ss << endl;
+      myprint (ss.str());
 #endif
-    }
+
+    } // for loop
 
     if (!node->getChildren().size()) { // no children?
-      m_nextLeaf = node;
       node->setLeaf(); // -> terminal node
+      node->setValue(ELEM_ONE);
+      m_leafProfile.at(depth) += 1; // count leaf node
+      return true;
     }
 
-    ++m_nodesAND;
+  } else { // NODE_OR
 
-  } else { // if (node->getType() == NODE_OR) { //====================== OR NODE =======================
+    ++m_nodesOR; // count node expansion
 
-#ifdef DEBUG
-    {
-      GETLOCK(mtx_io,lk);
-      cout << *node << endl;
-    }
-#endif
-
-#ifndef NO_CACHING
-    // Caching for this node
-    if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
-      // add cache context information
-      addCacheContext(node,ptnode->getCacheContext());
-#ifdef DEBUG
-      {
-        GETLOCK(mtx_io, lk);
-        cout << "    Context set: " << node->getCacheContext() << endl;
-      }
-#endif
-      // try to get value from cache
-      try {
-        // will throw int(UNKNOWN) if not found
-#ifndef NO_ASSIGNMENT
-        pair<double,vector<val_t> > entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
-        node->setValue( entry.first ); // set value
-        node->setOptAssig( entry.second ); // set assignment
-#else
-        double entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
-        node->setValue( entry ); // set value
-#endif
-        node->setLeaf(); // mark as leaf
-        m_nextLeaf = node;
-        node->clearHeurCache(); // clear precomputed heur./labels
-#ifdef DEBUG
-        {
-          GETLOCK(mtx_io,lk);
-          cout << "-Read " << *node << " with opt. solution " << node->getOptAssig() << endl;
-        }
-#endif
-        return;
-      } catch (...) { // cache lookup failed
-        node->setCachable(); // mark for caching later
-      }
-    }
-#endif
-
-
-#ifndef NO_PRUNING
-    // Pruning
-    if (canBePruned(node)) {
-#ifdef DEBUG
-    {
-      GETLOCK(mtx_io, lk);
-      cout << "\t !pruning " << endl;
-    }
-#endif
-      node->setLeaf();
-      node->setPruned();
-      node->setValue(ELEM_ZERO);
-      m_nextLeaf = node;
-      node->clearHeurCache();
-      return;
-    }
-#endif
-
-
-#ifdef PARALLEL_MODE
-    // TODO currently outsource at fixed depth
-//    if (ptnode->getDepth() == m_space->options->cutoff_depth) {
-    if ( ptnode->getDepth() == m_space->options->cutoff_depth ||
-        mylog10( ptnode->getSubsize() ) <= m_space->options->cutoff_size) {
-//    if (ptnode->getSubwidth() == m_space->options->cutoff_depth) {
-
-      {
-        GETLOCK(mtx_io, lkio);
-        cout << "** Parallelising at depth " << ptnode->getDepth() << endl;
-      }
-
-      addSubprobContext(node,ptnode->getFullContext()); // set subproblem context
-      addPSTlist(node); // to allow pruning in the worker
-      node->setExtern();
-      node->clearHeurCache(); // clear from cache
-      m_nextLeaf = node;
-      return;
-    }
-#endif
-
-    /////////////////////////////////////
     // actually create new AND children
-
     double* heur = node->getHeurCache();
 
     vector<SearchNode*> newNodes;
@@ -205,41 +73,51 @@ void BranchAndBound::expandNext() {
 
     for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
 
-      SearchNodeAND* n = new SearchNodeAND(node, i);
+      // can skip node if heuristic is zero (since it's an upper bound)
+      if (heur[2*i+1] == ELEM_ZERO) {
+        m_leafProfile.at(depth) += 1;
+        continue; // label=0 -> skip
+      }
 
-      // get cached heur. value
+      SearchNodeAND* n = new SearchNodeAND(node, i, heur[2*i+1]); // uses cached label
+
+      // set cached heur. value
       n->setHeur( heur[2*i] );
-      // get cached label value
-      n->setLabel( heur[2*i+1] );
-
       // add node as successor
       node->addChild(n);
-
       // remember new node
       newNodes.push_back(n);
     }
 
-    // sort new nodes by increasing heuristic value
-    sort(newNodes.begin(), newNodes.end(), SearchNode::heurLess);
-
-    // add new child nodes to stack, highest heur. value will end up on top
-    for (vector<SearchNode*>::iterator it = newNodes.begin(); it!=newNodes.end(); ++it) {
-      m_stack.push(*it);
-#ifdef DEBUG
-      {
-        GETLOCK(mtx_io, lk);
-        cout << '\t' << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; // Assig. " << m_assignment << endl;
-      }
-#endif
-    }
-
     node->clearHeurCache(); // clear heur. cache of OR node
 
-    ++m_nodesOR;
+    if (newNodes.size()) {
 
-  } //=========================================================== END =============================
+      // sort new nodes by increasing heuristic value
+      sort(newNodes.begin(), newNodes.end(), SearchNode::heurLess);
 
-}
+      // add new child nodes to stack, highest heur. value will end up on top
+      for (vector<SearchNode*>::iterator it = newNodes.begin(); it!=newNodes.end(); ++it) {
+        m_stack.push(*it);
+#ifdef DEBUG
+        {
+          GETLOCK(mtx_io, lk);
+          cout << '\t' << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; // Assig. " << m_assignment << endl;
+        }
+#endif
+      }
+    } else { // all child AND nodes were pruned
+      node->setLeaf();
+      node->setValue(ELEM_ZERO);
+      return true;
+    }
+
+  } // if-else over node type
+
+  return false; // default false
+
+} // BranchAndBound::doExpand
+
 
 
 
@@ -251,7 +129,8 @@ BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space
   SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
   m_space->root = node;
   // create dummy variable's AND node (domain size 1)
-  SearchNode* next = new SearchNodeAND(m_space->root, 0);
+  SearchNode* next = new SearchNodeAND(m_space->root, 0, prob->getGlobalConstant());
+  // put global constant into dummy AND node label
   m_space->root->addChild(next);
 
   m_stack.push(next);

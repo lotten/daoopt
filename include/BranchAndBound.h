@@ -12,9 +12,9 @@
 
 #include "debug.h"
 
-// Branch and Bound search, implements pure virtual functions from
-// Search.h, most importantly expandNext()
-class BranchAndBound : public Search {
+/* Branch and Bound search, implements pure virtual functions from
+ * Search.h, most importantly expandNext() */
+class BranchAndBound : virtual public Search {
 
 protected:
   stack<SearchNode*> m_stack; // The DFS stack of nodes
@@ -23,11 +23,15 @@ protected:
 protected:
   void expandNext();
 
+  bool doExpand(SearchNode* n);
+
   bool hasMoreNodes() const { return !m_stack.empty(); }
 
   void resetSearch(SearchNode* p);
 
-  SearchNode* firstNode() const { return m_stack.top() ; }
+  SearchNode* nextNode();
+
+  bool isMaster() const { return false; }
 
 public:
   bool isDone() const;
@@ -37,11 +41,19 @@ public:
 };
 
 
-// Inline definitions
+/* Inline definitions */
 
 inline bool BranchAndBound::isDone() const {
   return m_stack.empty();
 }
+
+
+inline SearchNode* BranchAndBound::nextNode() {
+  SearchNode* n = m_stack.top();
+  m_stack.pop();
+  return n;
+}
+
 
 inline void BranchAndBound::resetSearch(SearchNode* p) {
   assert(p);
@@ -49,5 +61,6 @@ inline void BranchAndBound::resetSearch(SearchNode* p) {
       m_stack.pop();
   m_stack.push(p);
 }
+
 
 #endif /* BRANCHANDBOUND_H_ */

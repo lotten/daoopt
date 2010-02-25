@@ -7,12 +7,12 @@
 
 #include "MiniBucketElim.h"
 
-// disables DEBUG output
+/* disables DEBUG output */
 #undef DEBUG
 
 
 #ifdef DEBUG
-// ostream operator for debugging
+/* ostream operator for debugging */
 ostream& operator <<(ostream& os, const list<Function*>& l) {
   list<Function*>::const_iterator it = l.begin();
   os << '[';
@@ -26,7 +26,7 @@ ostream& operator <<(ostream& os, const list<Function*>& l) {
 #endif
 
 
-// computes the augmented part of the heuristic estimate
+/* computes the augmented part of the heuristic estimate */
 double MiniBucketElim::getHeur(int var, const vector<val_t>& assignment) const {
 
   assert( var >= 0 && var < m_problem->getN());
@@ -100,12 +100,9 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
         for (vector<Function*>::iterator itF=funs.begin(); itF!=funs.end(); ++itF)
           m_globalUB OP_TIMESEQ (*itF)->getValue(*assignment); // all constant functions, tablesize==1
 
-//#ifdef DEBUG
         double mbval = m_globalUB OP_TIMES m_problem->getGlobalConstant();
-
-        cout << "    MBE-UB = " << SCALE_LOG(mbval) << " (" << SCALE_NORM(mbval) << ")" << endl;
-//#endif
-
+        cout << "    MBE-ROOT = " << SCALE_LOG(m_globalUB) << " (" << SCALE_NORM(m_globalUB) << ")" << endl
+             << "    MBE-ALL  = " << SCALE_LOG(mbval) << " (" << SCALE_NORM(mbval) << ")" << endl;
       }
       continue; // skip the dummy variable's bucket
     }
@@ -178,8 +175,8 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
 }
 
 
-// finds a dfs order of the pseudotree (or the locally restricted subtree)
-// and writes it into the argument vector
+/* finds a dfs order of the pseudotree (or the locally restricted subtree)
+ * and writes it into the argument vector */
 void MiniBucketElim::findDfsOrder(vector<int>& order) const {
   order.clear();
   stack<PseudotreeNode*> dfs;
@@ -197,7 +194,7 @@ void MiniBucketElim::findDfsOrder(vector<int>& order) const {
 }
 
 
-// checks whether a function 'fits' in this MB
+/* checks whether a function 'fits' in this MB */
 bool MiniBucket::allowsFunction(Function* f) {
 
   const set<int>& a=m_jointScope, b=f->getScope();
@@ -226,15 +223,15 @@ bool MiniBucket::allowsFunction(Function* f) {
   }
 
   // accept if no scope increase or new scope not greater than ibound
-  //return s==m_jointScope.size() || s <= m_ibound;
+  //return s==m_jointScope.size() || s <= m_ibound+1;
   // new scope would be greater then ibound?
   return s <= m_ibound+1;
 
 }
 
 
-// joins the functions in the MB while marginalizing out the bucket var., resulting
-// function is returned
+/* joins the functions in the MB while marginalizing out the bucket var.,
+ * resulting function is returned */
 Function* MiniBucket::eliminate(bool buildTable) {
 
   Problem* problem = m_mbElim->m_problem;

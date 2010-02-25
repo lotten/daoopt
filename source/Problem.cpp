@@ -305,9 +305,6 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
       increaseTuple(j,tuple,limit);
     }
 
-#ifdef DEBUG
-//    cout << "Creating function " << i << " with arity " << scopes[i].size() <<'.' << endl;
-#endif
     Function* f = new FunctionBayes(i,this,scopeSet,table,tab_size);
     m_functions.push_back(f);
 
@@ -341,9 +338,9 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 }
 
 #ifndef NO_ASSIGNMENT
-void Problem::outputAndSaveSolution(const string& file, double mpe, const vector<val_t>& sol, bool subprobOnly) const {
+void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes, const vector<val_t>& sol, bool subprobOnly) const {
 #else
-void Problem::outputAndSaveSolution(const string& file, double mpe, bool subprobOnly) const {
+void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes, bool subprobOnly) const {
 #endif
 
 #ifndef NO_ASSIGNMENT
@@ -379,7 +376,9 @@ void Problem::outputAndSaveSolution(const string& file, double mpe, bool subprob
 
     if (writeFile) {
       BINWRITE(out,mpe); // mpe solution cost
-      BINWRITE(out,fileAssigSize); // no. of variables
+      BINWRITE(out, noNodes.first); // no. of OR nodes expanded
+      BINWRITE(out, noNodes.second); // no. of AND nodes expanded
+      BINWRITE(out,fileAssigSize); // no. of variables in opt. assignment
     }
 
     val_t v = UNKNOWN;
@@ -412,12 +411,64 @@ void Problem::outputAndSaveSolution(const string& file, double mpe, bool subprob
 #else
     if (writeFile) {
       BINWRITE(out,mpe); // mpe solution cost
+      BINWRITE(out, noNodes.first); // no. of OR nodes expanded
+      BINWRITE(out, noNodes.second); // no. of AND nodes expanded
     }
 #endif
 
 	  cout << endl;
 	  if (writeFile)
 	    out.close();
+
+}
+
+
+void Problem::writeUAI(const string& prob) const {
+  assert (prob.size());
+
+  ogzstream out;
+  out.open(prob.c_str(), ios::out | ios::trunc);
+
+  if (!out) {
+    cerr << "Error writing reduced network to file " << prob << endl;
+    exit(1);
+  }
+
+  out << "MARKOV" << endl; // TODO hard-coding is not optimal
+
+  // variable info
+  out << (m_n) << endl;
+  for (vector<val_t>::const_iterator it=m_domains.begin(); it!=m_domains.end(); ++it)
+    out << ' ' << ((int) *it) ;
+
+  // function information
+  // NOTE: introduces a dummy function to account for a possible global constant
+  // introduced by eliminating evidence and unary variables earlier
+  out << endl << m_functions.size()+1 << endl; // no. of functions +1 (for dummy function)
+  for (vector<Function*>::const_iterator it=m_functions.begin(); it!=m_functions.end(); ++it) {
+    const set<int>& scope = (*it)->getScope();
+    out << scope.size() << '\t'; // scope size
+    for (set<int>::const_iterator itS=scope.begin(); itS!=scope.end(); ++itS)
+      out << *itS << ' '; // variables in scope
+    out << endl;
+  }
+  out << "0" << endl; // dummy function (constant, thus empty scope)
+  out << endl;
+
+  // write the function tables
+  for (vector<Function*>::const_iterator it=m_functions.begin(); it!=m_functions.end(); ++it) {
+    double * T = (*it)->getTable();
+    out << (*it)->getTableSize() << endl; // table size
+    for (size_t i=0; i<(*it)->getTableSize(); ++i)
+      out << ' ' << SCALE_NORM( T[i] ); // table entries
+    out << endl;
+  }
+  // and the dummy function table
+  out << '1' << endl << ' ' << SCALE_NORM(m_globalConstant) << endl;
+
+  // done
+  out << endl;
+  out.close();
 
 }
 

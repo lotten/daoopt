@@ -7,10 +7,10 @@
 
 #include "hash.h"
 
-// The whole new hash function.
-// @k: the key.
-// @length: the length of the key in bytes.
-// @initval: the previous hash, or an arbitrary value.
+/* The whole new hash function.
+ * @k: the key.
+ * @length: the length of the key in bytes.
+ * @initval: the previous hash, or an arbitrary value. */
 size_t myhash(register unsigned char *k, size_t length, size_t initval)
 {
   register size_t a,b,c;  /* the internal state */

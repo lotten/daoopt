@@ -9,25 +9,34 @@
 #include "Function.h"
 #include "Graph.h"
 #include "Pseudotree.h"
-#include "BranchAndBound.h"
-#include "BoundPropagator.h"
-#include "SubproblemHandler.h"
 #include "ProgramOptions.h"
 #include "MiniBucketElim.h"
+
+#ifdef PARALLEL_MODE
+#include "BranchAndBoundMaster.h"
+#include "BoundPropagatorMaster.h"
+#include "SubproblemHandler.h"
 #include "SigHandler.h"
+#else
+#include "BranchAndBound.h"
+#include "BoundPropagator.h"
+#endif
+
+#include "BestFirst.h"
 
 #include <ctime>
 
-#define VERSIONINFO "0.95.3b"
+#define VERSIONINFO "0.97.0"
 
-// define to enable diagnostic output of memory stats
+/* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
 
 int main(int argc, char** argv) {
 
-  // Record start time
-  time_t time_start, time_end;
+  // Record start time, end time, and preprocessing time
+  time_t time_start, time_end, time_pre;
   time(&time_start);
+  double time_passed;
 
   cout << "DAOOPT " << VERSIONINFO ;
 #ifdef PARALLEL_MODE
@@ -40,6 +49,11 @@ int main(int argc, char** argv) {
     cout << typeid(temp).name() << ")" << endl;
   }
 
+  // Reprint command line
+  for (int i=0; i<argc; ++i)
+    cout << argv[i] << ' ';
+  cout << endl;
+
   ProgramOptions opt = parseCommandLine(argc,argv);
 
   /////////////////////
@@ -47,6 +61,7 @@ int main(int argc, char** argv) {
   cout
   << "+ i-bound:\t" << opt.ibound << endl
   << "+ j-bound:\t" << opt.cbound << endl
+  << "+ Memory limit:\t" << opt.memlimit << endl
 #ifdef PARALLEL_MODE
   << "+ Cutoff depth:\t" << opt.cutoff_depth << endl
   << "+ Cutoff size:\t" << opt.cutoff_size << endl
@@ -64,6 +79,12 @@ int main(int argc, char** argv) {
   // Remove evidence variables
   p.removeEvidence();
   cout << "Removed evidence, now " << p.getN() << " variables and " << p.getC() << " functions." << endl;
+
+  // Output reduced network?
+  if (!opt.out_reducedFile.empty()) {
+    cout << "Writing reduced network to file " << opt.out_reducedFile << endl;
+    p.writeUAI(opt.out_reducedFile);
+  }
 
   // Some statistics
   cout << "Max. domain size:\t" << (int) p.getK() << endl;
@@ -118,15 +139,17 @@ int main(int argc, char** argv) {
 #endif
 
   // Build pseudo tree
-  Pseudotree pt(p.getN());
+  Pseudotree pt(&p);
   pt.build(g,elim,opt.cbound); // will add dummy variable
   p.addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   pt.addFunctionInfo(p.getFunctions());
 #ifdef PARALLEL_MODE
-  int cutoff = pt.computeComplexities(p, opt.threads);
+  int cutoff = pt.computeComplexities(opt.threads);
   if (opt.autoCutoff) {
     cout << "Auto cutoff:\t\t" << cutoff << endl;
     opt.cutoff_depth = cutoff;
+  } else {
+    cout << "Auto cutoff:\t\t" << cutoff << " (ignored)" << endl;
   }
 #endif
 
@@ -134,25 +157,61 @@ int main(int argc, char** argv) {
   //cout << "Elimination: " << elim << endl;
 #endif
 
-  cout << "Induced width:\t\t" << pt.getWidth() << endl;
-  cout << "Pseudotree depth:\t" << pt.getDepth() << endl;
-  cout << "Disconn. components:\t" << pt.getComponents() << endl;
+#if false
+  //////////////////////////////////////////////////
+  // Begin test
+  set<int> ctxt;
 
+  vector<val_t> assig(p.getN(),UNKNOWN);
+  assig.back() = 0;
 
-  // The central search space
+  Function* f =  p.getFunctions()[0];
+
+  cout << "Function " << *f << endl;
+  cout << "Tightness " << f->getTightness() << endl;
+
+  ctxt.insert(0);
+  ctxt.insert(2);
+
+//  assig[0] = 0;
+  assig[1] = 0;
+
+  cout << "Tightness " << f->getTightness(ctxt,&assig) << endl;
+
+  //cout << pt.getNode(2)->computeSubCompDet(ctxt,&assig) << endl;
+
+  return EXIT_SUCCESS;
+  // End test
+  //////////////////////////////////////////////////
+#endif
+
+  // The main search space
+#ifdef PARALLEL_MODE
+  SearchSpaceMaster* space = new SearchSpaceMaster(&pt,&opt);
+#else
   SearchSpace* space = new SearchSpace(&pt,&opt);
+#endif
 
   // Mini bucket heuristic
   MiniBucketElim mbe(&p,&pt,opt.ibound);
 
   // The search engine
-  BranchAndBound bab(&p,&pt,space,&mbe);
+#ifdef PARALLEL_MODE
+  BranchAndBoundMaster search(&p,&pt,space,&mbe);
+#else
+  BranchAndBound search(&p,&pt,space,&mbe);
+#endif
 
   // Subproblem specified? If yes, restrict.
   if (!opt.in_subproblemFile.empty()) {
-    bab.restrictSubproblem(opt.in_subproblemFile);
-    cout << "Read subproblem from file " << opt.in_subproblemFile << '.' << endl;
+    cout << "Reading subproblem from file " << opt.in_subproblemFile << '.' << endl;
+    search.restrictSubproblem(opt.in_subproblemFile);
   }
+
+  cout << "Induced width:\t\t" << pt.getWidthCond() << " / " << pt.getWidth() << endl;
+  cout << "Pseudotree depth:\t" << pt.getHeightCond() << " / " << pt.getHeight() << endl;
+  cout << "Problem variables:\t" << pt.getSizeCond() <<  " / " << pt.getSize() << endl;
+  cout << "Disconn. components:\t" << pt.getComponentsCond() << " / " << pt.getComponents() << endl;
 
 #ifdef MEMDEBUG
   malloc_stats();
@@ -160,27 +219,36 @@ int main(int argc, char** argv) {
 
   int ibound = opt.ibound;
   if (opt.memlimit != NONE) {
-    ibound = mbe.limitIbound(ibound, opt.memlimit, & bab.getAssignment() );
+    ibound = mbe.limitIbound(ibound, opt.memlimit, & search.getAssignment() );
     cout << "Enforcing memory limit resulted in i-bound " << ibound << endl;
     opt.ibound = ibound; // Write back into options object
   }
-
 
   // Build the MBE *after* restricting the subproblem
   size_t sz = 0;
   if (opt.nosearch) {
     cout << "Simulating mini bucket heuristic..." << endl;
-    sz = mbe.build(& bab.getAssignment(), false); // just compute memory estimate
+    sz = mbe.build(& search.getAssignment(), false); // false = just compute memory estimate
   }
   else {
     cout << "Computing mini bucket heuristic..." << endl;
-    sz = mbe.build(& bab.getAssignment(), true); // actually compute heuristic
+    sz = mbe.build(& search.getAssignment(), true); // true =  actually compute heuristic
   }
   cout << '\t' << (sz / (1024*1024.0)) * sizeof(double) << " MBytes" << endl;
 
 #ifdef MEMDEBUG
   malloc_stats();
 #endif
+
+  // output (sub)problem lower bound, mostly makes sense for conditioned subproblems
+  // in parallelized setting
+  double lb = search.curLowerBound();
+  cout << "Initial problem lower bound: " << lb << endl;
+
+  // Record time after preprocessing
+  time(&time_pre);
+  time_passed = difftime(time_pre, time_start);
+  cout << "Preprocessing complete: " << time_passed << " seconds" << endl;
 
   // abort before actual search?
   if (opt.nosearch) {
@@ -190,7 +258,11 @@ int main(int argc, char** argv) {
   }
 
   // The propagation engine
+#ifdef PARALLEL_MODE
+  BoundPropagatorMaster prop(space);
+#else
   BoundPropagator prop(space);
+#endif
 
   cout << "--- Starting search ---" << endl;
 
@@ -207,7 +279,7 @@ int main(int argc, char** argv) {
     CondorSubmissionEngine cse(space);
 
     boost::thread thread_prop(boost::ref(prop));
-    boost::thread thread_bab(boost::ref(bab));
+    boost::thread thread_bab(boost::ref(search));
     boost::thread thread_cse(boost::ref(cse));
 
     // start signal handler
@@ -227,30 +299,32 @@ int main(int argc, char** argv) {
 
 
 #else
-  while (!bab.isDone()) {
-    prop.propagate(bab.nextLeaf());
+  while (!search.isDone()) {
+    prop.propagate(search.nextLeaf());
   }
 #endif
 
-  cout << endl << "--- Search done ---" << endl;
+  cout << endl << "-------- Search done --------" << endl;
 #ifdef PARALLEL_MODE
-  cout << "Condor jobs:  " << bab.getThreadCount() << endl;
+  cout << "Condor jobs:   " << search.getThreadCount() << endl;
 #endif
-  cout << "OR nodes:     " << bab.getNodesOR() << endl;
-  cout << "AND nodes:    " << bab.getNodesAND() << endl;
+  cout << "OR nodes:      " << search.getNoNodesOR() << endl;
+  cout << "AND nodes:     " << search.getNoNodesAND() << endl;
 
   time(&time_end);
-  double time_passed = difftime(time_end,time_start);
-  cout << "Time elapsed: " << time_passed << " seconds" << endl;
+  time_passed = difftime(time_end,time_start);
+  cout << "Time elapsed:  " << time_passed << " seconds" << endl;
+  time_passed = difftime(time_pre,time_start);
+  cout << "Preprocessing: " << time_passed << " seconds" << endl;
 
-  double mpeCost = bab.getCurOptValue();//space->getSolutionCost();
+  double mpeCost = search.getCurOptValue();//space->getSolutionCost();
 
   // account for global constant (but not if solving subproblem)
   if (opt.in_subproblemFile.empty()) {
-    mpeCost OP_TIMESEQ p.getGlobalConstant();
+//    mpeCost OP_TIMESEQ p.getGlobalConstant();
   }
 
-  cout << "--------------------------\n"
+  cout << "-----------------------------\n"
     << SCALE_LOG(mpeCost) << " (" << SCALE_NORM(mpeCost) << ')' << endl;
 
   /*
@@ -261,13 +335,26 @@ int main(int argc, char** argv) {
   cout << endl;
   */
 
+
+  // Output node and leaf profiles per depth
+  const vector<count_t>& prof = search.getNodeProfile();
+  cout << endl << "p " << prof.size();
+  for (vector<count_t>::const_iterator it=prof.begin(); it!=prof.end(); ++it) {
+    cout << ' ' << *it;
+  }
+  const vector<count_t>& leaf = search.getLeafProfile();
+  cout << endl << "l " << leaf.size();
+  for (vector<count_t>::const_iterator it=leaf.begin(); it!=leaf.end(); ++it) {
+    cout << ' ' << *it;
+  }
+  cout << endl;
+
+
+  p.outputAndSaveSolution(opt.out_solutionFile, mpeCost, search.getNoNodes(),
 #ifndef NO_ASSIGNMENT
-  p.outputAndSaveSolution(opt.out_solutionFile, mpeCost, bab.getCurOptTuple(),
-                                                !opt.in_subproblemFile.empty() );
-#else
-  p.outputAndSaveSolution(opt.out_solutionFile, mpeCost,
-                                                !opt.in_subproblemFile.empty() );
+      search.getCurOptTuple(),
 #endif
+      !opt.in_subproblemFile.empty() );
 
   cout << endl;
 

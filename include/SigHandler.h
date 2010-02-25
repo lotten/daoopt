@@ -15,8 +15,8 @@
 
 #ifdef PARALLEL_MODE
 
-// watches for signals like SIGINT and SIGTERM, catches them
-// and takes care of processing
+/* watches for signals like SIGINT and SIGTERM, catches them
+ * and takes care of processing */
 class SigHandler {
 protected:
 

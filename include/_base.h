@@ -8,26 +8,33 @@
 #ifndef _BASE_H_
 #define _BASE_H_
 
-// some customizable definitions
+/* some customizable definitions */
 #include "DEFINES.h"
 
-// either LINUX or WINDOWS has to be defined -> should happen in the Makefile
+/* either LINUX or WINDOWS has to be defined -> should happen in the Makefile */
 //#define LINUX
 //#define WINDOWS
 #if !defined(LINUX) && !defined(WINDOWS)
 #error Either LINUX or WINDOWS identifiers have to be defined (for preprocessor)!
 #endif
 
-// define if data files (solution and subproblem files) should be written in binary
+/* for easier debugging output */
+#ifdef DEBUG
+#define DIAG(X) X
+#else
+#define DIAG(X) ;
+#endif
+
+/* define if data files (solution and subproblem files) should be written in binary */
 #define BINARY_DATAFILES
 
-// define to disable caching (for debugging)
+/* define to disable caching (for debugging) */
 //#define NO_CACHING
 
-// define to enable memory limitation for caching (experimental)
+/* define to enable memory limitation for caching (experimental) */
 //#define CACHE_MEMLIMIT
 
-// define to disable pruning (for debugging)
+/* define to disable heuristic pruning (for debugging) */
 //#define NO_PRUNING
 
 #ifdef NOTHREADS
@@ -36,9 +43,9 @@
 
 #ifdef PARALLEL_MODE
 
-// Boost thread libraries
-#import "boost/thread.hpp"
-//#import "boost/thread/shared_mutex.hpp"
+/* Boost thread libraries */
+#include "boost/thread.hpp"
+//#include "boost/thread/shared_mutex.hpp"
 
 #define GETLOCK(X,Y) boost::mutex::scoped_lock Y ( X )
 #define CONDWAIT(X,Y) ( X ).wait( Y )
@@ -47,7 +54,7 @@
 #define INCREASE(X)  ++( X )
 #define DECREASE(X) --( X )
 
-// static IO mutex for console output
+/* static IO mutex for console output */
 static boost::mutex mtx_io;
 
 #else
@@ -62,13 +69,15 @@ static boost::mutex mtx_io;
 #endif
 
 
-// define if all computation should be done in log format (recommended)
+/* define if all computation should be done in log format (recommended) */
 #define USE_LOG
 
 #ifdef USE_LOG
 
 #define OP_TIMES +
 #define OP_TIMESEQ +=
+#define OP_DIVIDE -
+#define OP_DIVIDEEQ -=
 #define ELEM_ZERO (- std::numeric_limits<double>::infinity() )
 #define ELEM_ONE 0.0
 
@@ -82,6 +91,8 @@ static boost::mutex mtx_io;
 
 #define OP_TIMES *
 #define OP_TIMESEQ *=
+#define OP_DIVIDE /
+#define OP_DIVIDEEQ /=
 #define ELEM_ZERO 0.0
 #define ELEM_ONE 1.0
 
@@ -97,9 +108,6 @@ static boost::mutex mtx_io;
 #define ELEM_NAN std::numeric_limits<double>::quiet_NaN()
 #define ISNAN(x) ( x!=x )
 
-
-
-
 //#include <assert.h>
 #include <cassert>
 //#include <time.h>
@@ -107,16 +115,16 @@ static boost::mutex mtx_io;
 //#include <math.h>
 #include <cmath>
 
-// for signal handling
+/* for signal handling */
 #include <csignal>
 
-// for limits
+/* for limits */
 #include <limits>
 
-// for typeinfo
+/* for typeinfo */
 #include <typeinfo>
 
-// STL includes
+/* STL includes */
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -130,20 +138,18 @@ static boost::mutex mtx_io;
 #include <limits>
 #include <sstream>
 
-/////////////////////////////////////////////////
-// which hashtable to use? define only *one*
+/* which hashtable to use? define only *one*  */
 #define HASH_BOOST
 //#define HASH_TR1
 //#define HASH_SGI
 //#define HASH_GOOGLE_DENSE
 //#define HASH_GOOGLE_SPARSE
 
-// type for storing contexts in binary
-//typedef std::vector<char> context_t;
+/* type for storing contexts in binary */
 typedef std::vector<val_t> context_t;
 
 #ifdef HASH_SGI
-// SGI hash set and map
+/* SGI hash set and map */
 #include <backward/hash_set> // deprecated!
 #include <backward/hash_map> // deprecated!
 
@@ -152,11 +158,11 @@ using __gnu_cxx::hash_map;
 #endif
 
 #ifdef HASH_TR1
-// TR1 hash sets and maps
+/* TR1 hash sets and maps */
 #include <tr1/unordered_set>
 #include <tr1/unordered_map>
 
-// some renaming (crude hack)
+/* some renaming (crude hack) */
 #define hash_set std::tr1::unordered_set
 #define hash_map std::tr1::unordered_map
 #endif
@@ -198,13 +204,20 @@ template<> struct hash<std::string> {
 #endif
 
 
-// Windows-specific definitions
+/* Windows-specific definitions */
 #ifdef WINDOWS
 #define uint unsigned int
 #endif
 
+/* for debugging */
+#ifdef DEBUG
+#include "debug.h"
+#endif
 
-// LibGMP C++ interface
+/* type for counting nodes, fixed precision for 32/64 bit machines. */
+typedef uint64_t count_t;
+
+/* LibGMP C++ interface */
 #ifdef PARALLEL_MODE
 #include <gmpxx.h>
 typedef mpz_class bigint;
@@ -212,14 +225,14 @@ typedef mpf_class bigfloat;
 typedef mpq_class bigfrac;
 #endif
 
-// Boost random number library
+/* Boost random number library */
 #include <boost/random/linear_congruential.hpp>
 
 using namespace std;
 
-///////////////////////////////////
-//////// MACRO DEFINITIONS ////////
-///////////////////////////////////
+/*////////////////////////////////*/
+/*////// MACRO DEFINITIONS ///////*/
+/*////////////////////////////////*/
 
 #define UNKNOWN -1
 #define NOID -1
@@ -228,31 +241,31 @@ using namespace std;
 #define TRUE 1
 #define FALSE 0
 
-// FUNCTION TYPES
+/* FUNCTION TYPES */
 #define TYPE_BAYES 1
 #define TYPE_WCSP 2
 
-// INPUT FORMATS
+/* INPUT FORMATS */
 #define INP_UAI 1
 #define INP_ERGO 2
 
-// TASK TYPE
+/* TASK TYPE */
 #define TASK_MIN 1
 #define TASK_MAX 2
 
-// PROBLEM TYPE
+/* PROBLEM TYPE */
 #define PROB_MULT 1
 #define PROB_ADD 2
 
-// SEARCH NODE TYPE
+/* SEARCH NODE TYPE */
 #define NODE_AND 1
 #define NODE_OR 2
 
 
 
-/////////////////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////////////*/
 
-// static random number generator
+/* static random number generator */
 class rand {
 private:
   static int state;
@@ -269,17 +282,18 @@ public:
 
 };
 
-////////////////////////////////
+/*//////////////////////////////*/
 
 /*
  * the following is based on code and explanations from
  * http://www.cygnus-software.com/papers/comparingfloats/Comparing%20floating%20point%20numbers.htm
  */
 
-// NOTE: Taking out the void* casts produces the gcc warning
-// "dereferencing type-punned pointer will break strict-aliasing rules"
+/* NOTE: Taking out the void* casts produces the gcc warning
+ * "dereferencing type-punned pointer will break strict-aliasing rules"
+ */
 
-// floating point equality comparison (modulo floating point precision)
+/* floating point equality comparison (modulo floating point precision) */
 inline bool fpEq(double A, double B, int64_t maxDist=2) {
   assert(sizeof(double) == sizeof(int64_t));
   if (A == B)
@@ -294,7 +308,7 @@ inline bool fpEq(double A, double B, int64_t maxDist=2) {
   return false;
 }
 
-// floating point "less than" (modulo fp. precision)
+/* floating point "less than" (modulo fp. precision) */
 inline bool fpLt(double A, double B, int64_t maxDist=2) {
   assert(sizeof(double) == sizeof(int64_t));
   if (A == B || A == INFINITY || B == -INFINITY)
@@ -311,7 +325,7 @@ inline bool fpLt(double A, double B, int64_t maxDist=2) {
   return false;
 }
 
-// floating point "less or equal than" (modulo fp. precision)
+/* floating point "less or equal than" (modulo fp. precision) */
 inline bool fpLEq(double A, double B, int64_t maxDist=2) {
   assert(sizeof(double) == sizeof(int64_t));
   if (A == B || A == -INFINITY || B == INFINITY)
@@ -328,9 +342,9 @@ inline bool fpLEq(double A, double B, int64_t maxDist=2) {
   return true;
 }
 
-//////////////////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////////////*/
 
-//binary read and write of value X to/from stream S
+/* binary read and write of value X to/from stream S */
 #ifdef BINARY_DATAFILES
 #define BINWRITE(S,X) ( S ).write((char*)&( X ), sizeof( X ))
 #define BINREAD(S,X) ( S ).read((char*)&( X ), sizeof( X ))
@@ -340,9 +354,9 @@ inline bool fpLEq(double A, double B, int64_t maxDist=2) {
 #endif
 
 
-// encode doubles to 64 bit integers (and back)
+#ifdef false
+/* encode doubles to 64 bit integers (and back) */
 typedef int64_t int64bit;
-/*
 inline std::string encodeDoubleAsInt(double d) {
   int64bit x = *(int64bit*)(void*)&d;
   std::ostringstream ss;
@@ -356,7 +370,7 @@ inline double decodeDoubleFromString(std::string s) {
   ss >> x;
   return *(double*)(void*)&x;
 }
-*/
+#endif /* false */
 
 inline std::string encodeDoubleAsInt(double d) {
   std::ostringstream ss;
@@ -372,7 +386,7 @@ inline double decodeDoubleFromString(std::string s) {
 }
 
 
-///////////////////////////////////////////////////////////////
+/*///////////////////////////////////////////////////////////*/
 
 
 inline double mylog10(unsigned long a) {
@@ -384,10 +398,10 @@ double mylog10(bigint a);
 #endif
 
 
-///////////////////////////////////////////////////////////////
+/*///////////////////////////////////////////////////////////*/
 
-/*
-//hash function for pair<int,int>
+#ifdef false
+/* hash function for pair<int,int> */
 namespace __gnu_cxx {
 
   using std::size_t;
@@ -402,7 +416,7 @@ namespace __gnu_cxx {
   };
 
 }
-*/
+#endif /* false */
 
 #endif /* _BASE_H_ */
 

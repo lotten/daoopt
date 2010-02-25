@@ -8,7 +8,9 @@
 #include "Function.h"
 #include "Problem.h"
 
-// Constructor
+#undef DEBUG
+
+/* Constructor */
 Function::Function(const int& id, Problem* p, const set<int>& scope, double* T, const size_t& size) :
   m_id(id), m_problem(p), m_table(T), m_tableSize(size), m_scope(scope) {
 #ifdef PRECOMP_OFFSETS
@@ -23,8 +25,7 @@ Function::Function(const int& id, Problem* p, const set<int>& scope, double* T, 
 }
 
 
-// returns the table entry for the assignment
-// (input is vector of val_t)
+/* returns the table entry for the assignment (input is vector of val_t) */
 double Function::getValue(const vector<val_t>& assignment) const {
 //  assert(isInstantiated(assignment)); // make sure scope is fully instantiated
 #ifdef PRECOMP_OFFSETS
@@ -44,13 +45,9 @@ double Function::getValue(const vector<val_t>& assignment) const {
   return m_table[idx];
 }
 
-// returns the table entry for the assignment
-// (input is vector of pointers to val_t)
+
+/* returns the table entry for the assignment (input is vector of pointers to val_t) */
 double Function::getValuePtr(const vector<val_t*>& tuple) const {
-
-//  cout << 'f' << m_id << ": Tuple " << tuple.size() << endl;
-//  cout << 'f' << m_id << ' ' << tuple << endl;
-
   assert(tuple.size() == m_scope.size()); // make sure tuple size matches scope size
 #ifdef PRECOMP_OFFSETS
   size_t idx = 0;
@@ -69,6 +66,7 @@ double Function::getValuePtr(const vector<val_t*>& tuple) const {
   return m_table[idx];
 }
 
+
 void Function::translateScope(const map<int, int>& translate) {
   //cout << "Translating " << m_id << " :";
   set<int> newScope;
@@ -80,8 +78,9 @@ void Function::translateScope(const map<int, int>& translate) {
   m_scope = newScope;
 }
 
-// Main substitution function.
-// !! Changes the values of the newScope, newTable, newTableSize reference arguments !!
+/* Main substitution function.
+ * !! Changes the values of the newScope, newTable, newTableSize reference arguments !!
+ */
 void Function::substitute_main(const map<int,val_t>& assignment, set<int>& newScope,
                                double*& newTable, size_t& newTableSize) const {
 
@@ -143,6 +142,7 @@ void Function::substitute_main(const map<int,val_t>& assignment, set<int>& newSc
 
 }
 
+
 Function* FunctionBayes::clone() const {
   double* newTable = new double[m_tableSize];
   for (size_t i=0; i<m_tableSize; ++i)
@@ -150,6 +150,7 @@ Function* FunctionBayes::clone() const {
   Function* f = new FunctionBayes(m_id, m_problem, m_scope, newTable, m_tableSize );
   return f;
 }
+
 
 Function* FunctionBayes::substitute(const map<int,val_t>& assignment) const {
 
@@ -165,110 +166,226 @@ Function* FunctionBayes::substitute(const map<int,val_t>& assignment) const {
 
 }
 
-#ifdef TIGHTNESS
-size_t FunctionBayes::getTightness(const set<int>& proj, const set<int>& inst) {
 
-  // Compute intersection of 'scope' and m_argv
+#ifdef PARALLEL_MODE
+
+/* Computes tightness:
+ * 1) Table is projected down on 'proj'.
+ * 2) Every tuple is checked to match the values from 'assig' for the vars in 'cond'.
+ * 3) Count matching (projected) tuples with non-zero weight
+ */
+size_t Function::getTightness(const set<int>& proj, const set<int>& cond,
+                              const vector<val_t>* assig) {
+
+#ifdef DEBUG
+  cout << "Function::getTightness\t#" << *this << endl;
+  cout << "Function::getTightness\tproj  = " << proj << endl;
+  cout << "Function::getTightness\tcond  = " << cond << endl;
+  cout << "Function::getTightness\tassig = ";
+  if (assig)
+    cout << *assig << endl;
+  else
+    cout << "NULL" << endl;
+#endif
+
+  size_t arity = m_scope.size();
+
+  // Compute intersection of scope and proj
   set<int> s;
   set_intersection(m_scope.begin(), m_scope.end(), proj.begin(), proj.end(), inserter(s,s.begin()));
-  assert(!s.empty()); // make sure function is relevant
+  DIAG(cout << "Function::getTightness\tProjected to " << s << endl);
+  assert(!s.empty()); // make sure function is relevant // TODO return 1?
 
-  // not actually projected, return full tightness
-  if (s.size() == m_scope.size())
+  // not actually projected => return full tightness
+  if (s.size() == arity) {
+    DIAG(cout << "Function::getTightness\t-> full scope, returning precomputed tightness." << endl );
     return this->getTightness();
-
-  size_t idx = 0;
-  int* tuple = new int[m_scope.size()];
-  for (int i=0; i<m_scope.size();++i)
-    tuple[i] = 0;
-  // collect domain sizes
-  vector<int> domains;
-  domains.reserve(m_scope.size());
-  for (set<int>::const_iterator sit = m_scope.begin(); sit!=m_scope.end(); ++sit) {
-    domains.push_back(m_problem->getDomainSize(*sit));
   }
 
+  size_t count = m_tCache;
+  // Check cache scope (but caching only applies if no assignment was specified)
+  if ( assig || s != m_tCacheScope ) {
 
-  ////// update below //////
-
-
-  // find the indexes of the relevant projected variables
-  int* idxs = new int [s.size()];
-  int c =0;
-  for (set<int>::iterator it = s.begin(); it != s.end(); ++it) {
-    for (int i=0; i<m_argc; ++i)
-      if (m_argv[i]==*it) { idxs[c]=i; break; }
-    ++c;
-  }
-
-  // Has the value assignment (of relevant variables) changed?
-  bool valsChanged = false;
-  // Is any variable in the (projected) scope assigned?
-  bool restricted = false;
-
-  for (int i=0; i<s.size(); ++i) {
-    int curVal = m_problem->getValue(m_argv[idxs[i]]);
-    if (curVal != -1) restricted = true;
-    if (curVal != m_assignmentCached[idxs[i]]) {
-      valsChanged = true;
-      m_assignmentCached[i] = curVal;
-    }
-  }
-
-  // function is fully covered by cluster and no relevant variables
-  // are assigned yet
-  if (s.size() == m_scope.size() && !restricted)
-    return getTightness();
-
-  // If match with last scope AND no relevant value changes,
-  // return cached value
-  if (m_tightnessCacheScope == s && !valsChanged) {
-    switch (m_type) {
-    case FUN_PROBABILITY : return m_tightnessCache;
-    case FUN_CONSTRAINT : return m_tightnessCacheTableSize - m_tightnessCache;
-    default: assert(false);
-    }
-  }
-
-  // keep track of the complete tuple
-  int* vals = new int[m_argc]; // variable value for iterating over table
-  int* doms = new int[m_argc]; // max. domain size (static)
-  for (int i=0; i<m_argc;++i) // init. values
-    vals[i]=0, doms[i]=m_problem->getStaticDomainSize(m_argv[i]);
-
-  set<int> positives; // collect the new indices
-  for (int i=0; i<m_tableSize; increaseTupleCount(i,vals,doms,m_argc)) {
-    // i is index of *complete* tuple
-    if (m_table[i] && (!restricted ||
-        compliesWithAssignment(vals, m_assignmentCached, idxs, s.size()) ) ) {
-      int id = 0; // compute *projected* index
-      for (int j=0; j<s.size(); ++j) {
-        id += vals[idxs[j]] * prod(doms, idxs, j+1, s.size());
+    // find the indexes of the relevant projected variables
+    // if i is index in reduced scope, idxs[i] is index in full scope
+    vector<int> idxs;
+    idxs.reserve(s.size());
+    for (set<int>::iterator it = s.begin(); it != s.end(); ++it) {
+      int c = 0;
+      for (set<int>::iterator itSc = m_scope.begin(); itSc != m_scope.end(); ++itSc) {
+        if (*itSc==*it) { idxs.push_back(c); break; }
+        ++c;
       }
-      /*cout << i << ":";
-      for (int k=0; k<s.size(); ++k)
-        cout << ' ' << vals[idxs[k]];
-      cout << endl;*/
-      positives.insert(id);
     }
+
+    // keep track of the complete tuple (not projected)
+    vector<val_t> vals(arity, 0);
+    vector<val_t> doms; doms.reserve(arity);
+    for (set<int>::iterator itSc = m_scope.begin(); itSc != m_scope.end(); ++itSc)
+      doms.push_back(m_problem->getDomainSize(*itSc));
+
+    set<size_t> positives; // collect the new indices (wrt. projected scope)
+    for (size_t i=0; i<m_tableSize; increaseTuple(i,vals,doms) ) {
+      // i is index of *complete* tuple
+      if ( m_table[i] != ELEM_ZERO ) {
+
+        // check if tuple complies with assignment (if given)
+        if (assig) {
+
+          // over the constraining assignment variables
+          set<int>::const_iterator itCo = cond.begin();
+          // over the current tuples
+          set<int>::const_iterator itSc = m_scope.begin();
+          vector<val_t>::const_iterator itV = vals.begin();
+          bool compatible = true;
+
+          while (compatible && itSc != m_scope.end() && itCo != cond.end() ) {
+
+            if (*itCo < *itSc) ++itCo;
+            else if (*itSc < *itCo) ++itSc, ++itV;
+            else { // *itSc == *itCo , check assignment
+              if (assig->at(*itSc) != UNKNOWN && assig->at(*itSc) != *itV )
+                compatible = false; // tuple does not comply with assignment => skip it
+              ++itCo; ++itSc; ++itV;
+            }
+          }
+          if (!compatible)
+            continue; // skip this tuple in outer for loop
+        }
+
+        // compute the index of the projected tuple and store it
+        size_t id = 0; // *projected* index
+        size_t prod = 1;
+        for (int j=s.size()-1; j>=0; --j) {
+          id += vals[idxs[j]] * prod; // vals is *full* tuple
+          prod  *= doms[idxs[j]];
+        }
+        positives.insert(id);
+
+      }
+    }
+
+    if (this->getType() == TYPE_BAYES)
+      count = positives.size();
+    else
+      assert(false);
+
+    // save result into cache (if no assignment given)
+    if (assig==NULL) {
+      m_tCacheScope = s;
+      m_tCache = count;
+    }
+
   }
-  delete[] vals;
-  delete[] doms;
-  delete[] idxs;
 
-  // compute max. possible projected table size
-  m_tightnessCacheTableSize = 1;
-  for (set<int>::iterator it = s.begin(); it != s.end(); ++it)
-    m_tightnessCacheTableSize *= m_problem->getStaticDomainSize(*it);
-  m_tightnessCache = positives.size();
-  m_tightnessCacheScope = s;
-
-  switch (m_type) {
-  case FUN_PROBABILITY : return m_tightnessCache;
-  case FUN_CONSTRAINT : return m_tightnessCacheTableSize - m_tightnessCache;
-  default: assert(false);
-  }
-
+  return count;
 
 }
+#endif /* PARALLEL_MODE */
+
+
+#ifdef PARALLEL_MODE
+bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
+                              const set<int>& cond, const vector<val_t>* assig) {
+
+  bigint csize = 1;
+
+  set<int>::const_iterator it1 = m_scope.begin();
+  set<int>::const_iterator it2 = uncovered.begin();
+
+  // compute product of the newly covered domains
+  while (it1 != m_scope.end() && it2 != uncovered.end()) {
+    if (*it1 < *it2)
+      ++it1;
+    else if (*it2 < *it1)
+      ++it2;
+    else { // *it1==*it2
+      csize *= m_problem->getDomainSize(*it1);
+      ++it1, ++it2;
+    }
+  }
+
+  if (csize==1) // nothing new covered
+          return UNKNOWN;
+
+  // return ratio of tightness of function (projected on cluster)
+  // over product of newly covered domains (might be 0)
+  // TODO use uncovered instead of cluster?
+
+  size_t t = getTightness(proj, cond, assig);
+  DIAG( cout << "\t\tt = " << t << endl );
+  return t / ((bigfloat) csize);
+
+}
+#endif /* PARALLEL_MODE */
+
+
+#ifdef PARALLEL_MODE
+double Function::getAverage(const set<int>& cond, const vector<val_t>& assig) {
+
+  double sum = ELEM_ONE;
+  size_t count = 0;
+
+  // make sure assignment is actually specified
+  for (set<int>::const_iterator it=cond.begin(); it!=cond.end(); ++it) {
+    assert (assig.at(*it) != UNKNOWN );
+  }
+
+  // keep track of the complete tuple (i.e., tuple size = scope size)
+  vector<val_t> vals(m_scope.size(), 0);
+  // cache domain sizes of scope variables
+  vector<val_t> doms; doms.reserve( m_scope.size() );
+  for (set<int>::iterator itSc = m_scope.begin(); itSc != m_scope.end(); ++itSc)
+    doms.push_back(m_problem->getDomainSize(*itSc));
+
+  // iterate over all tuples
+  for (size_t i=0; i<m_tableSize; increaseTuple(i,vals,doms) ) {
+
+    // over the constraining assignment variables
+    set<int>::const_iterator itCo = cond.begin();
+    // over the current tuples
+    set<int>::const_iterator itSc = m_scope.begin(); // should be kept in sync with the next
+    vector<val_t>::const_iterator itV = vals.begin();
+
+    bool compatible = true;
+
+    while (compatible && itSc != m_scope.end() && itCo != cond.end() ) {
+
+      if (*itCo < *itSc) ++itCo;
+      else if (*itSc < *itCo) ++itSc, ++itV; // keep sync
+      else { // *itSc == *itCo , check assignment
+        if (assig.at(*itSc) != *itV )
+          compatible = false; // tuple does not comply with assignment => skip it
+        ++itCo; ++itSc; ++itV;
+      }
+    }
+    if (!compatible)
+      continue; // skip this tuple in for loop over tuples
+
+//    if (m_table[i] != ELEM_ZERO) { // don't count zeros
+    if (m_table[i] != ELEM_ZERO && m_table[i] != ELEM_ONE) { // don't count zeros or ones
+      sum OP_TIMESEQ m_table[i];
+      count += 1;
+    }
+
+  }
+
+  if (count) {
+#ifdef USE_LOG
+    return sum /count ;
+#else
+    return pow(sum, 1.0/count) ;
 #endif
+  } else {
+    return ELEM_ONE;
+  }
+
+#ifdef USE_LOG
+  return (count) ? (sum / count) : ELEM_ONE;
+#else
+  return (count) ? pow(sum, 1.0/count) : ELEM_ONE;
+#endif
+
+}
+#endif /* PARALLEL_MODE */
+

@@ -62,10 +62,12 @@ public:
   ~CacheTable();
 };
 
-// Inline definitions
+/* Inline definitions */
 
-// inserts a value into the respective cache table
-// throws an int if insert non successful (memory limit or index out of bounds)
+
+/* inserts a value into the respective cache table, throws an int if
+ * insert non successful (memory limit or index out of bounds)
+ */
 #ifndef NO_ASSIGNMENT
 inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int) {
 #else
@@ -105,8 +107,7 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
 }
 
 
-// throws an int (UNKNOWN) if not found
-
+/* tries to read a value from a table, throws an int (UNKNOWN) if not found */
 #ifndef NO_ASSIGNMENT
 inline pair<double, vector<val_t> > CacheTable::read(int n, size_t inst, const context_t& ctxt) const throw (int) {
 #else
@@ -169,7 +170,7 @@ inline CacheTable::~CacheTable() {
 }
 
 #ifdef WINDOWS
-// not supported under Windows // TODO
+/* TODO? not supported under Windows */
 inline int CacheTable::memused() const {
   return -1;
 }

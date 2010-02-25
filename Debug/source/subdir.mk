@@ -4,7 +4,9 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../source/BestFirst.cpp \
 ../source/BoundPropagator.cpp \
+../source/BoundPropagatorMaster.cpp \
 ../source/BranchAndBound.cpp \
 ../source/Function.cpp \
 ../source/Graph.cpp \
@@ -13,6 +15,8 @@ CPP_SRCS += \
 ../source/ProgramOptions.cpp \
 ../source/Pseudotree.cpp \
 ../source/Random.cpp \
+../source/Search.cpp \
+../source/SearchMaster.cpp \
 ../source/SearchNode.cpp \
 ../source/SigHandler.cpp \
 ../source/SubproblemCondor.cpp \
@@ -20,7 +24,9 @@ CPP_SRCS += \
 ../source/utils.cpp 
 
 OBJS += \
+./source/BestFirst.o \
 ./source/BoundPropagator.o \
+./source/BoundPropagatorMaster.o \
 ./source/BranchAndBound.o \
 ./source/Function.o \
 ./source/Graph.o \
@@ -29,6 +35,8 @@ OBJS += \
 ./source/ProgramOptions.o \
 ./source/Pseudotree.o \
 ./source/Random.o \
+./source/Search.o \
+./source/SearchMaster.o \
 ./source/SearchNode.o \
 ./source/SigHandler.o \
 ./source/SubproblemCondor.o \
@@ -36,7 +44,9 @@ OBJS += \
 ./source/utils.o 
 
 CPP_DEPS += \
+./source/BestFirst.d \
 ./source/BoundPropagator.d \
+./source/BoundPropagatorMaster.d \
 ./source/BranchAndBound.d \
 ./source/Function.d \
 ./source/Graph.d \
@@ -45,6 +55,8 @@ CPP_DEPS += \
 ./source/ProgramOptions.d \
 ./source/Pseudotree.d \
 ./source/Random.d \
+./source/Search.d \
+./source/SearchMaster.d \
 ./source/SearchNode.d \
 ./source/SigHandler.d \
 ./source/SubproblemCondor.d \

@@ -27,7 +27,8 @@ public:
   int order_iterations; // no. of randomized order finding iterations
   int cutoff_depth; // fixed cutoff depth for central search
   int memlimit; // memory limit (in MB)
-  double cutoff_size; // fixed cutoff subproblem size
+  int cutoff_size; // fixed cutoff subproblem size (times 10^6)
+  int maxSubprob; // only generate this many subproblems, then abort (for testing)
 
   std::string executableName; // name of the executable
   std::string problemName; // name of the problem
@@ -36,6 +37,7 @@ public:
   std::string in_orderingFile; // ordering file path
   std::string in_subproblemFile; // subproblem file path
   std::string out_solutionFile; // file path to write solution to
+  std::string out_reducedFile; // file to save reduced network to
 
 public:
   ProgramOptions();
@@ -44,6 +46,6 @@ public:
 ProgramOptions parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
-  nosearch(false), ibound(0), cbound(0), cbound_worker(0), threads(0), order_iterations(0), cutoff_depth(0), memlimit(NONE), cutoff_size(0.0) {}
+		      nosearch(false), ibound(0), cbound(0), cbound_worker(0), threads(0), order_iterations(0), cutoff_depth(0), memlimit(NONE), cutoff_size(0), maxSubprob(NONE) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

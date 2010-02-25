@@ -15,11 +15,11 @@
 #include "utils.h"
 
 
-// forward declaration
+/* forward declaration */
 class MiniBucket;
 
 
-// The overall minibucket elimination
+/* The overall minibucket elimination */
 class MiniBucketElim : public Heuristic {
 
   friend class MiniBucket;
@@ -41,7 +41,7 @@ protected:
   void findDfsOrder(vector<int>&) const;
 
   // Compares the size of the scope of two functions
-  //bool scopeIsLarger(Function*, Function*) const;
+//  bool scopeIsLarger(Function*, Function*) const;
 
   // reset the data structures
   void reset() ;
@@ -72,7 +72,7 @@ public:
 };
 
 
-// A single minibucket, i.e. a collection of functions
+/* A single minibucket, i.e. a collection of functions */
 class MiniBucket {
 
 protected:
@@ -98,7 +98,7 @@ public:
 
 
 
-// Inline definitions
+/* Inline definitions */
 
 
 inline MiniBucketElim::MiniBucketElim(Problem* p, Pseudotree* pt, int ib) :

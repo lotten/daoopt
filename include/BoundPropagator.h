@@ -15,27 +15,25 @@
 #include "debug.h"
 
 class BoundPropagator {
+
 protected:
   SearchSpace* m_space;
+
 public:
 
-#ifdef PARALLEL_MODE
-  // operator for multithreading
-  void operator () ();
-#endif
-
+  // propagates the value of the specified search node and removes unneeded nodes
   void propagate(SearchNode*);
 
 #ifndef NO_ASSIGNMENT
 private:
-//  void mergePrevAssignment(SearchNode* prev, SearchNode* cur);
-
   void propagateTuple(SearchNode* start, SearchNode* end);
-
 #endif
 
+protected:
+  virtual bool isMaster() const { return false; }
+
 public:
- BoundPropagator(SearchSpace* s) : m_space(s) {}
+  BoundPropagator(SearchSpace* s) : m_space(s) {}
 };
 
 

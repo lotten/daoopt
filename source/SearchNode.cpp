@@ -19,3 +19,14 @@ ostream& operator << (ostream& os, const SearchNode& n) {
     return os << "OR node: " << n.getVar();
   }
 }
+
+string SearchNode::toString(const SearchNode* n) {
+  assert(n);
+  ostringstream ss;
+  if (n->getType() == NODE_AND) {
+    ss << "AND node: " << n->getVar() << "->" << (int) n->getVal();
+  } else { // OR node
+    ss << "OR node: " << n->getVar();
+  }
+  return ss.str();
+}

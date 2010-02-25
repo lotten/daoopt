@@ -21,8 +21,8 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     po::options_description desc("Valid options");
     desc.add_options()
       ("input-file,f", po::value<string>(), "path to problem file (required)")
-      ("evid-file,e", po::value<string>(), "path to evidence file")
-      ("ordering,o", po::value<string>(), "read elimination ordering from this file")
+      ("evid-file,e", po::value<string>(), "path to optional evidence file")
+      ("ordering,o", po::value<string>(), "read elimination ordering from this file (first to last)")
       ("subproblem,s", po::value<string>(), "limit search to subproblem specified in file")
       ("sol-file,c", po::value<string>(), "path to output optimal solution to")
       ("ibound,i", po::value<int>()->default_value(10), "i-bound for mini bucket heuristics")
@@ -33,12 +33,14 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("iterations,t", po::value<int>()->default_value(25), "iterations for finding ordering")
 #ifdef PARALLEL_MODE
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
-      ("cutoff-size,l", po::value<double>()->default_value(-1), "cutoff subproblem size (log10) for central search")
+      ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^6)")
       ("cutoff-auto,a", "determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(5), "max. number of concurrent subproblem processes")
+      ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
 #endif
-      ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit (in MByte)")
-      ("nosearch,n", "perform only preprocessing")
+      ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
+      ("nosearch,n", "perform preprocessing, output stats, and exit")
+      ("reduce,r", po::value<string>(), "outputs the reduced network to this file (removes evidence and unary variables)")
       ("help,h", "produces this help message")
       ;
 
@@ -86,7 +88,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       opt.order_iterations = vm["iterations"].as<int>();
 
     if (vm.count("cutoff-size"))
-      opt.cutoff_size = vm["cutoff-size"].as<double>();
+      opt.cutoff_size = vm["cutoff-size"].as<int>();
 
     if (vm.count("cutoff-depth"))
       opt.cutoff_depth = vm["cutoff-depth"].as<int>();
@@ -99,6 +101,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     if (vm.count("procs"))
       opt.threads = vm["procs"].as<int>();
 
+    if (vm.count("max-sub"))
+      opt.maxSubprob = vm["max-sub"].as<int>();
+
     if (vm.count("memlimit"))
       opt.memlimit = vm["memlimit"].as<int>();
 
@@ -106,6 +111,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       opt.nosearch = true;
     else
       opt.nosearch = false;
+
+    if (vm.count("reduce"))
+      opt.out_reducedFile = vm["reduce"].as<string>();
 
     if (vm.count("subproblem") && !vm.count("ordering")) {
       cerr << "Error: Specifying a subproblem requires reading a fixed ordering from file." << endl;

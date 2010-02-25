@@ -12,26 +12,26 @@
 
 #ifdef PARALLEL_MODE
 
-// Suppress condor output if not in debug mode
+/* Suppress condor output if not in debug mode */
 #ifndef DEBUG
 #define SILENT_MODE
 #endif
 
 
-// parameters that can be modified
+/* parameters that can be modified */
 #define MAX_SUBMISSION_TRIES 6
 #define SUBMISSION_FAIL_DELAY_BASE 2
 
-#define WAIT_BETWEEN_BATCHES 8
-#define WAIT_FOR_MORE_JOBS 2
+#define WAIT_BETWEEN_BATCHES 10
+#define WAIT_FOR_MORE_JOBS 3
 
 
 
-// static definitions (no need to modify)
+/* static definitions (no need to modify) */
 #define CONDOR_SUBMIT "condor_submit"
 #define CONDOR_WAIT "condor_wait"
 #define CONDOR_RM "condor_rm"
-// some string definition for filenames
+/* some string definition for filenames */
 #define JOBFILE "subproblem.sub"
 #define PREFIX_SOL "temp_sol."
 #define PREFIX_EST "temp_est."
@@ -42,13 +42,13 @@
 
 #define REQUIREMENTS_FILE "requirements.txt"
 
-// custom attributes for generated condor jobs
+/* custom attributes for generated condor jobs */
 #define CONDOR_ATTR_PROBLEM "daoopt_problem"
 #define CONDOR_ATTR_THREADID "daoopt_threadid"
 
 void SubproblemCondor::operator() () {
 
-  CondorSubmission job(m_subproblem, m_threadId, m_estimate);
+  CondorSubmission job(m_subproblem, m_threadId);
 
   boost::thread* waitProc = NULL;
 
@@ -56,16 +56,16 @@ void SubproblemCondor::operator() () {
 
   // pass subproblem to CondorSubmissionEngine
   {
-    GETLOCK(m_space->mtx_condorQueue,lk);
-    m_space->condorQueue.push(&job);
-    NOTIFY(m_space->cond_condorQueue);
+    GETLOCK(m_spaceMaster->mtx_condorQueue,lk);
+    m_spaceMaster->condorQueue.push(&job);
+    NOTIFY(m_spaceMaster->cond_condorQueue);
   }
 
   // wait for signal from CondorSubmissionEngine
   {
     boost::mutex mtx_local;
     GETLOCK(mtx_local,lk);
-    CONDWAIT(m_space->cond_jobsSubmitted, lk);
+    CONDWAIT(m_spaceMaster->cond_jobsSubmitted, lk);
   }
 
   // start condor_wait in new thread
@@ -73,13 +73,6 @@ void SubproblemCondor::operator() () {
   waitProc = new boost::thread(wi);
   // wait for condor_wait
   waitProc->join();
-
-/*
-  {
-    GETLOCK(mtx_io,lk2);
-    cout << "<-- Receiving solution for subproblem " << m_threadId << '.' << endl;
-  }
-*/
 
   // Read solution from file
   ostringstream solutionFile;
@@ -95,8 +88,12 @@ void SubproblemCondor::operator() () {
   }
   igzstream in(solutionFile.str().c_str(), ios::binary | ios::in);
 
-  double d;
-  BINREAD(in, d); // read opt. cost
+  double optCost;
+  BINREAD(in, optCost); // read opt. cost
+
+  int64_t nodesOR, nodesAND;
+  BINREAD(in, nodesOR);
+  BINREAD(in, nodesAND);
 
 #ifndef NO_ASSIGNMENT
   int n;
@@ -114,15 +111,19 @@ void SubproblemCondor::operator() () {
   in.close();
 
   // Write subproblem solution value and tuple into search node
-  m_subproblem->setValue(d);
+  m_subproblem->root->setValue(optCost);
 #ifndef NO_ASSIGNMENT
-  m_subproblem->setOptAssig(tup);
+  m_subproblem->root->setOptAssig(tup);
 #endif
 
-  {
-    GETLOCK(mtx_io,lk2);
-    cout << "<-- Received solution for subproblem " << m_threadId << ": " << d << endl;
-  }
+  double heur = m_subproblem->upperBound;
+
+  stringstream ss;
+  ss << "<-- Subproblem " << m_threadId << " (" << job.batch << "." << job.process << "): "
+     << optCost << "/" << heur
+     << " (" << nodesAND << '/' << m_subproblem->hwb << '/' << m_subproblem->twb
+     << ", w=" << m_subproblem->width << ")\n";
+  myprint(ss.str());
 
   } catch (boost::thread_interrupted i) {
     // interrupt condor_wait thread
@@ -136,9 +137,9 @@ void SubproblemCondor::operator() () {
   if (waitProc) delete waitProc;
 
   {
-    GETLOCK(m_space->mtx_solved, lk);
-    m_space->solved.push(m_subproblem);
-    m_space->cond_solved.notify_one();
+    GETLOCK(m_spaceMaster->mtx_solved, lk);
+    m_spaceMaster->solved.push(m_subproblem); // push node to solved queue
+    m_spaceMaster->cond_solved.notify_one();
   }
 
 }
@@ -148,7 +149,7 @@ void SubproblemCondor::removeJob() const {
 
   ostringstream rmCmd;
   rmCmd << CONDOR_RM << " -constraint '("
-        << CONDOR_ATTR_PROBLEM << "==\"" << m_space->options->problemName << "\" && "
+        << CONDOR_ATTR_PROBLEM << "==\"" << m_spaceMaster->options->problemName << "\" && "
         << CONDOR_ATTR_THREADID <<  "==" << m_threadId << ")'" ;
 #ifdef SILENT_MODE
   rmCmd << " > /dev/null";
@@ -159,7 +160,7 @@ void SubproblemCondor::removeJob() const {
   while (!success) {
 
     {
-      GETLOCK(m_space->mtx_condor, lk);
+      GETLOCK(m_spaceMaster->mtx_condor, lk);
       if ( !system( rmCmd.str().c_str() ) )
         success = true;
     }
@@ -250,11 +251,7 @@ void CondorSubmissionEngine::operator ()() {
 
     // custom attributes
     jobFile
-    << '+' << CONDOR_ATTR_PROBLEM << " = \"" << m_space->options->problemName << "\"" << endl;
-
-//    // Condor log file
-//    ostringstream logFile;
-//    logFile << PREFIX_LOG << batch << ".$(Process) ";
+    << '+' << CONDOR_ATTR_PROBLEM << " = \"" << m_spaceMaster->options->problemName << "\"" << endl;
 
     // Logging options
     jobFile << endl
@@ -264,29 +261,38 @@ void CondorSubmissionEngine::operator ()() {
 
     waitForCond = true;
 
+    queue<CondorSubmission*> localQ;
+
+    // start collecting jobs for this batch
     do {
       {
-        GETLOCK(m_space->mtx_condorQueue, lk);
+        GETLOCK(m_spaceMaster->mtx_condorQueue, lk);
 
         if (waitForCond) {
-          while (m_space->condorQueue.empty())
-            CONDWAIT(m_space->cond_condorQueue, lk); // releases lock
+          while (m_spaceMaster->condorQueue.empty())
+            CONDWAIT(m_spaceMaster->cond_condorQueue, lk); // releases lock
           waitForCond = false;
         }
 
         // collect all jobs
-        if (m_space->condorQueue.size()) {
-          while (m_space->condorQueue.size()) {
-            nextJob = m_space->condorQueue.front();
-            m_space->condorQueue.pop();
-            jobFile << encodeJob(nextJob);
+        if (m_spaceMaster->condorQueue.size()) {
+          while (m_spaceMaster->condorQueue.size()) {
+            nextJob = m_spaceMaster->condorQueue.front();
+            m_spaceMaster->condorQueue.pop();
+            localQ.push(nextJob); // store pointer locally
           }
         } else {
-          // submit the collected jobs to Condor (before releasing the lock!)
+          // only now encode the jobs
+          GETLOCK( m_spaceMaster->mtx_space, lk2); // lock the search space
+          while (localQ.size()) {
+            jobFile << encodeJob( localQ.front() );
+            localQ.pop();
+          }
+          // finally submit the collected jobs to Condor (before releasing the lock!)
           submitToCondor(jobFile); // also notifies waiting SubproblemHandlers
           waitForCond = true;
         }
-      } // lock is released here
+      } // lock mtc_condorQueue is released here
 
       // wait a little before checking again
       if (!waitForCond)
@@ -294,7 +300,7 @@ void CondorSubmissionEngine::operator ()() {
 
     } while (!waitForCond) ;
 
-    // sleep for 5 seconds before checking for jobs again
+    // sleep for some seconds before checking for jobs again
     mysleep(WAIT_BETWEEN_BATCHES);
 
     ++m_curBatch; // increase batch counter
@@ -303,17 +309,17 @@ void CondorSubmissionEngine::operator ()() {
 
   } catch (boost::thread_interrupted i) {
 
-    GETLOCK(m_space->mtx_activeThreads, lk);
+    GETLOCK(m_spaceMaster->mtx_activeThreads, lk);
 
     // find and terminate active subproblem processes
-    map<SearchNode*, boost::thread*>::const_iterator itT = m_space->activeThreads.begin();
-    for (; itT!=m_space->activeThreads.end(); ++itT) {
+    map<Subproblem*, boost::thread*>::const_iterator itT = m_spaceMaster->activeThreads.begin();
+    for (; itT!=m_spaceMaster->activeThreads.end(); ++itT) {
       itT->second->interrupt();
     }
 
     // join and delete threads instances
-    itT = m_space->activeThreads.begin();
-    for (; itT!=m_space->activeThreads.end(); ++itT) {
+    itT = m_spaceMaster->activeThreads.begin();
+    for (; itT!=m_spaceMaster->activeThreads.end(); ++itT) {
       itT->second->join();
       delete itT->second;
     }
@@ -345,7 +351,7 @@ void CondorSubmissionEngine::submitToCondor(const ostringstream& jobstr) const {
   while (!success) {
 
     {
-      GETLOCK(m_space->mtx_condor, lk);
+      GETLOCK(m_spaceMaster->mtx_condor, lk);
       if ( !system( submitCmd.str().c_str() ) ) // returns 0 if successful
         success = true;
     }
@@ -362,26 +368,27 @@ void CondorSubmissionEngine::submitToCondor(const ostringstream& jobstr) const {
     } else {
       // submission successful
       GETLOCK(mtx_io,lk2);
-      cout << "----> Submitted " << m_nextProcess <<" jobs to batch " << m_curBatch << '.' << endl;
+      cout << "----> Submitted " << m_nextProcess <<" jobs in batch " << m_curBatch << '.' << endl;
       //break;
     }
 
   }
 
   // signal waiting SubproblemHandlers
-  NOTIFYALL( m_space->cond_jobsSubmitted );
+  NOTIFYALL( m_spaceMaster->cond_jobsSubmitted );
 
 }
 
 
-// creates the required files on disk for job submission and generates
-// the string for the Condor submission file
+/* creates the required files on disk for job submission and generates
+ * the string for the Condor submission file.
+ * !!! ATTENTION: needs to be called inside a mtx_space lock !!! */
 string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
 
-  SearchNode* n = P->problem;
+  SearchNode* n = P->subproblem->root; // subproblem root node
   //size_t threadId = P.threadID;
 
-  assert(n && !n->getSubprobContext().empty());
+  assert(n); // && !n->getSubprobContext().empty());
 
   // set process identification
   P->batch = m_curBatch;
@@ -405,25 +412,46 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
   BINWRITE( con, sz);
 
   // write context instantiations
-  con.write( (char*) (& n->getSubprobContext().at(0)), n->getSubprobContext().size() * sizeof(val_t));
+  if (n->getSubprobContext().size())
+    con.write( (char*) (& n->getSubprobContext().at(0)), n->getSubprobContext().size() * sizeof(val_t));
   //con.write(& n->getSubprobContext().at(0), n->getSubprobContext().size());
 
   //con << n->getSubprobContext(); // write subproblem context
 
-  // write number of PST entries
-  int pstSize = n->getPSTlist().size();
-  BINWRITE(con,pstSize);
-  // output PST data to enable advanced pruning in subproblem
-  list<pair<double,double> >::const_iterator it = n->getPSTlist().begin();
-  for (;it!=n->getPSTlist().end();++it) {
-    BINWRITE(con, it->first);
-    BINWRITE(con, it->second);
+  // write the PST
+  // first, number of entries = depth of root node
+  // write negative number to signal bottom-up traversal
+  // (positive number means top-down, to be compatible with old versions)
+  int pstSize = P->subproblem->depth;
+  pstSize *= -1;
+  BINWRITE( con, pstSize );
+  pstSize *= -1;
+  // climb up the tree
+  double val = ELEM_NAN;
+  SearchNode *curOR = n, *curAND = NULL;
+
+  // write AND label, OR value bottom-up
+  while (pstSize--) {
+
+    curAND = curOR->getParent();
+    val = curAND->getLabel();
+    val OP_TIMESEQ curAND->getSubSolved();
+    // incorporate yet-unsolved sibling OR nodes
+    const CHILDLIST& children = curAND->getChildren();
+    for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
+      if (*it != curOR) // skip previous or node
+        val OP_TIMESEQ (*it)->getHeur();
+    }
+    BINWRITE( con, val );
+
+    curOR = curAND->getParent();
+    val = curOR->getValue(); // OR value
+    BINWRITE( con, val );
+
   }
+  con.close(); // done with subproblem file
 
-  con.close();
-  // subproblem file generated
-
-  // write complexity estimate to disk
+  // write complexity estimates to disk
   ostringstream estimateFile;
   estimateFile << PREFIX_EST << P->batch << '.' << P->process;
   ofstream estFile(estimateFile.str().c_str());
@@ -432,7 +460,8 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
     cerr << "Problem writing estimate file for thread " << P->threadID << '.' << endl;
     return "";
   }
-  estFile << P->estimate;
+  // ! processing scripts expect single line without carriage !
+  estFile << P->subproblem->twb << '\t' << P->subproblem->hwb << '\t' << P->subproblem->width;
   estFile.close();
   // estimate written
 
@@ -450,23 +479,23 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
   // Job specifics
   job
   // Make sure input files get transferred
-  << "transfer_input_files = " << m_space->options->in_problemFile
-  << ", " << m_space->options->in_orderingFile
+  << "transfer_input_files = " << m_spaceMaster->options->in_problemFile
+  << ", " << m_spaceMaster->options->in_orderingFile
   << ", " << subprobFile.str();
-  if (!m_space->options->in_evidenceFile.empty())
-    job << ", " << m_space->options->in_evidenceFile;
+  if (!m_spaceMaster->options->in_evidenceFile.empty())
+    job << ", " << m_spaceMaster->options->in_evidenceFile;
   job << endl;
 
   // Build the argument list for the worker invocation
   ostringstream command;
-  //command << m_space->options->executableName << "-worker";
-  command << " -f " << m_space->options->in_problemFile;
-  if (!m_space->options->in_evidenceFile.empty())
-    command << " -e " << m_space->options->in_evidenceFile;
-  command << " -o " << m_space->options->in_orderingFile;
+  //command << m_spaceMaster->options->executableName << "-worker";
+  command << " -f " << m_spaceMaster->options->in_problemFile;
+  if (!m_spaceMaster->options->in_evidenceFile.empty())
+    command << " -e " << m_spaceMaster->options->in_evidenceFile;
+  command << " -o " << m_spaceMaster->options->in_orderingFile;
   command << " -s " << subprobFile.str();
-  command << " -i " << m_space->options->ibound;
-  command << " -j " << m_space->options->cbound_worker;
+  command << " -i " << m_spaceMaster->options->ibound;
+  command << " -j " << m_spaceMaster->options->cbound_worker;
   command << " -c " << solutionFile.str();
   //command << " > /dev/null";
 
@@ -476,13 +505,17 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
   // Queue it
   job << "queue" << endl;
   {
-    GETLOCK(mtx_io,lk);
-    cout << "--> Submitting subproblem " << P->threadID << " in batch " << P->batch
-         << ", process " << P->process << '.' << endl;
+    ostringstream ss;
+    ss << "--> Subproblem " << P->threadID << " (" << P->batch
+         << "." << P->process << "): "
+         << P->subproblem->lowerBound << "/" << P->subproblem->upperBound << " "
+         << P->subproblem->avgInc
+         << endl;
 #ifdef DEBUG
-    cout << "--------------------------------------" << endl << job.str()
+    ss << "--------------------------------------" << endl << job.str()
 	 << "--------------------------------------" << endl;
 #endif
+    myprint(ss.str());
   }
   return job.str();
 
