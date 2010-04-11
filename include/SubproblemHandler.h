@@ -38,6 +38,7 @@ public:
 
 };
 
+
 /* Constructors */
 inline SubproblemHandler::SubproblemHandler(SearchSpaceMaster* p, SearchNode* n) :
   m_spaceMaster(p), m_rootnode(n) {}

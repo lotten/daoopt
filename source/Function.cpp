@@ -193,12 +193,12 @@ size_t Function::getTightness(const set<int>& proj, const set<int>& cond,
   // Compute intersection of scope and proj
   set<int> s;
   set_intersection(m_scope.begin(), m_scope.end(), proj.begin(), proj.end(), inserter(s,s.begin()));
-  DIAG(cout << "Function::getTightness\tProjected to " << s << endl);
+//  DIAG(cout << "Function::getTightness\tProjected to " << s << endl);
   assert(!s.empty()); // make sure function is relevant // TODO return 1?
 
   // not actually projected => return full tightness
   if (s.size() == arity) {
-    DIAG(cout << "Function::getTightness\t-> full scope, returning precomputed tightness." << endl );
+//    DIAG(cout << "Function::getTightness\t-> full scope, returning precomputed tightness." << endl );
     return this->getTightness();
   }
 
@@ -313,7 +313,7 @@ bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
   // TODO use uncovered instead of cluster?
 
   size_t t = getTightness(proj, cond, assig);
-  DIAG( cout << "\t\tt = " << t << endl );
+//  DIAG( cout << "\t\tt = " << t << endl );
   return t / ((bigfloat) csize);
 
 }

@@ -10,7 +10,7 @@
 #undef DEBUG
 
 
-void BoundPropagator::propagate(SearchNode* n) {
+SearchNode* BoundPropagator::propagate(SearchNode* n) {
 
   // these two pointers move upward in the search space, always one level
   // apart s.t. cur is the parent node of prev
@@ -36,6 +36,7 @@ void BoundPropagator::propagate(SearchNode* n) {
     if (cur->getType() == NODE_AND) {
       // ===========================================================================
 
+      // propagate and update node values
       if (prop) {
         // optimal solution to previously solved and deleted child OR nodes
         double d = cur->getSubSolved();
@@ -158,15 +159,22 @@ void BoundPropagator::propagate(SearchNode* n) {
     propagateTuple(n,prev);
 #endif
 
-  // Store value of OR node to be deleted into AND parent
-  if(highestDelete.first->getType() == NODE_AND)
+  if(highestDelete.first->getType() == NODE_AND) {
+    // Store value of OR node to be deleted into AND parent
     highestDelete.first->addSubSolved(highestDelete.second->getValue());
+#ifdef PARALLEL_MODE
+    // cache lower/upper bound of OR to be deleted (for master init.)
+    m_boundsCache = make_pair(highestDelete.second->getInitialBound(), highestDelete.second->getHeurOrg());
+#endif
+  }
   // clean up, remove unnecessary nodes from memory
   highestDelete.first->eraseChild(highestDelete.second);
 
 #ifdef DEBUG
   myprint("! Prop done.\n");
 #endif
+
+  return highestDelete.first;
 
 }
 

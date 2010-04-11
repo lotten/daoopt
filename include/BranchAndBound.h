@@ -36,6 +36,8 @@ protected:
 public:
   bool isDone() const;
 
+  void setInitialBound(double d);
+
 public:
   BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) ;
 };

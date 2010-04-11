@@ -7,6 +7,7 @@
 
 #include "Pseudotree.h"
 
+#undef DEBUG
 
 int Pseudotree::restrictSubproblem(int i) {
 
@@ -298,7 +299,7 @@ int Pseudotree::computeComplexities(int workers) {
 
   bigint c = m_root->getSubsize();
 
-  cout << "Complexity bound:\t" << mylog10(c) << " (" << c << ")" << endl;
+//  cout << "Complexity bound:\t" << mylog10(c) << " (" << c << ")" << endl;
 
   /*
    * iterate over levels, assuming cutoff, and compute upper bounds as follows:
@@ -314,7 +315,7 @@ int Pseudotree::computeComplexities(int workers) {
   vector<bigint> bounds; bounds.reserve(m_levels.size());
   for (vector<list<PseudotreeNode*> >::const_iterator it=m_levels.begin();
        it!=m_levels.end(); ++it) {
-    cout << "# " << central << '\t';
+//    cout << "# " << central << '\t';
     tmax = 0; tsum=0; tnum=0; wmax=0;
     for (list<PseudotreeNode*>::const_iterator itL = it->begin(); itL!=it->end(); ++itL) {
       tmax = max(tmax, (*itL)->getSubsize() );
@@ -332,14 +333,14 @@ int Pseudotree::computeComplexities(int workers) {
     bound = central + max( tmax, bigint(tsum / min(tnum,bigint(workers))) );
     bounds.push_back( bound );
 
-    cout << tnum << '\t' << (tmax) << '\t' << (tsum) << '\t' << (bound) << '\t' << ratio << '\t' << wmax << endl;
+//    cout << tnum << '\t' << (tmax) << '\t' << (tsum) << '\t' << (bound) << '\t' << ratio << '\t' << wmax << endl;
     for (list<PseudotreeNode*>::const_iterator itL = it->begin(); itL!=it->end(); ++itL) {
 //      cout << " + " << (*itL)->getVar();
       central += (*itL)->getOwnsize();
     }
 //    cout << endl;
   }
-  cout << "# " << central << "\t0\t0\t0\t" << central << "\t1\t0" << endl;
+//  cout << "# " << central << "\t0\t0\t0\t" << central << "\t1\t0" << endl;
 
   int curDepth = -1, minDepth=UNKNOWN;
   bigint min = bounds.at(0)+1;
@@ -475,7 +476,7 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
   cluster.insert(m_var); // add own variable to get cluster
   const vector<val_t>& doms = m_tree->m_problem->getDomains();
 
-  DIAG( cout << "Covering cluster " << cluster << " conditioned on " << cond << endl );
+//  DIAG( cout << "Covering cluster " << cluster << " conditioned on " << cond << endl );
 
   // compute locally relevant set of variables, i.e. context minus instantiated vars in 'cond'
   set<int> vars;
@@ -502,11 +503,11 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
     Function* cand = NULL;
     list<Function*>::iterator candIt = funcs.begin();
 
-    DIAG(cout << "  Uncovered: " << uncovered << endl);
+//    DIAG(cout << "  Uncovered: " << uncovered << endl);
 
     for (list<Function*>::iterator itF = funcs.begin(); itF!= funcs.end(); ++itF) {
       bigfloat rtemp = (*itF)->gainRatio(uncovered, cluster, cond, assig);
-      DIAG( cout << "   Ratio for " << (*(*itF)) <<": " << rtemp << endl );
+//      DIAG( cout << "   Ratio for " << (*(*itF)) <<": " << rtemp << endl );
       if (rtemp != UNKNOWN && rtemp < ratio)
         ratio = rtemp, cand = *itF, candIt = itF;
     }

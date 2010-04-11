@@ -47,6 +47,12 @@ protected:
 
   vector<val_t> m_assignment;   // The current (partial assignment)
 
+#ifdef PARALLEL_MODE
+  /* keeps tracks up lower/upper bound on first OR node generated for
+   * each depth level. used for initialization of cutoff scheme. */
+  vector<pair<double,double> > m_bounds;
+#endif
+
 public:
   /* for single-threaded execution, returns the next leaf node */
   SearchNode* nextLeaf() ;
@@ -73,14 +79,30 @@ public:
   const vector<val_t>& getCurOptTuple() const;
 #endif
 
+//  void outputAndSaveSolution(const string& filename) const;
+
   // restricts search to a subproblem as specified in file with path 's'
-  // parses the file and then calls the next function
-  void restrictSubproblem(const string& s);
+  // parses the file and then calls the next function.
+  // returns true on success, false otherwise
+  bool restrictSubproblem(const string& s);
 
   // restricts search to a subproblem rooted at 'rootVar'. Context instantiation
   // is extracted from 'assig', ancestral partial solution tree from 'pst' vector.
   // pst containst [OR value, AND label] top-down.
-  void restrictSubproblem(int rootVar, const vector<val_t>& assig, const vector<double>& pst);
+  // returns the (original) depth of the new root node
+  int restrictSubproblem(int rootVar, const vector<val_t>& assig, const vector<double>& pst);
+
+  // loads an initial lower bound from a file (in binary, for precision reasons).
+  // returns true on success, false on error
+  bool loadInitialBound(string);
+
+  // sets the initial lower bound
+  virtual void setInitialBound(double) = 0;
+
+#ifdef PARALLEL_MODE
+  // returns the cached lower/upper bounds on the first node at each depth
+  const vector<pair<double,double> >& getBounds() const { return m_bounds; }
+#endif
 
 protected:
 
@@ -100,7 +122,8 @@ protected:
 protected:
 
   // processes the current node (value instantiation etc.)
-  bool doProcess(SearchNode*);
+  // if trackHeur==true, caches lower/upper bounds for first node at each depth
+  bool doProcess(SearchNode*, bool trackHeur=false);
 
   // performs a cache lookup; if successful, stores value into node and returns true
   bool doCaching(SearchNode*);

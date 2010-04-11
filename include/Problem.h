@@ -76,11 +76,17 @@ public:
   // outputs the solution to the screen and, if file!="", writes it to file
   //  - cost is the MPE tuple value
   //  - sol is the optimal solution tuple
+  //  - noNodes is the number of OR/AND nodes
+  //  - nodeProf and leafProf are the full and leaf node profiles
   // if subprobOnly is true, only the variables from sol will be output to file (for subproblem solving)
 #ifndef NO_ASSIGNMENT
-  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes, const vector<val_t>& sol, bool subprobOnly = false) const;
+  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes, const vector<val_t>& sol,
+                             const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
+                             bool subprobOnly = false) const;
 #else
-  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes, bool subprobOnly = false) const;
+  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes,
+                             const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
+                             bool subprobOnly = false) const;
 #endif
 
   // adds the dummy variable to connect disconnected pseudo tree components
@@ -118,7 +124,7 @@ inline Problem::Problem() :
     m_e(UNKNOWN),
     m_c(UNKNOWN),
     m_r(UNKNOWN),
-    m_globalConstant(0.0) {}
+    m_globalConstant(ELEM_NAN) {}
 
 inline Problem::~Problem() {
   // delete functions

@@ -17,12 +17,24 @@
 class BoundPropagator {
 
 protected:
+
   SearchSpace* m_space;
+
+#ifdef PARALLEL_MODE
+  // caches the lower/upper bound of the last highest deleted node
+  // (required for preprocessing within master process)
+  pair<double,double> m_boundsCache;
+#endif
 
 public:
 
   // propagates the value of the specified search node and removes unneeded nodes
-  void propagate(SearchNode*);
+  // returns a pointer to the parent of the highest deleted node
+  SearchNode* propagate(SearchNode*);
+
+#ifdef PARALLEL_MODE
+  const pair<double,double>& getBoundsCache() const { return m_boundsCache; }
+#endif
 
 #ifndef NO_ASSIGNMENT
 private:

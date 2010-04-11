@@ -7,8 +7,9 @@
 
 #include "BoundPropagatorMaster.h"
 
-
 #ifdef PARALLEL_MODE
+
+#undef DEBUG
 
 void BoundPropagatorMaster::operator() () {
 
@@ -40,8 +41,16 @@ void BoundPropagatorMaster::operator() () {
           sp = m_spaceMaster->solved.front();
           n = sp->root; // root node of subproblem
 
+          // collect subproblem statistics
+          {
+//            myprint("Adding subproblem to statistics\n");
+            GETLOCK(m_spaceMaster->mtx_stats, lk2);
+//            myprint("Acquired mutex\n");
+            m_spaceMaster->stats->addSubprob(sp);
+          }
+
           { // clean up processing thread
-            GETLOCK(m_spaceMaster->mtx_activeThreads, lk);
+            GETLOCK(m_spaceMaster->mtx_activeThreads, lk2);
             map< Subproblem*, boost::thread* >::iterator it = m_spaceMaster->activeThreads.find(sp);
             if (it!=m_spaceMaster->activeThreads.end()) {
               // tp = m_space->activeThreads.find(p)->second;
@@ -56,7 +65,7 @@ void BoundPropagatorMaster::operator() () {
           m_spaceMaster->solved.pop();
         }
 
-      }
+      } // mtx_solved released
 
       { // actual propagation
         GETLOCK(m_spaceMaster->mtx_space, lk);

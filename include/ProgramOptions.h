@@ -26,9 +26,13 @@ public:
   int threads; // max. number of parallel subproblems
   int order_iterations; // no. of randomized order finding iterations
   int cutoff_depth; // fixed cutoff depth for central search
+  int cutoff_width; // fixed width for central cutoff
+  int nodes_init; // number of nodes for local initialization (times 10^6)
   int memlimit; // memory limit (in MB)
   int cutoff_size; // fixed cutoff subproblem size (times 10^6)
   int maxSubprob; // only generate this many subproblems, then abort (for testing)
+
+  double initialBound; // initial lower bound
 
   std::string executableName; // name of the executable
   std::string problemName; // name of the problem
@@ -36,6 +40,7 @@ public:
   std::string in_evidenceFile; // evidence file path
   std::string in_orderingFile; // ordering file path
   std::string in_subproblemFile; // subproblem file path
+  std::string in_boundFile; // file with initial lower bound (from SLS, e.g.)
   std::string out_solutionFile; // file path to write solution to
   std::string out_reducedFile; // file to save reduced network to
 
@@ -46,6 +51,9 @@ public:
 ProgramOptions parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
-		      nosearch(false), ibound(0), cbound(0), cbound_worker(0), threads(0), order_iterations(0), cutoff_depth(0), memlimit(NONE), cutoff_size(0), maxSubprob(NONE) {}
+		      nosearch(false), autoCutoff(true), ibound(0), cbound(0), cbound_worker(0),
+		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
+		      nodes_init(NONE), memlimit(NONE),
+		      cutoff_size(NONE), maxSubprob(NONE), initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

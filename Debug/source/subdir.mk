@@ -8,6 +8,7 @@ CPP_SRCS += \
 ../source/BoundPropagator.cpp \
 ../source/BoundPropagatorMaster.cpp \
 ../source/BranchAndBound.cpp \
+../source/BranchAndBoundMaster.cpp \
 ../source/Function.cpp \
 ../source/Graph.cpp \
 ../source/MiniBucketElim.cpp \
@@ -19,6 +20,7 @@ CPP_SRCS += \
 ../source/SearchMaster.cpp \
 ../source/SearchNode.cpp \
 ../source/SigHandler.cpp \
+../source/Statistics.cpp \
 ../source/SubproblemCondor.cpp \
 ../source/hash.cpp \
 ../source/utils.cpp 
@@ -28,6 +30,7 @@ OBJS += \
 ./source/BoundPropagator.o \
 ./source/BoundPropagatorMaster.o \
 ./source/BranchAndBound.o \
+./source/BranchAndBoundMaster.o \
 ./source/Function.o \
 ./source/Graph.o \
 ./source/MiniBucketElim.o \
@@ -39,6 +42,7 @@ OBJS += \
 ./source/SearchMaster.o \
 ./source/SearchNode.o \
 ./source/SigHandler.o \
+./source/Statistics.o \
 ./source/SubproblemCondor.o \
 ./source/hash.o \
 ./source/utils.o 
@@ -48,6 +52,7 @@ CPP_DEPS += \
 ./source/BoundPropagator.d \
 ./source/BoundPropagatorMaster.d \
 ./source/BranchAndBound.d \
+./source/BranchAndBoundMaster.d \
 ./source/Function.d \
 ./source/Graph.d \
 ./source/MiniBucketElim.d \
@@ -59,6 +64,7 @@ CPP_DEPS += \
 ./source/SearchMaster.d \
 ./source/SearchNode.d \
 ./source/SigHandler.d \
+./source/Statistics.d \
 ./source/SubproblemCondor.d \
 ./source/hash.d \
 ./source/utils.d 

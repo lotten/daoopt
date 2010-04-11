@@ -57,7 +57,9 @@ public:
   virtual void addSubSolved(double) = 0;
   virtual double getSubSolved() const = 0;
   void setHeur(double d) { m_heurValue = d; }
+  // the first one is overridden in SearchNodeOR, the second one isn't
   virtual double getHeur() const { return m_heurValue; }
+  virtual double getHeurOrg() const { return m_heurValue; }
 
   virtual void setCacheContext(const context_t&) = 0;
   virtual const context_t& getCacheContext() const = 0;
@@ -66,11 +68,17 @@ public:
   virtual size_t getCacheInst() const = 0;
 
 #ifdef PARALLEL_MODE
+  virtual void setInitialBound(double d) = 0;
+  virtual double getInitialBound() const = 0;
+
   virtual void setSubprobContext(const context_t&) = 0;
   virtual const context_t& getSubprobContext() const = 0;
 #endif
 
-  SearchNode* getParent() { return m_parent; }
+  virtual void getPST(vector<double>&) const = 0;
+//  void getPST(vector<double>&) const;
+
+  SearchNode* getParent() const { return m_parent; }
   void addChild(SearchNode* node);
   const CHILDLIST& getChildren() const { return m_children; }
   bool hasChild(SearchNode* node) const;
@@ -137,10 +145,13 @@ public:
   void setCacheInst(size_t i) { assert(false); }
   size_t getCacheInst() const { assert(false); return 0; }
 #ifdef PARALLEL_MODE
+  void setInitialBound(double d) { assert(false); }
+  double getInitialBound() const { assert(false); }
+
   void setSubprobContext(const context_t& t) { assert(false); }
   const context_t& getSubprobContext() const { assert(false); return emptyCtxt; }
 #endif
-
+  void getPST(vector<double>&) const { assert(false); };
   /* empty implementations, functions meaningless for AND nodes */
   void setHeurCache(double* d) {}
   double* getHeurCache() const { return NULL; }
@@ -157,6 +168,7 @@ protected:
   int m_var;             // Node variable
 #ifdef PARALLEL_MODE
   size_t m_cacheInst;    // Cache instance counter
+  double m_initialBound; // the lower bound when the node was first generated
 #endif
   double* m_heurCache;   // Stores the precomputed heuristic values of the AND children
   context_t m_cacheContext; // Stores the context (for caching)
@@ -192,9 +204,15 @@ public:
 #endif
 
 #ifdef PARALLEL_MODE
+  void setInitialBound(double d) { m_initialBound = d; }
+  double getInitialBound() const { return m_initialBound; }
+#endif
+
+#ifdef PARALLEL_MODE
   void setSubprobContext(const context_t& c) { m_subprobContext = c; }
   const context_t& getSubprobContext() const { return m_subprobContext; }
 #endif
+  void getPST(vector<double>&) const;
 
   void setHeurCache(double* d) { m_heurCache = d; }
   double* getHeurCache() const { return m_heurCache; }
@@ -236,16 +254,6 @@ inline bool SearchNode::hasChild(SearchNode* node) const {
   return false;
 }
 
-inline ostream& operator << (ostream& os, const CHILDLIST& set) {
-  os << '{' ;
-  for (CHILDLIST::const_iterator it=set.begin(); it!=set.end();) {
-    os << *it;
-    if (++it != set.end()) os << ',';
-  }
-  cout << '}';
-  return os;
-}
-
 inline void SearchNode::eraseChild(SearchNode* node) {
   CHILDLIST::iterator it = m_children.find(node);
   if (it != m_children.end()) {
@@ -267,17 +275,6 @@ inline void SearchNodeOR::clearHeurCache() {
     delete[] m_heurCache;
     m_heurCache = NULL;
   }
-}
-
-
-inline double SearchNodeOR::getHeur() const {
-  return m_heurValue;
-  if (m_children.empty()) return m_heurValue;
-  double h = min(m_heurValue,m_nodeValue);
-  for (CHILDLIST::const_iterator it=m_children.begin(); it!=m_children.end(); ++it) {
-    if ((*it)->getHeur() > h) h = (*it)->getHeur();
-  }
-  return h;
 }
 
 

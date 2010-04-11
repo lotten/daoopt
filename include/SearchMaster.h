@@ -14,6 +14,7 @@
 
 #include "SubproblemHandler.h"
 #include "SubproblemCondor.h"
+#include "Statistics.h"
 
 
 /* all search implementations for the master process should inherit this */
@@ -29,15 +30,23 @@ protected:
 
   bool isMaster() const { return true; }
 
-  SearchMaster(Problem* prob, Pseudotree* pt, SearchSpaceMaster* s, Heuristic* h) :
-      Search(prob, pt, s, h), m_spaceMaster(s) {}
+  // returns true if the subproblem rooted at this node was simple enough to
+  // be solved locally, In which case the solution is already stored in the node
+  bool doSolveLocal(SearchNode*);
 
   // returns true if the subproblem rooted at this node should be outsourced/parallelized
   // (implemented in derived classes)
   bool doParallelize(SearchNode*);
 
+  // finds the initial cutoff depth by exploring at most N nodes,
+  // writes the actual value of N back and returns true iff problem was
+  // fully solved already
+  virtual bool findInitialParams(count_t& N) const = 0;
+
   // solves the subproblem under the node locally through sequential search
   virtual void solveLocal(SearchNode*) const = 0;
+
+  SearchMaster(Problem* prob, Pseudotree* pt, SearchSpaceMaster* s, Heuristic* h);
 
 protected:
 
@@ -51,6 +60,13 @@ protected:
   double estimateIncrement(SearchNode*) const;
 
 };
+
+
+inline SearchMaster::SearchMaster(Problem* prob, Pseudotree* pt, SearchSpaceMaster* s, Heuristic* h) :
+          Search(prob, pt, s, h), m_spaceMaster(s)
+{
+  m_spaceMaster->stats = new Statistics();
+}
 
 
 #endif /* PARALLEL_MODE */

@@ -33,11 +33,15 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("iterations,t", po::value<int>()->default_value(25), "iterations for finding ordering")
 #ifdef PARALLEL_MODE
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
+      ("cutoff-width,w", po::value<int>()->default_value(-1), "cutoff width for central search")
       ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^6)")
-      ("cutoff-auto,a", "determine cutoff automatically")
+      ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^6) for local initialization")
+      ("noauto,a", "don't determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(5), "max. number of concurrent subproblem processes")
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
 #endif
+      ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
+      ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
       ("reduce,r", po::value<string>(), "outputs the reduced network to this file (removes evidence and unary variables)")
@@ -87,22 +91,34 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     if (vm.count("iterations"))
       opt.order_iterations = vm["iterations"].as<int>();
 
-    if (vm.count("cutoff-size"))
-      opt.cutoff_size = vm["cutoff-size"].as<int>();
-
     if (vm.count("cutoff-depth"))
       opt.cutoff_depth = vm["cutoff-depth"].as<int>();
 
-    if (vm.count("cutoff-auto"))
-      opt.autoCutoff = true;
-    else
+    if (vm.count("cutoff-width"))
+      opt.cutoff_width = vm["cutoff-width"].as<int>();
+
+    if (vm.count("cutoff-size"))
+      opt.cutoff_size = vm["cutoff-size"].as<int>();
+
+    if (vm.count("init-nodes"))
+      opt.nodes_init = vm["init-nodes"].as<int>();
+
+    if (vm.count("noauto"))
       opt.autoCutoff = false;
+    else
+      opt.autoCutoff = true;
 
     if (vm.count("procs"))
       opt.threads = vm["procs"].as<int>();
 
     if (vm.count("max-sub"))
       opt.maxSubprob = vm["max-sub"].as<int>();
+
+    if (vm.count("bound-file"))
+      opt.in_boundFile = vm["bound-file"].as<string>();
+
+    if (vm.count("initial-bound"))
+      opt.initialBound = vm["initial-bound"].as<double>();
 
     if (vm.count("memlimit"))
       opt.memlimit = vm["memlimit"].as<int>();

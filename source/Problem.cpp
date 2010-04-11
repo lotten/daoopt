@@ -107,23 +107,64 @@ bool Problem::parseOrdering(const string& file, vector<int>& elim) const {
 
   igzstream in(file.c_str());
 
-  int n=0,x=UNKNOWN;
+  int nIn;
+  in >> nIn; // length of ordering
+  if (nIn != m_n && nIn != m_nOrg) {
+    cerr << "Problem reading ordering, number of variables doesn't match" << endl;
+    in.close(); exit(1);
+  }
+
+  // read into buffer first
+  list<int> buffer;
+  int x=UNKNOWN;
+  while(nIn-- && !in.eof()) {
+    in >> x;
+    buffer.push_back(x);
+  }
+
+  bool fullOrdering = false; // default
+  if (buffer.size() == (size_t) m_nOrg) {
+    fullOrdering = true;
+  }
+
+  int n=0;
   vector<bool> check(m_n, false);
 
-  while (!in.eof()) {
-    in >> x; ++n;
-    if (x<0 || x>=m_n) {
-      cerr << "Problem reading ordering, variable index " << x << " out of range" << endl;
-      in.close();
-      exit(1);
+  for (list<int>::iterator it=buffer.begin(); it!=buffer.end(); ++it) {
+    if (!fullOrdering) {
+
+      if (*it < 0 || *it >= m_n) {
+        cerr << "Problem reading ordering, variable index " << *it << " out of range" << endl;
+        in.close(); exit(1);
+      }
+
+      if (check[*it]) {
+        cerr << "Problem reading ordering, variable " << *it << " appears more than once." << endl;
+        in.close(); exit(1);
+      } else check[*it] = true;
+
+      elim.push_back(*it); ++n;
+
+    } else { // full order, needs filtering
+
+      if (*it < 0 || *it >= m_nOrg) {
+        cerr << "Problem reading ordering, variable index " << *it << " out of range" << endl;
+        in.close(); exit(1);
+      }
+
+      map<int,int>::const_iterator it2 = m_old2new.find(*it);
+      if (it2 != m_old2new.end()) {
+        x = it2->second;
+        if (check[x]) {
+          cerr << "Problem reading ordering, variable " << *it << " appears more than once." << endl;
+          in.close(); exit(1);
+        } else check[x] = true;
+
+        elim.push_back(x); ++n;
+      } else { /* evidence */ }
+
     }
-    if (check[x]) {
-      cerr << "Problem reading ordering, variable " << x << " appears more than once." << endl;
-      in.close();
-      exit(1);
-    } else check[x] = true;
-    elim.push_back(x);
-    if (n==m_n) break;
+
   }
 
   if (n!=m_n) {
@@ -337,88 +378,105 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
 }
 
+
 #ifndef NO_ASSIGNMENT
-void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes, const vector<val_t>& sol, bool subprobOnly) const {
+void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes, const vector<val_t>& sol,
+    const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
 #else
-void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes, bool subprobOnly) const {
+void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes,
+    const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
 #endif
 
 #ifndef NO_ASSIGNMENT
 	  assert( subprobOnly || (int) sol.size() == m_n );
 #endif
 
-	  bool writeFile = false;
-	  if (! file.empty())
-	    writeFile = true;
+  bool writeFile = false;
+  if (! file.empty())
+    writeFile = true;
 
-	  ogzstream out;
-	  if (writeFile) {
-	    out.open(file.c_str(), ios::out | ios::trunc | ios::binary);
-	    if (!out) {
-	      cerr << "Error writing optimal solution to file " << file << endl;
-	      exit(1);
-	    }
-	  }
+  ogzstream out;
+  if (writeFile) {
+    out.open(file.c_str(), ios::out | ios::trunc | ios::binary);
+    if (!out) {
+      cerr << "Error writing optimal solution to file " << file << endl;
+      exit(1);
+    }
+  }
 
-	  cout << "s " << SCALE_LOG(mpe);
+  cout << "s " << SCALE_LOG(mpe);
 #ifndef NO_ASSIGNMENT
-	  cout << ' ' << m_nOrg;
+  cout << ' ' << m_nOrg;
 #endif
 
 
 #ifndef NO_ASSIGNMENT
 
-	  int fileAssigSize = UNKNOWN;
-	  if (subprobOnly)
-	    fileAssigSize = (int) sol.size() -1; // -1 for dummy var.
-	  else
-	    fileAssigSize = m_nOrg;
+  int fileAssigSize = UNKNOWN;
+  if (subprobOnly)
+    fileAssigSize = (int) sol.size() -1; // -1 for dummy var.
+  else
+    fileAssigSize = m_nOrg;
 
-    if (writeFile) {
-      BINWRITE(out,mpe); // mpe solution cost
-      BINWRITE(out, noNodes.first); // no. of OR nodes expanded
-      BINWRITE(out, noNodes.second); // no. of AND nodes expanded
-      BINWRITE(out,fileAssigSize); // no. of variables in opt. assignment
+  if (writeFile) {
+    BINWRITE(out,mpe); // mpe solution cost
+    BINWRITE(out, noNodes.first); // no. of OR nodes expanded
+    BINWRITE(out, noNodes.second); // no. of AND nodes expanded
+    BINWRITE(out,fileAssigSize); // no. of variables in opt. assignment
+  }
+
+  int v = UNKNOWN; // output domain values as int, regardless of internal type
+
+  for (int i=0; i<fileAssigSize; ++i) {
+    if (subprobOnly) { // only output subproblem assignment
+      v = (int) sol.at(i);
+      cout << ' ' << (int) v;
+      if (writeFile) BINWRITE(out, v);
+    } else { // ouptut full assignment (incl. evidence)
+      map<int,int>::const_iterator itRen = m_old2new.find(i);
+      if (itRen != m_old2new.end()) {
+        v = (int) sol.at( itRen->second);
+        cout << ' ' << (int) v;
+        if (writeFile) BINWRITE(out,v);
+      } else {
+        map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
+        if (itEvid != m_evidence.end()) { // var. i was evidence
+          v = (int) itEvid->second;
+          cout << ' ' << (int) v;
+          if (writeFile) BINWRITE(out,v);
+        } else { // var. had unary domain and was removed
+          v = 0;
+          cout << ' ' << (int) v;
+          if (writeFile) BINWRITE(out,v);
+        }
+      }
     }
-
-    val_t v = UNKNOWN;
-
-	  for (int i=0; i<fileAssigSize; ++i) {
-	    if (subprobOnly) { // only output subproblem assignment
-	      v = sol.at(i);
-	      cout << ' ' << (int) v;
-	      if (writeFile) BINWRITE(out, v);
-	    } else { // ouptut full assignment (incl. evidence)
-	      map<int,int>::const_iterator itRen = m_old2new.find(i);
-	      if (itRen != m_old2new.end()) {
-	        v = sol.at( itRen->second);
-	        cout << ' ' << (int) v;
-	        if (writeFile) BINWRITE(out,v);
-	      } else {
-	        map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
-	        if (itEvid != m_evidence.end()) { // var. i was evidence
-	          v = itEvid->second;
-	          cout << ' ' << (int) v;
-	          if (writeFile) BINWRITE(out,v);
-	        } else { // var. had unary domain and was removed
-	          v = 0;
-	          cout << ' ' << (int) v;
-	          if (writeFile) BINWRITE(out,v);
-	        }
-	      }
-	    }
-	  }
+  }
 #else
-    if (writeFile) {
-      BINWRITE(out,mpe); // mpe solution cost
-      BINWRITE(out, noNodes.first); // no. of OR nodes expanded
-      BINWRITE(out, noNodes.second); // no. of AND nodes expanded
-    }
+  if (writeFile) {
+    BINWRITE(out,mpe); // mpe solution cost
+    BINWRITE(out, noNodes.first); // no. of OR nodes expanded
+    BINWRITE(out, noNodes.second); // no. of AND nodes expanded
+  }
 #endif
 
-	  cout << endl;
-	  if (writeFile)
-	    out.close();
+  // output node profiles in case of subproblem processing
+  if (subprobOnly) {
+    int size = (int) leafProf.size();
+    BINWRITE(out, size);
+    // leaf nodes first
+    for (vector<count_t>::const_iterator it=leafProf.begin(); it!=leafProf.end(); ++it) {
+      BINWRITE(out,*it);
+    }
+    // now full node profile (has same array size)
+    for (vector<count_t>::const_iterator it=nodeProf.begin(); it!=nodeProf.end(); ++it) {
+      BINWRITE(out,*it);
+    }
+  }
+
+  cout << endl;
+  if (writeFile)
+    out.close();
 
 }
 

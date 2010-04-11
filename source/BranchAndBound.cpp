@@ -23,7 +23,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
 
-  if (node->getType() == NODE_AND) {
+  if (node->getType() == NODE_AND) { /*******************************************/
 
     ++m_nodesAND; // count node
     if (depth >= 0) { // ignores dummy nodes
@@ -43,6 +43,11 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 
       node->addChild(n);
       m_stack.push(n);
+#ifdef PARALLEL_MODE
+      // store initial lower bound on subproblem (needed for master init.)
+      n->setInitialBound(lowerBound(n));
+#endif
+
 #ifdef DEBUG
       ostringstream ss;
       ss << '\t' << *n;
@@ -61,7 +66,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
       return true;
     }
 
-  } else { // NODE_OR
+  } else { // NODE_OR /*********************************************************/
 
     ++m_nodesOR; // count node expansion
 
@@ -73,7 +78,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 
     for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
 
-      // can skip node if heuristic is zero (since it's an upper bound)
+      // early pruning if heuristic is zero (since it's an upper bound)
       if (heur[2*i+1] == ELEM_ZERO) {
         m_leafProfile.at(depth) += 1;
         continue; // label=0 -> skip
@@ -106,7 +111,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
         }
 #endif
       }
-    } else { // all child AND nodes were pruned
+    } else { // all child AND nodes were pruned (counted as leafs above)
       node->setLeaf();
       node->setValue(ELEM_ZERO);
       return true;
@@ -119,6 +124,42 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 } // BranchAndBound::doExpand
 
 
+void BranchAndBound::setInitialBound(double d) {
+  assert(m_space);
+
+  m_space->root->setValue(d);
+
+  return;
+/*
+  // clear existing dummy nodes (new ones will be created)
+  if (m_space->root)
+    delete m_space->root;
+
+  // create a new pair of dummy nodes to store the bound into
+  PseudotreeNode* ptroot = m_pseudotree->getRoot();
+  SearchNode* nodeOR = new SearchNodeOR(NULL, ptroot->getVar() );
+  nodeOR->setValue(d);
+  SearchNode* nodeAND = new SearchNodeAND(nodeOR, 0, ELEM_ONE);
+  nodeOR->addChild(nodeAND);
+
+  // link new search root
+  m_space->root = nodeOR;
+
+  // now create pair of dummy nodes (with no value)
+  nodeOR = new SearchNodeOR(nodeAND, ptroot->getVar());
+  nodeAND->addChild(nodeOR);
+
+  nodeAND = new SearchNodeAND(nodeOR, 0, ELEM_ONE);
+  nodeOR->addChild(nodeAND);
+
+  // the last OR node will contain the actual solution in the end,
+  // thus linked as subproblemLocal
+  m_space->subproblemLocal = nodeOR;
+
+  // reset search stack
+  this->resetSearch(nodeAND);
+*/
+}
 
 
 BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) :

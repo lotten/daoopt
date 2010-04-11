@@ -26,7 +26,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.97.0"
+#define VERSIONINFO "0.98.0"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -45,8 +45,9 @@ int main(int argc, char** argv) {
   cout << " STANDALONE (";
 #endif
   {
-    val_t temp=0;
-    cout << typeid(temp).name() << ")" << endl;
+//    val_t temp=0;
+//    cout << typeid(temp).name() << ")" << endl;
+    cout << sizeof(val_t)*8 << ")" << endl;
   }
 
   // Reprint command line
@@ -145,12 +146,11 @@ int main(int argc, char** argv) {
   pt.addFunctionInfo(p.getFunctions());
 #ifdef PARALLEL_MODE
   int cutoff = pt.computeComplexities(opt.threads);
-  if (opt.autoCutoff) {
-    cout << "Auto cutoff:\t\t" << cutoff << endl;
-    opt.cutoff_depth = cutoff;
-  } else {
-    cout << "Auto cutoff:\t\t" << cutoff << " (ignored)" << endl;
-  }
+  cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
+//  if (opt.autoCutoff) {
+//    cout << "Auto cutoff:\t\t" << cutoff << endl;
+//    opt.cutoff_depth = cutoff;
+//  }
 #endif
 
 #ifdef DEBUG
@@ -205,7 +205,9 @@ int main(int argc, char** argv) {
   // Subproblem specified? If yes, restrict.
   if (!opt.in_subproblemFile.empty()) {
     cout << "Reading subproblem from file " << opt.in_subproblemFile << '.' << endl;
-    search.restrictSubproblem(opt.in_subproblemFile);
+    if (!search.restrictSubproblem(opt.in_subproblemFile) ) {
+      delete space; return 1;
+    }
   }
 
   cout << "Induced width:\t\t" << pt.getWidthCond() << " / " << pt.getWidth() << endl;
@@ -239,6 +241,19 @@ int main(int argc, char** argv) {
 #ifdef MEMDEBUG
   malloc_stats();
 #endif
+
+  // set initial lower bound if provided (but only if no subproblem was specified)
+  if (opt.in_subproblemFile.empty() ) {
+    if (opt.in_boundFile.size()) {
+      cout << "Loading initial lower bound from file " << opt.in_boundFile << '.' << endl;
+      if (!search.loadInitialBound(opt.in_boundFile)) {
+        delete space; return 1;
+      }
+    } else if (!ISNAN ( opt.initialBound )) {
+      cout <<  "Setting external lower bound " << opt.initialBound << endl;
+      search.setInitialBound( opt.initialBound );
+    }
+  }
 
   // output (sub)problem lower bound, mostly makes sense for conditioned subproblems
   // in parallelized setting
@@ -300,6 +315,7 @@ int main(int argc, char** argv) {
 
 #else
   while (!search.isDone()) {
+//  while (search.getNoNodesAND() < 500000) {
     prop.propagate(search.nextLeaf());
   }
 #endif
@@ -354,7 +370,7 @@ int main(int argc, char** argv) {
 #ifndef NO_ASSIGNMENT
       search.getCurOptTuple(),
 #endif
-      !opt.in_subproblemFile.empty() );
+      search.getNodeProfile(),search.getLeafProfile(),!opt.in_subproblemFile.empty() );
 
   cout << endl;
 

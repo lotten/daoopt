@@ -25,6 +25,8 @@ class BranchAndBoundMaster : public SearchMaster, public BranchAndBound {
 protected:
   bool isMaster() const { return true; }
 
+  bool findInitialParams(count_t& limitN) const;
+
   void solveLocal(SearchNode*) const;
 
 public:

@@ -15,6 +15,11 @@
 
 #include "SearchNode.h"
 
+#ifdef PARALLEL_MODE
+#include "Subproblem.h"
+#include "Statistics.h"
+#endif /* PARALLEL_MODE */
+
 #ifndef NO_CACHING
 #include "CacheTable.h"
 #endif
@@ -36,7 +41,7 @@ struct ProgramOptions;
 
 /* forward declarations */
 class Pseudotree;
-struct Subproblem;
+
 
 /* main search space structure for worker nodes */
 struct SearchSpace{
@@ -77,6 +82,8 @@ inline SearchNode* SearchSpace::getTrueRoot() const {
 /* search space for master node, extends worker search space to allow threading */
 struct SearchSpaceMaster : public SearchSpace {
 
+  Statistics* stats; // keeps track of the statistics
+
   // queue for information exchange between components
   queue< Subproblem* > solved; // for externally solved subproblems
   queue< SearchNode* > leaves; // for fully solved leaf nodes
@@ -101,6 +108,9 @@ struct SearchSpaceMaster : public SearchSpace {
   // mutex and condition variable for search space *and* cache
   boost::mutex mtx_space;
 
+  // mutex for Statistics object
+  boost::mutex mtx_stats;
+
   // mutex and condition var. for the list of solved leaf nodes
   boost::mutex mtx_solved;
   boost::condition_variable_any cond_solved;
@@ -112,6 +122,7 @@ struct SearchSpaceMaster : public SearchSpace {
   boost::mutex mtx_condor;
 
   SearchSpaceMaster(Pseudotree* pt, ProgramOptions* opt);
+  ~SearchSpaceMaster();
 
 };
 
@@ -122,25 +133,10 @@ inline SearchSpaceMaster::SearchSpaceMaster(Pseudotree* pt, ProgramOptions* opt)
   if (options) allowedThreads = opt->threads;
 }
 
+inline SearchSpaceMaster::~SearchSpaceMaster() {
+  if (stats) delete stats;
+}
 
-/* simple container for an external subproblem and its attributes (for parallelization) */
-struct Subproblem {
-  int         width;      // induced width of the conditioned problem
-  int         depth;      // depth of the root node in original search space
-  int         ptHeight;   // height of the subproblem pseudo tree
-  size_t      threadId;   // thread ID
-  double      lowerBound; // lower bound on solution (from previous subproblems)
-  double      upperBound; // heuristic estimate of the subproblem solution (upper bound)
-  double      avgInc;     // average label value along the path from the root to the subproblem
-  SearchNode* root;       // subproblem root node in master search space
-  bigint      hwb;        // hwb bound for subproblem
-  bigint      twb;        // twb bound for subproblem
-
-  Subproblem(SearchNode* n, int wi, int de, int ptHei, double lBou, double uBou, double avg, bigint hw, bigint tw) :
-    width(wi), depth(de), ptHeight(ptHei), lowerBound(lBou), upperBound(uBou), avgInc(avg),
-    root(n), hwb(hw), twb(tw) {};
-
-};
 #endif /* PARALLEL_MODE */
 
 

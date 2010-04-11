@@ -21,7 +21,7 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 
 #ifndef NO_CACHING
   // Init context cache table
-  cout << "Initialising cache system." << endl;
+//  cout << "Initialising cache system." << endl;
   m_space->cache = new CacheTable(prob->getN(), m_space->options->memlimit);
 #endif
 
@@ -35,7 +35,7 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 }
 
 
-bool Search::doProcess(SearchNode* node) {
+bool Search::doProcess(SearchNode* node, bool trackHeur) {
   assert(node);
   if (node->getType() == NODE_AND) {
 #ifdef DEBUG
@@ -60,6 +60,22 @@ bool Search::doProcess(SearchNode* node) {
     ss << *node << "\n";
     myprint(ss.str());
 #endif
+
+#ifdef PARALLEL_MODE
+    if (trackHeur) {
+      // keep track of lower/upper bound for first node in depth level
+      // (only used in master process for initialization)
+      int var = node->getVar();
+      int depth = m_pseudotree->getNode(var)->getDepth();
+      if (depth == (int) m_bounds.size()) {
+        double lb = lowerBound(node);
+        double ub = node->getHeurOrg();
+//        cout << "Recording bounds for node " << var << " at depth " << depth << ": " << lb << "/" << ub << endl;
+        m_bounds.push_back(make_pair(lb,ub));
+      }
+    }
+#endif
+
   }
 
   return false; // default
@@ -154,7 +170,7 @@ SearchNode* Search::nextLeaf() {
   SearchNode* node = NULL;
   while (true) {
     node = this->nextNode();
-    if (doProcess(node)) // initial processing
+    if (doProcess(node,true)) // initial processing
       return node;
     if (doCaching(node)) // caching?
       return node;
@@ -162,7 +178,7 @@ SearchNode* Search::nextLeaf() {
       return node;
     if (doExpand(node)) // node expansion
       return node;
-  }
+}
 
 }
 
@@ -315,30 +331,25 @@ double Search::lowerBound(SearchNode* node) const {
   // assume OR node
   assert(node->getType() == NODE_OR);
 
-  SearchNode* curAND = NULL;
-  SearchNode* curOR = node;
+  double maxBound = ELEM_ZERO;
+  maxBound = max(maxBound, node->getValue()); // to deal with NaN
+  double curBound = ELEM_ZERO;
+  double pstVal = ELEM_ONE;
 
-  double maxBound = ELEM_ZERO, curBound = ELEM_NAN;
-  double pst = ELEM_ONE;
+  vector<double> pst;
+  node->getPST(pst); // will store PST into pst
 
   // climb up to search space root node
-  while (curOR->getParent()) {
+  for (vector<double>::iterator it=pst.begin(); it!=pst.end(); ) {
 
-    curAND = curOR->getParent();
-    pst  OP_TIMESEQ  curAND->getLabel();
-    pst  OP_TIMESEQ  curAND->getSubSolved(); // already solved (and deleted) sibling OR nodes
+    // iterator is at AND position
+    pstVal OP_TIMESEQ (*it); // add current label
 
-    // incorporate unsolved sibling OR nodes through their heuristic
-    const CHILDLIST& children = curAND->getChildren();
-    for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
-      if (*it != curOR) // skip previous or node
-        pst  OP_TIMESEQ  (*it)->getHeur();
-    }
+    ++it; // move to OR value
+    curBound = (*it) OP_DIVIDE pstVal; // current bound
+    maxBound = max(maxBound,curBound); // order is important (for NaN)
 
-    curOR = curAND->getParent();
-    curBound = curOR->getValue() OP_DIVIDE pst;
-    maxBound = max(maxBound, curBound);
-
+    ++it; // move to next AND label
   }
 
   return maxBound;
@@ -346,11 +357,32 @@ double Search::lowerBound(SearchNode* node) const {
 }
 
 
-void Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const vector<double>& pst) {
+bool Search::loadInitialBound(string file) {
+
+  // See if file can be opened
+  ifstream inTest(file.c_str());
+  inTest.close();
+  if (inTest.fail()) {
+    cerr << "ERROR reading from file " << file << endl;
+    return false;
+  }
+
+  // Read the actual value from file
+  igzstream infile(file.c_str(), ios::in | ios::binary);
+  if (infile) {
+    double bound;
+    BINREAD(infile, bound);
+    this->setInitialBound(bound);
+  }
+  infile.close();
+  return true;
+}
+
+
+int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const vector<double>& pst) {
 
   // adjust the pseudo tree, returns original depth of new root node
   int depth = m_pseudotree->restrictSubproblem(rootVar);
-  cout << "Restricted to subproblem with root node " << rootVar << " at depth " << depth  << endl;
 
   // resize node count vectors for subproblem
   m_nodeProfile.resize(m_pseudotree->getHeightCond()+1);
@@ -403,12 +435,13 @@ void Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const v
   // empty existing queue/stack/etc. and add new node
   this->resetSearch(next); // dummy AND node
 
+  return depth;
 
 }
 
 
 
-void Search::restrictSubproblem(const string& file) {
+bool Search::restrictSubproblem(const string& file) {
   assert(!file.empty());
 
   {
@@ -417,7 +450,7 @@ void Search::restrictSubproblem(const string& file) {
 
     if (inTemp.fail()) {
       cerr << "Error opening subproblem specification " << file << '.' << endl;
-      exit(1);
+      return false;
     }
   }
 
@@ -433,8 +466,8 @@ void Search::restrictSubproblem(const string& file) {
   // root variable of subproblem
   BINREAD(fs, rootVar);
   if (rootVar<0 || rootVar>= m_problem->getN()) {
-    cerr << "Error reading subproblem specification, variable index " << rootVar << " out of range" << endl;
-    exit(1);
+    cerr << "ERROR reading subproblem specification, variable index " << rootVar << " out of range" << endl;
+    return false;
   }
 
   cout << "Restricting to subproblem with root node " << rootVar << endl;
@@ -444,21 +477,23 @@ void Search::restrictSubproblem(const string& file) {
   BINREAD(fs, x);
   const set<int>& context = m_pseudotree->getNode(rootVar)->getFullContext();
   if (x != (int) context.size()) {
-    cerr << "Error reading subproblem specification, context size doesn't match." << endl;
-    exit(1);
+    cerr << "ERROR reading subproblem specification, context size doesn't match." << endl;
+    return false;
   }
 
   // Read context assignment into temporary vector
   vector<val_t> assignment(m_problem->getN(), UNKNOWN);
   val_t y = UNKNOWN;
+  int z = UNKNOWN;
   cout << "Subproblem context:";
   for (set<int>::const_iterator it = context.begin(); it!=context.end(); ++it) {
-    BINREAD(fs, y);
+    BINREAD(fs, z); // files always contain ints, convert to val_t
+    y = (val_t) z;
     if (y<0 || y>=m_problem->getDomainSize(*it)) {
-      cerr <<endl<< "Error reading subproblem specification, variable value " << (int)y << " not in domain." << endl;
-      exit(1);
+      cerr <<endl<< "ERROR reading subproblem specification, variable value " << (int)y << " not in domain." << endl;
+      return false;
     }
-    cout << ' ' << (*it) <<'=' << (int) y;
+    cout << ' ' << (*it) << "->" << (int) y;
     assignment[*it] = y;
   }
   cout << endl;
@@ -505,7 +540,11 @@ void Search::restrictSubproblem(const string& file) {
   fs.close();
 
   // call function to actually condition this search instance
-  this->restrictSubproblem(rootVar, assignment, pstVals);
+  int depth = this->restrictSubproblem(rootVar, assignment, pstVals);
+
+  cout << "Restricted to subproblem with root node " << rootVar << " at depth " << depth  << endl;
+
+  return true; // success
 
 }
 

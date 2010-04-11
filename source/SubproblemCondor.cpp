@@ -91,7 +91,7 @@ void SubproblemCondor::operator() () {
   double optCost;
   BINREAD(in, optCost); // read opt. cost
 
-  int64_t nodesOR, nodesAND;
+  count_t nodesOR, nodesAND;
   BINREAD(in, nodesOR);
   BINREAD(in, nodesAND);
 
@@ -101,13 +101,29 @@ void SubproblemCondor::operator() () {
 
   vector<val_t> tup(n,UNKNOWN);
 
-  val_t v;
+  int v; // assignment saved as int, regardless of internal type
   for (int i=0; i<n; ++i) {
     BINREAD(in, v); // read opt. assignments
-    tup[i] = v;
+    tup[i] = (val_t) v;
   }
 #endif
 
+  // read node profiles
+  int size;
+  count_t c;
+  BINREAD(in, size);
+  m_subproblem->leafP.reserve(size);
+  m_subproblem->nodeP.reserve(size);
+  for (int i=0; i<size; ++i) { // leaf profile
+    BINREAD(in, c);
+    m_subproblem->leafP.push_back(c);
+  }
+  for (int i=0; i<size; ++i) { // full node profile
+    BINREAD(in, c);
+    m_subproblem->nodeP.push_back(c);
+  }
+
+  // done reading input file
   in.close();
 
   // Write subproblem solution value and tuple into search node
@@ -115,13 +131,18 @@ void SubproblemCondor::operator() () {
 #ifndef NO_ASSIGNMENT
   m_subproblem->root->setOptAssig(tup);
 #endif
+  // Write number of OR/AND nodes into subproblem
+  m_subproblem->nodesOR  = nodesOR;
+  m_subproblem->nodesAND = nodesAND;
+  // Mark as solved
+  m_subproblem->setSolved();
 
   double heur = m_subproblem->upperBound;
 
   stringstream ss;
   ss << "<-- Subproblem " << m_threadId << " (" << job.batch << "." << job.process << "): "
-     << optCost << "/" << heur
-     << " (" << nodesAND << '/' << m_subproblem->hwb << '/' << m_subproblem->twb
+     << optCost << "|" << heur
+     << " (" << nodesAND << '/' << m_subproblem->estimate << '/' << m_subproblem->hwb
      << ", w=" << m_subproblem->width << ")\n";
   myprint(ss.str());
 
@@ -411,44 +432,30 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
   int sz = n->getSubprobContext().size();
   BINWRITE( con, sz);
 
-  // write context instantiations
-  if (n->getSubprobContext().size())
-    con.write( (char*) (& n->getSubprobContext().at(0)), n->getSubprobContext().size() * sizeof(val_t));
-  //con.write(& n->getSubprobContext().at(0), n->getSubprobContext().size());
+  // write context instantiations (as ints)
+//  if (n->getSubprobContext().size())
+//    con.write( (char*) (& n->getSubprobContext().at(0)), n->getSubprobContext().size() * sizeof(val_t));
 
-  //con << n->getSubprobContext(); // write subproblem context
+  for (context_t::const_iterator it=n->getSubprobContext().begin();
+       it!=n->getSubprobContext().end(); ++it) {
+    int z = (int) *it;
+    BINWRITE( con, z);
+  }
 
   // write the PST
   // first, number of entries = depth of root node
   // write negative number to signal bottom-up traversal
   // (positive number means top-down, to be compatible with old versions)
-  int pstSize = P->subproblem->depth;
-  pstSize *= -1;
-  BINWRITE( con, pstSize );
-  pstSize *= -1;
-  // climb up the tree
-  double val = ELEM_NAN;
-  SearchNode *curOR = n, *curAND = NULL;
 
-  // write AND label, OR value bottom-up
-  while (pstSize--) {
+  vector<double> pst;
+  n->getPST(pst);
+  int pstSize = ((int) pst.size()) / -2;
+  BINWRITE( con, pstSize); // write negative PST size
 
-    curAND = curOR->getParent();
-    val = curAND->getLabel();
-    val OP_TIMESEQ curAND->getSubSolved();
-    // incorporate yet-unsolved sibling OR nodes
-    const CHILDLIST& children = curAND->getChildren();
-    for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
-      if (*it != curOR) // skip previous or node
-        val OP_TIMESEQ (*it)->getHeur();
-    }
-    BINWRITE( con, val );
-
-    curOR = curAND->getParent();
-    val = curOR->getValue(); // OR value
-    BINWRITE( con, val );
-
+  for(vector<double>::iterator it=pst.begin();it!=pst.end();++it) {
+    BINWRITE( con, *it);
   }
+
   con.close(); // done with subproblem file
 
   // write complexity estimates to disk
@@ -508,8 +515,9 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
     ostringstream ss;
     ss << "--> Subproblem " << P->threadID << " (" << P->batch
          << "." << P->process << "): "
-         << P->subproblem->lowerBound << "/" << P->subproblem->upperBound << " "
-         << P->subproblem->avgInc
+         << P->subproblem->lowerBound << "/" << P->subproblem->upperBound
+         << "\test: " << P->subproblem->estimate
+//         << " " << P->subproblem->avgInc << "\test: " << P->subproblem->estInc
          << endl;
 #ifdef DEBUG
     ss << "--------------------------------------" << endl << job.str()

@@ -20,6 +20,7 @@ CPP_SRCS += \
 ../source/SearchMaster.cpp \
 ../source/SearchNode.cpp \
 ../source/SigHandler.cpp \
+../source/Statistics.cpp \
 ../source/SubproblemCondor.cpp \
 ../source/hash.cpp \
 ../source/utils.cpp 
@@ -41,6 +42,7 @@ OBJS += \
 ./source/SearchMaster.o \
 ./source/SearchNode.o \
 ./source/SigHandler.o \
+./source/Statistics.o \
 ./source/SubproblemCondor.o \
 ./source/hash.o \
 ./source/utils.o 
@@ -62,6 +64,7 @@ CPP_DEPS += \
 ./source/SearchMaster.d \
 ./source/SearchNode.d \
 ./source/SigHandler.d \
+./source/Statistics.d \
 ./source/SubproblemCondor.d \
 ./source/hash.d \
 ./source/utils.d 
