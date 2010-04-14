@@ -5,13 +5,15 @@
  *      Author: lars
  */
 
+#undef DEBUG
+
 #include "SearchMaster.h"
 
 #ifdef PARALLEL_MODE
 
-#undef DEBUG
-
 void SearchMaster::operator ()() {
+
+  try {
 
   bool solvedDuringInit = false;
 
@@ -29,7 +31,7 @@ void SearchMaster::operator ()() {
     myprint(ss.str());
   }
 
-  try { while ( this->hasMoreNodes() ) {
+  while ( this->hasMoreNodes() ) {
 
     { // allowedThreads says how many more subproblems can be processed in parallel
       GETLOCK( m_spaceMaster->mtx_allowedThreads , lk);
@@ -124,8 +126,12 @@ bool SearchMaster::doSolveLocal(SearchNode* node) {
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int width = ptnode->getSubwidth();
+  int height = ptnode->getHeight();
 
   if (width <= m_space->options->cutoff_width) {
+    ostringstream ss;
+    ss << "Solving subproblem with root " << var << " locally, h=" << height << " w=" << width << endl;
+    myprint(ss.str());
     this->solveLocal(node); // solves subproblem and stores value
     return true;
   }
@@ -180,6 +186,7 @@ bool SearchMaster::doParallelize(SearchNode* node) {
 
     estDepth *= pow(height,stats->getBeta());
     estDepth += pow(height - stats->getAvgHei(), stats->getGamma());
+    estDepth = max(0.0,estDepth);
 
     ss << " l=" << lb << " u=" << ub << " bra=" << avgBra << " inc=" << avgInc << " h=" << height
        <<  " D: " << estDepth;

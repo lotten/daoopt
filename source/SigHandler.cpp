@@ -7,9 +7,6 @@
 
 #include "SigHandler.h"
 
-#ifdef DEBUG
-#include "debug.h"
-#endif
 
 #ifdef PARALLEL_MODE
 

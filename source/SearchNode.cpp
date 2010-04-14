@@ -40,7 +40,6 @@ void SearchNodeOR::getPST(vector<double>& pst) const {
 
     curOR = curAND->getParent();
     pst.push_back(curOR->getValue());
-
   }
 
 }

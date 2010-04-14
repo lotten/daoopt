@@ -12,6 +12,7 @@ CPP_SRCS += \
 ../source/Function.cpp \
 ../source/Graph.cpp \
 ../source/MiniBucketElim.cpp \
+../source/ParallelManager.cpp \
 ../source/Problem.cpp \
 ../source/ProgramOptions.cpp \
 ../source/Pseudotree.cpp \
@@ -34,6 +35,7 @@ OBJS += \
 ./source/Function.o \
 ./source/Graph.o \
 ./source/MiniBucketElim.o \
+./source/ParallelManager.o \
 ./source/Problem.o \
 ./source/ProgramOptions.o \
 ./source/Pseudotree.o \
@@ -56,6 +58,7 @@ CPP_DEPS += \
 ./source/Function.d \
 ./source/Graph.d \
 ./source/MiniBucketElim.d \
+./source/ParallelManager.d \
 ./source/Problem.d \
 ./source/ProgramOptions.d \
 ./source/Pseudotree.d \

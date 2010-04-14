@@ -10,7 +10,6 @@
 
 #include "Search.h"
 
-#include "debug.h"
 
 class NodeComp {
 public:

@@ -40,6 +40,12 @@ protected:
   SearchNode* m_parent;              // pointer to the parent
   double m_nodeValue;                // node value (as in cost)
   double m_heurValue;                // heuristic estimate of the node's value
+#ifdef PARALLEL_MODE
+  count_t m_subCount;                // number of nodes expanded below this node
+  count_t m_subLeaves;               // number leaf nodes generated below this node
+  count_t m_subLeafD;                // cumulative depth of leaf nodes below this node, division
+                                     // by m_subLeaves yields average leaf depth
+#endif
   CHILDLIST m_children;              // Child nodes
 #ifndef NO_ASSIGNMENT
   vector<val_t> m_optAssignment;     // stores the optimal solution to the subproblem
@@ -68,6 +74,18 @@ public:
   virtual size_t getCacheInst() const = 0;
 
 #ifdef PARALLEL_MODE
+  count_t getSubCount() const { return m_subCount; }
+  void setSubCount(count_t c) { m_subCount = c; }
+  void addSubCount(count_t c) { m_subCount += c; }
+
+  count_t getSubLeaves() const { return m_subLeaves; }
+  void setSubLeaves(count_t c) { m_subLeaves = c; }
+  void addSubLeaves(count_t c) { m_subLeaves += c; }
+
+  count_t getSubLeafD() const { return m_subLeafD; }
+  void setSubLeafD(count_t d) { m_subLeafD = d; }
+  void addSubLeafD(count_t d) { m_subLeafD += d; }
+
   virtual void setInitialBound(double d) = 0;
   virtual double getInitialBound() const = 0;
 
@@ -233,6 +251,9 @@ ostream& operator << (ostream&, const SearchNode&);
 
 inline SearchNode::SearchNode(SearchNode* parent) :
   m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY)
+#ifdef PARALLEL_MODE
+  , m_subCount(0), m_subLeaves(0), m_subLeafD(0)
+#endif
   { /* intentionally empty */ }
 
 inline SearchNode::~SearchNode() {

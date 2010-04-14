@@ -8,13 +8,10 @@
 #ifndef SUBPROBLEMHANDLER_H_
 #define SUBPROBLEMHANDLER_H_
 
-
-
 #include "SearchSpace.h"
 
-#ifdef PARALLEL_MODE
 
-#include "debug.h"
+#ifdef PARALLEL_MODE
 
 //#include "pstream.h"
 

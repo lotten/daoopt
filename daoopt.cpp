@@ -13,6 +13,7 @@
 #include "MiniBucketElim.h"
 
 #ifdef PARALLEL_MODE
+//#include "ParallelManager.h"
 #include "BranchAndBoundMaster.h"
 #include "BoundPropagatorMaster.h"
 #include "SubproblemHandler.h"
@@ -26,7 +27,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.98.0"
+#define VERSIONINFO "0.98.1"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -283,6 +284,10 @@ int main(int argc, char** argv) {
 
 #ifdef PARALLEL_MODE
 
+  /*
+  ParallelManager manager(&search,&prop,space);
+  manager.run();
+  */
 
   // take care of signal handling
   sigset_t new_signal_mask;//, old_signal_mask;
@@ -326,6 +331,9 @@ int main(int argc, char** argv) {
 #endif
   cout << "OR nodes:      " << search.getNoNodesOR() << endl;
   cout << "AND nodes:     " << search.getNoNodesAND() << endl;
+#ifdef PARALLEL_MODE
+//  cout << "Subcount:      " << search.getSubCount() << endl;
+#endif
 
   time(&time_end);
   time_passed = difftime(time_end,time_start);

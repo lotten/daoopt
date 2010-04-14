@@ -6,46 +6,47 @@
  */
 
 #include "Statistics.h"
-#include "debug.h"
 
 #ifdef PARALLEL_MODE
 
 #define FALLOFF 0.9
 
-void Statistics::init(int depth, count_t N, vector<count_t> leafProf, double lower, double upper) {
+void Statistics::init(int depth, int height, count_t N, count_t L, count_t D, double lower, double upper) {
 
-  cout << "Statistics::init(" << depth << ',' << N << ',' << lower <<',' << upper << ")" << endl;
+  cout << "Statistics::init(" << depth <<','<< N <<','<< L <<','<< D <<','<< lower <<','<< upper <<")"<< endl;
 
   ostringstream ss;
   ss << "Statistics initialized using " << N << " nodes,";
 
+  /*
   // avg. leaf depth first (using full node profile!)
   count_t leafs = 0;
-  for (size_t i=0 /*depth*/; i<leafProf.size(); ++i) {
+  for (size_t i=0 ; i<leafProf.size(); ++i) {
     leafs += leafProf.at(i);
   }
 
   double avgD = 0.0; size_t h=0;
-  for (size_t i=0/*depth*/; i<leafProf.size(); ++i, ++h) {
+  for (size_t i=0; i<leafProf.size(); ++i, ++h) {
     avgD += (leafProf.at(i))*h*1.0/leafs;
   }
   avgD -= depth;
+  */
 
-  defHei = leafProf.size() - depth;
+  defHei = height - 1.5 ; // to artificially reduce first set of subproblems  TODO?
   ss << " h:" << defHei;
 
-  defDep = avgD;
-  ss << " avgD:" << avgD;
+  defDep = D/(double)L;
+  ss << " avgD:" << defDep;
 
   // compute avg. increment
   double inc = pow(upper - lower, _alpha);
-  inc *= pow(defHei, _beta);
-  inc /= avgD;
-  defInc = inc;
-  ss << " inc:" << inc;
+  inc *= pow(height, _beta);
+  inc /= defDep;
+  defInc = inc * .9; // .9 to be cautious  TODO?
+  ss << " inc:" << defInc;
 
   // branching factor
-  double br = pow(N, 1.0/ avgD);
+  double br = pow(N, 1.0/ defDep);
   defBra = br;
   ss << " br:" << br;
 

@@ -5,11 +5,11 @@
  *      Author: lars
  */
 
+#undef DEBUG
+
 #include "BoundPropagatorMaster.h"
 
 #ifdef PARALLEL_MODE
-
-#undef DEBUG
 
 void BoundPropagatorMaster::operator() () {
 

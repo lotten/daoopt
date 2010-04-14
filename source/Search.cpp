@@ -5,11 +5,10 @@
  *      Author: lars
  */
 
-#include "Search.h"
-#include "ProgramOptions.h"
-
 #undef DEBUG
 
+#include "Search.h"
+#include "ProgramOptions.h"
 
 Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
   m_nodesOR(0), m_nodesAND(0), m_nextThreadId(0), m_problem(prob),
@@ -38,11 +37,7 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 bool Search::doProcess(SearchNode* node, bool trackHeur) {
   assert(node);
   if (node->getType() == NODE_AND) {
-#ifdef DEBUG
-    ostringstream ss;
-    ss << *node << " (l=" << node->getLabel() << ")\n";
-    myprint(ss.str());
-#endif
+    DIAG( ostringstream ss; ss << *node << " (l=" << node->getLabel() << ")\n"; myprint(ss.str()) );
     int var = node->getVar();
     int val = node->getVal();
     m_assignment[var] = val; // record assignment
@@ -52,30 +47,11 @@ bool Search::doProcess(SearchNode* node, bool trackHeur) {
       node->setLeaf(); // mark as leaf
       int depth = m_pseudotree->getNode(var)->getDepth();
       m_leafProfile.at(depth) += 1; // count leaf node
+      PAR_ONLY( node->setSubLeaves(1) );
       return true; // and abort
     }
   } else { // NODE_OR
-#ifdef DEBUG
-    ostringstream ss;
-    ss << *node << "\n";
-    myprint(ss.str());
-#endif
-
-#ifdef PARALLEL_MODE
-    if (trackHeur) {
-      // keep track of lower/upper bound for first node in depth level
-      // (only used in master process for initialization)
-      int var = node->getVar();
-      int depth = m_pseudotree->getNode(var)->getDepth();
-      if (depth == (int) m_bounds.size()) {
-        double lb = lowerBound(node);
-        double ub = node->getHeurOrg();
-//        cout << "Recording bounds for node " << var << " at depth " << depth << ": " << lb << "/" << ub << endl;
-        m_bounds.push_back(make_pair(lb,ub));
-      }
-    }
-#endif
-
+    DIAG( ostringstream ss; ss << *node << "\n"; myprint(ss.str()) );
   }
 
   return false; // default
@@ -100,9 +76,7 @@ bool Search::doCaching(SearchNode* node) {
     if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
       // add cache context information
       addCacheContext(node,ptnode->getCacheContext());
-#ifdef DEBUG
-      myprint( str("    Context set: ") + node->getCacheContext() + "\n" );
-#endif
+      DIAG( myprint( str("    Context set: ") + node->getCacheContext() + "\n" ) );
       // try to get value from cache
       try {
         // will throw int(UNKNOWN) if not found
@@ -146,16 +120,19 @@ bool Search::doPruning(SearchNode* node) {
   int depth = ptnode->getDepth();
 
   if (canBePruned(node)) {
-#ifdef DEBUG
-    myprint("\t !pruning \n");
-#endif
+    DIAG( myprint("\t !pruning \n") );
     node->setLeaf();
     node->setPruned();
     node->setValue(ELEM_ZERO);
-    if (node->getType() == NODE_AND)
-      m_leafProfile.at(depth) += 1; // count 1 leaf AND node
-    else // NODE_OR
-      m_leafProfile.at(depth) += m_problem->getDomainSize(var); // assume all AND children would have been created and pruned
+    if (node->getType() == NODE_AND) {
+      // count 1 leaf AND node
+      m_leafProfile.at(depth) += 1;
+      PAR_ONLY( node->setSubLeaves(1) ) ;
+    } else { // NODE_OR
+      // assume all AND children would have been created and pruned
+      m_leafProfile.at(depth) += m_problem->getDomainSize(var);
+      PAR_ONLY( node->addSubLeaves(m_problem->getDomainSize(var)) ) ;
+    }
     return true;
   }
 
@@ -178,14 +155,14 @@ SearchNode* Search::nextLeaf() {
       return node;
     if (doExpand(node)) // node expansion
       return node;
-}
+  }
 
 }
 
 
 bool Search::canBePruned(SearchNode* n) const {
 
-  // heuristic is upper bound, hence can use to prunt zero
+  // heuristic is upper bound, hence can use to prune if value=zero
   if (n->getHeur() == ELEM_ZERO)
     return true;
 
@@ -203,25 +180,13 @@ bool Search::canBePruned(SearchNode* n) const {
     curPSTVal = curOR->getHeur(); // n->getHeur()
   }
 
-#ifdef DEBUG
-  {
-    GETLOCK(mtx_io, lk);
-    cout << "\tcanBePruned(" << *n << ")"
-         << " h=" << n->getHeur() << endl;
-  }
-#endif
+  DIAG( ostringstream ss; ss << "\tcanBePruned(" << *n << ")" << " h=" << n->getHeur() << endl; myprint(ss.str()); )
 
   list<SearchNode*> notOptOR; // marks nodes for tagging as possibly not optimal
 
   // up to root node, if we have to
   while (true) {
-#ifdef DEBUG
-    {
-      GETLOCK(mtx_io, lk);
-      cout << "\t ?PST root: " << *curOR
-      << " pst=" << curPSTVal << " v=" << curOR->getValue() << endl;
-    }
-#endif
+    DIAG( ostringstream ss; ss << "\t ?PST root: " << *curOR << " pst=" << curPSTVal << " v=" << curOR->getValue() << endl; myprint(ss.str()); )
 
     //if ( fpLt(curPSTVal, curOR->getValue()) ) {
     if ( curPSTVal <= curOR->getValue() ) {

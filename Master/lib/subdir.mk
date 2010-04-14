@@ -4,7 +4,8 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../lib/gzstream.cpp 
+../lib/gzstream.cpp \
+../lib/inotify-cxx.cpp 
 
 C_SRCS += \
 ../lib/adler32.c \
@@ -31,6 +32,7 @@ OBJS += \
 ./lib/inffast.o \
 ./lib/inflate.o \
 ./lib/inftrees.o \
+./lib/inotify-cxx.o \
 ./lib/trees.o \
 ./lib/uncompr.o \
 ./lib/zutil.o 
@@ -50,7 +52,8 @@ C_DEPS += \
 ./lib/zutil.d 
 
 CPP_DEPS += \
-./lib/gzstream.d 
+./lib/gzstream.d \
+./lib/inotify-cxx.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

@@ -5,6 +5,19 @@
  *      Author: lars
  */
 
+
+/* for easier debugging output and nicer code,
+ * redefined for every file that includes _base.h */
+#ifdef DIAG
+#undef DIAG
+#endif
+
+#ifdef DEBUG
+#define DIAG(X) { X }
+#else
+#define DIAG(X) ;
+#endif
+
 #ifndef _BASE_H_
 #define _BASE_H_
 
@@ -16,13 +29,6 @@
 //#define WINDOWS
 #if !defined(LINUX) && !defined(WINDOWS)
 #error Either LINUX or WINDOWS identifiers have to be defined (for preprocessor)!
-#endif
-
-/* for easier debugging output */
-#ifdef DEBUG
-#define DIAG(X) X
-#else
-#define DIAG(X) ;
 #endif
 
 /* define if data files (solution and subproblem files) should be written in binary */
@@ -68,6 +74,12 @@ static boost::mutex mtx_io;
 
 #endif
 
+
+#ifdef PARALLEL_MODE
+#define PAR_ONLY(X) X
+#else
+#define PAR_ONLY(X) ;
+#endif
 
 /* define if all computation should be done in log format (recommended) */
 #define USE_LOG
@@ -211,7 +223,7 @@ template<> struct hash<std::string> {
 
 /* for debugging */
 #ifdef DEBUG
-#include "debug.h"
+//#include "debug.h"
 #endif
 
 /* type for counting nodes, fixed precision for 32/64 bit machines. */
@@ -388,6 +400,20 @@ inline double decodeDoubleFromString(std::string s) {
 
 /*///////////////////////////////////////////////////////////*/
 
+
+inline void myprint(std::string s) {
+  {
+    GETLOCK(mtx_io, lk);
+    std::cout << s << std::flush;
+  }
+}
+
+inline void myerror(std::string s) {
+  {
+    GETLOCK(mtx_io, lk);
+    std::cerr << s << std::flush;
+  }
+}
 
 inline double mylog10(unsigned long a) {
   return log10(a);

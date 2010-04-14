@@ -458,6 +458,16 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
 
   con.close(); // done with subproblem file
 
+  {
+    ostringstream ss;
+    ss << " PST ";
+    for(vector<double>::iterator it=pst.begin();it!=pst.end();++it) {
+      ss << ' ' << *it; ++it; ss << '|' << *it;
+    }
+    ss << endl;
+    myprint(ss.str());
+  }
+
   // write complexity estimates to disk
   ostringstream estimateFile;
   estimateFile << PREFIX_EST << P->batch << '.' << P->process;

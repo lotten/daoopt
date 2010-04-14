@@ -5,13 +5,13 @@
  *      Author: lars
  */
 
+#undef DEBUG
+
 #include "BranchAndBound.h"
 
 #ifdef PARALLEL_MODE
 #undef DEBUG
 #endif
-
-#undef DEBUG
 
 typedef PseudotreeNode PtNode;
 
@@ -26,6 +26,10 @@ bool BranchAndBound::doExpand(SearchNode* node) {
   if (node->getType() == NODE_AND) { /*******************************************/
 
     ++m_nodesAND; // count node
+#ifdef PARALLEL_MODE
+    node->setSubCount(1);
+#endif
+
     if (depth >= 0) { // ignores dummy nodes
       m_nodeProfile.at(depth) += 1; // count node as expanded
     }
@@ -63,6 +67,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
       node->setLeaf(); // -> terminal node
       node->setValue(ELEM_ONE);
       m_leafProfile.at(depth) += 1; // count leaf node
+      PAR_ONLY( node->setSubLeaves(1) );
       return true;
     }
 
@@ -81,6 +86,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
       // early pruning if heuristic is zero (since it's an upper bound)
       if (heur[2*i+1] == ELEM_ZERO) {
         m_leafProfile.at(depth) += 1;
+        PAR_ONLY( node->addSubLeaves(1) );
         continue; // label=0 -> skip
       }
 

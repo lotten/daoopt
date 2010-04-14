@@ -43,12 +43,14 @@ public:
   /* performs parameter initialization based on statistics of
    * a small subproblem
    * @depth: subproblem root depth
-   * @N: number of nodes generated in subproblem
-   * @leafs: leaf profile of subproblem
+   * @height: height of subproblem pseudo tree
+   * @N: number of nodes expanded in subproblem
+   * @L: number of leaf nodes generated in subproblem
+   * @D: cumulative depth of leaf nodes in subproblem
    * @lower: initial lower bound for subproblem
    * @upper: initial upper bound for subproblem (minibuckets)
    **/
-  void init(int depth, count_t N, vector<count_t> leafs, double lower, double upper);
+  void init(int depth, int height, count_t N, count_t L, count_t D, double lower, double upper);
 
   /* records the subproblem information (after it has been solved) */
   void addSubprob(Subproblem*);

@@ -5,9 +5,9 @@
  *      Author: lars
  */
 
-#include "BoundPropagator.h"
-
 #undef DEBUG
+
+#include "BoundPropagator.h"
 
 
 SearchNode* BoundPropagator::propagate(SearchNode* n) {
@@ -23,6 +23,13 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
   // 'prop' signals whether we are still propagating values in this call
   // 'del' signals whether we are still deleting nodes in this call
   bool prop = true, del = true;
+
+#ifdef PARALLEL_MODE
+  // keeps track of the size of the deleted subspace and its number of leaf nodes
+  count_t subCount = 0;
+  count_t subLeaves = 0;
+  count_t subLeafD = 0;
+#endif
 
   // going all the way to the root, if we have to
   do {
@@ -86,9 +93,23 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
           }
 #endif
           highestDelete = make_pair(cur,prev);
-#ifdef DEBUG
-          myprint(" deleting AND\n");
+#ifdef PARALLEL_MODE
+          subCount += prev->getSubCount();
+          subLeaves += prev->getSubLeaves();
+          subLeafD += prev->getSubLeafD();
+
+          // cache parameters of deleted subproblem
+          m_subRootvarCache = prev->getVar();
+          m_subCountCache = subCount;
+          m_subLeavesCache = subLeaves;
+          m_subLeafDCache = subLeafD;
+          // cache lower/upper bound of OR to be deleted (for master init.)
+          m_subBoundsCache = make_pair(highestDelete.second->getInitialBound(), highestDelete.second->getHeurOrg());
+
+          // climb up one level
+          subLeafD += subLeaves;
 #endif
+          DIAG(myprint(" deleting AND\n") );
         } else {
           del = false;
         }
@@ -112,9 +133,12 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
       if (del) {
         if (prev->getChildren().size() <= 1) { // prev has no or one children?
           highestDelete = make_pair(cur,prev);
-#ifdef DEBUG
-          myprint(" deleting OR\n");
+#ifdef PARALLEL_MODE
+          subCount += prev->getSubCount();
+          subLeaves += prev->getSubLeaves();
+          subLeafD += prev->getSubLeafD();
 #endif
+          DIAG(myprint(" deleting OR\n"));
         } else {
           del = false;
         }
@@ -123,15 +147,14 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 #ifndef NO_ASSIGNMENT
       // save opt. tuple, will be needed for caching later
       if ( prop && cur->isCachable() && !cur->isNotOpt() ) {
-#ifdef DEBUG
-        myprint("< Cachable OR node found\n");
-#endif
+        DIAG(myprint("< Cachable OR node found\n"));
         propagateTuple(n, cur);
       }
 #endif
 
       // Stop at subproblem root node (if defined)
       if (cur == m_space->subproblemLocal) {
+        highestDelete = make_pair(cur,prev);
         DIAG(myprint("PROP reached ROOT\n"));
 #ifndef NO_ASSIGNMENT
         if (prop)
@@ -151,7 +174,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
       break;
     }
 
-  } while (cur); // until cur==NULL, i.e. parent of root
+  } while (cur); // until cur==NULL, i.e. 'parent' of root
 
 #ifndef NO_ASSIGNMENT
   // propagated up to root node, update tuple as well
@@ -162,17 +185,17 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
   if(highestDelete.first->getType() == NODE_AND) {
     // Store value of OR node to be deleted into AND parent
     highestDelete.first->addSubSolved(highestDelete.second->getValue());
-#ifdef PARALLEL_MODE
-    // cache lower/upper bound of OR to be deleted (for master init.)
-    m_boundsCache = make_pair(highestDelete.second->getInitialBound(), highestDelete.second->getHeurOrg());
-#endif
   }
-  // clean up, remove unnecessary nodes from memory
+#ifdef PARALLEL_MODE
+  // store size of deleted subproblem in parent node
+  highestDelete.first->addSubCount(subCount);
+  highestDelete.first->addSubLeaves(subLeaves);
+  highestDelete.first->addSubLeafD(subLeafD);
+#endif
+  // finally clean up, delete subproblem with unnecessary nodes from memory
   highestDelete.first->eraseChild(highestDelete.second);
 
-#ifdef DEBUG
-  myprint("! Prop done.\n");
-#endif
+  DIAG(myprint("! Prop done.\n"));
 
   return highestDelete.first;
 
@@ -186,9 +209,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
 
   assert(start && end);
 
-#ifdef DEBUG
-  cout << "< REC opt. assignment from " << *start << " to " << *end << endl;
-#endif
+  DIAG(cout << "< REC opt. assignment from " << *start << " to " << *end << endl);
 
   int endVar = end->getVar();
   const set<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
@@ -244,9 +265,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
     ++itVar, ++itVal;
   }
 
-#ifdef DEBUG
-  cout << "< Tuple for "<< *end << " after recording: " << (end->getOptAssig()) << endl;
-#endif
+  DIAG(cout << "< Tuple for "<< *end << " after recording: " << (end->getOptAssig()) << endl);
 
 }
 

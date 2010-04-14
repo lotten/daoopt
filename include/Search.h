@@ -50,7 +50,7 @@ protected:
 #ifdef PARALLEL_MODE
   /* keeps tracks up lower/upper bound on first OR node generated for
    * each depth level. used for initialization of cutoff scheme. */
-  vector<pair<double,double> > m_bounds;
+//  vector<pair<double,double> > m_bounds;
 #endif
 
 public:
@@ -62,6 +62,9 @@ public:
 
   count_t getNoNodesOR() const { return m_nodesOR; }
   count_t getNoNodesAND() const { return m_nodesAND; }
+#ifdef PARALLEL_MODE
+  count_t getSubCount() const { return m_space->getTrueRoot()->getSubCount(); }
+#endif
   pair<count_t,count_t> getNoNodes() const { return make_pair(m_nodesOR, m_nodesAND); }
   count_t getThreadCount() const { return m_nextThreadId; }
 
@@ -101,7 +104,7 @@ public:
 
 #ifdef PARALLEL_MODE
   // returns the cached lower/upper bounds on the first node at each depth
-  const vector<pair<double,double> >& getBounds() const { return m_bounds; }
+//  const vector<pair<double,double> >& getBounds() const { return m_bounds; }
 #endif
 
 protected:

@@ -5,11 +5,11 @@
  *      Author: lars
  */
 
+#undef DEBUG
+
 #include "BranchAndBoundMaster.h"
 
 #ifdef PARALLEL_MODE
-
-#undef DEBUG
 
 bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
@@ -24,55 +24,48 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
   BoundPropagator prop(&sp);
 
-  int minDepth = pt.getHeight();
-  count_t nodeCount = 0;
-//  vector<count_t> leafProf;
+  int maxSubRootDepth = pt.getHeight();
+  int maxSubRootHeight = 0;
+  count_t maxSubCount = 0;
+  count_t maxSubLeaves = 0;
+  count_t maxSubLeafD = 0;
   double lbound=ELEM_ONE, ubound=ELEM_ONE;
 
   SearchNode* parent = NULL;
 
-  count_t step = 100000;
-
   do {
 
     parent = prop.propagate(bab.nextLeaf());
-    if (parent->getType() == NODE_OR) continue; // ignore AND nodes
 
-    int pd = pt.getNode(parent->getVar())->getDepth() + 1;
-    count_t N = bab.getNoNodesAND();
+    count_t subCount = prop.getSubCountCache();
 
-    if ( N*20>limitN &&  pd < minDepth) {
-      minDepth = pd;
-      nodeCount = N;
-//      leafProf = bab.getLeafProfile();
+    if (subCount*20 > limitN && subCount > maxSubCount) {
+      maxSubCount = subCount;
+
+      int rootvar = prop.getSubRootvarCache();
+      maxSubRootDepth = pt.getNode(rootvar)->getDepth();
+      maxSubRootHeight = pt.getNode(rootvar)->getHeight();
+
+      maxSubLeaves = prop.getSubLeavesCache();
+      maxSubLeafD = prop.getSubLeafDCache();
 
       const pair<double,double>& bounds = prop.getBoundsCache();//bab.getBounds().at(pd);
       lbound = bounds.first;
       ubound = bounds.second;
 
-      cout << "Max. subproblem at depth " << pd << " N:"<< nodeCount
+      cout << "Root " << rootvar << " d:" << maxSubRootDepth << " h:" << maxSubRootHeight
+           << " N:"<< maxSubCount << " L:" << maxSubLeaves << " D:" << maxSubLeafD
+           << " avgD:" << (maxSubLeafD/(double)maxSubLeaves)
            << "\t" << lbound << '/' << ubound << endl;
 
     }
 
-    /*
-    if (N > step) {
-      step += 100000;
-      cout << N << '\t'<< minDepth << '\t' << lbound << ' ' << ubound;
-      const vector<count_t>& ls = bab.getLeafProfile();
-      cout << '\t' << ls.size();
-      for (vector<count_t>::const_iterator it=ls.begin(); it!=ls.end(); ++it)
-        cout << ' ' << *it;
-      cout << endl;
-    }
-    */
-
-  } while (!bab.isDone() && ( (bab.getNoNodesAND() < limitN) || (nodeCount==0) ) ) ;
+  } while (!bab.isDone() && ( (bab.getNoNodesAND() < limitN) || (maxSubCount==0) ) ) ;
 
   limitN = bab.getNoNodesAND();
 
   // initialize stats using max. subproblem except for full leaf profile
-  m_spaceMaster->stats->init(minDepth, nodeCount, bab.getLeafProfile(), lbound, ubound);
+  m_spaceMaster->stats->init(maxSubRootDepth, maxSubRootHeight, maxSubCount, maxSubLeaves, maxSubLeafD, lbound, ubound);
 
   if (bab.isDone())
     return true; // solved within time limit

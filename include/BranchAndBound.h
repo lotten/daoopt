@@ -10,7 +10,6 @@
 
 #include "Search.h"
 
-#include "debug.h"
 
 /* Branch and Bound search, implements pure virtual functions from
  * Search.h, most importantly expandNext() */

@@ -12,7 +12,6 @@
 #include "SearchNode.h"
 #include "Pseudotree.h"
 
-#include "debug.h"
 
 class BoundPropagator {
 
@@ -21,9 +20,16 @@ protected:
   SearchSpace* m_space;
 
 #ifdef PARALLEL_MODE
-  // caches the lower/upper bound of the last highest deleted node
-  // (required for preprocessing within master process)
-  pair<double,double> m_boundsCache;
+  /* caches the root variable of the last deleted subproblem */
+  int m_subRootvarCache;
+  /* caches the size of the last deleted subproblem */
+  count_t m_subCountCache;
+  /* caches the number of leaf nodes in the deleted subproblem */
+  count_t m_subLeavesCache;
+  /* caches the cumulative leaf depth in the deleted subproblem */
+  count_t m_subLeafDCache;
+  /* caches the lower/upper bound of the last highest deleted node */
+  pair<double,double> m_subBoundsCache;
 #endif
 
 public:
@@ -33,7 +39,11 @@ public:
   SearchNode* propagate(SearchNode*);
 
 #ifdef PARALLEL_MODE
-  const pair<double,double>& getBoundsCache() const { return m_boundsCache; }
+  int getSubRootvarCache() const { return m_subRootvarCache; }
+  count_t getSubCountCache() const { return m_subCountCache; }
+  count_t getSubLeavesCache() const { return m_subLeavesCache; }
+  count_t getSubLeafDCache() const { return m_subLeafDCache; }
+  const pair<double,double>& getBoundsCache() const { return m_subBoundsCache; }
 #endif
 
 #ifndef NO_ASSIGNMENT
@@ -45,7 +55,7 @@ protected:
   virtual bool isMaster() const { return false; }
 
 public:
-  BoundPropagator(SearchSpace* s) : m_space(s) {}
+  BoundPropagator(SearchSpace* s) : m_space(s) { /* empty */ }
 };
 
 
