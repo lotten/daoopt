@@ -188,6 +188,8 @@ void Problem::saveOrdering(const string& file, const vector<int>& elim) const {
     exit(1);
   }
 
+  out << elim.size() ;
+
   for (vector<int>::const_iterator it=elim.begin(); it!=elim.end(); ++it)
     out << ' ' << *it;
 
@@ -380,10 +382,10 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
 
 #ifndef NO_ASSIGNMENT
-void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes, const vector<val_t>& sol,
+void Problem::outputAndSaveSolution(const string& file, double mpe, pair<count_t,count_t> noNodes, const vector<val_t>& sol,
     const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
 #else
-void Problem::outputAndSaveSolution(const string& file, double mpe, pair<size_t,size_t> noNodes,
+void Problem::outputAndSaveSolution(const string& file, double mpe, pair<count_t,count_t> noNodes,
     const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
 #endif
 
@@ -530,3 +532,9 @@ void Problem::writeUAI(const string& prob) const {
 
 }
 
+#ifndef NO_ASSIGNMENT
+bool Problem::isEliminated(int i) const {
+  map<int,int>::const_iterator itRen = m_old2new.find(i);
+  return itRen == m_old2new.end();
+}
+#endif

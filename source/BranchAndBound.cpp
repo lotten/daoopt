@@ -47,29 +47,31 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 
       node->addChild(n);
       m_stack.push(n);
-#ifdef PARALLEL_MODE
-      // store initial lower bound on subproblem (needed for master init.)
-      n->setInitialBound(lowerBound(n));
-#endif
 
 #ifdef DEBUG
       ostringstream ss;
-      ss << '\t' << *n;
+      ss << '\t' << n << ": " << *n;
       if (n->isCachable())
-        ss << " - Cache: " << n->getCacheContext();
+        ss << " - Cache: " << (*it)->getCacheContext();
       ss << endl;
       myprint (ss.str());
 #endif
 
+      // store initial lower bound on subproblem (needed for master init.)
+      PAR_ONLY( n->setInitialBound(lowerBound(n)) );
+
     } // for loop
 
-    if (!node->getChildren().size()) { // no children?
+    if (node->getChildren().size()) {
+      /* nothing right now */
+    } else { // no children
       node->setLeaf(); // -> terminal node
       node->setValue(ELEM_ONE);
       m_leafProfile.at(depth) += 1; // count leaf node
       PAR_ONLY( node->setSubLeaves(1) );
       return true;
     }
+
 
   } else { // NODE_OR /*********************************************************/
 
@@ -110,12 +112,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
       // add new child nodes to stack, highest heur. value will end up on top
       for (vector<SearchNode*>::iterator it = newNodes.begin(); it!=newNodes.end(); ++it) {
         m_stack.push(*it);
-#ifdef DEBUG
-        {
-          GETLOCK(mtx_io, lk);
-          cout << '\t' << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; // Assig. " << m_assignment << endl;
-        }
-#endif
+        DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
       }
     } else { // all child AND nodes were pruned (counted as leafs above)
       node->setLeaf();
@@ -130,7 +127,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 } // BranchAndBound::doExpand
 
 
-void BranchAndBound::setInitialBound(double d) {
+void BranchAndBound::setInitialBound(double d) const {
   assert(m_space);
 
   m_space->root->setValue(d);
@@ -168,6 +165,13 @@ void BranchAndBound::setInitialBound(double d) {
 }
 
 
+#ifndef NO_ASSIGNMENT
+void BranchAndBound::setInitialSolution(const vector<val_t>& tuple) const {
+  m_space->root->setOptAssig(tuple);
+}
+#endif
+
+
 BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) :
    Search(prob,pt,space,heur) {
 
@@ -181,6 +185,8 @@ BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space
   m_space->root->addChild(next);
 
   m_stack.push(next);
+
+
 
 }
 

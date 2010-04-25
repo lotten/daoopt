@@ -13,7 +13,7 @@
 #endif
 
 #ifdef DEBUG
-#define DIAG(X) { X }
+#define DIAG(X) { X ;}
 #else
 #define DIAG(X) ;
 #endif

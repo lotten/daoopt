@@ -80,13 +80,19 @@ public:
   //  - nodeProf and leafProf are the full and leaf node profiles
   // if subprobOnly is true, only the variables from sol will be output to file (for subproblem solving)
 #ifndef NO_ASSIGNMENT
-  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes, const vector<val_t>& sol,
+  void outputAndSaveSolution(const string& file, double cost, pair<count_t,count_t> noNodes, const vector<val_t>& sol,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
                              bool subprobOnly = false) const;
 #else
-  void outputAndSaveSolution(const string& file, double cost, pair<size_t,size_t> noNodes,
+  void outputAndSaveSolution(const string& file, double cost, pair<count_t,count_t> noNodes,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
                              bool subprobOnly = false) const;
+#endif
+
+#ifndef NO_ASSIGNMENT
+  /* returns true iff the index variable from the full set has been eliminated
+   * as evidence or unary */
+  bool isEliminated(int i) const;
 #endif
 
   // adds the dummy variable to connect disconnected pseudo tree components

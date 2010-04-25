@@ -126,21 +126,22 @@ protected:
      *     i.e. the product of the domain sizes of the variables in context(X)
      */
   public:
-    int subwidth; // Induced width of subproblem if conditioned on this variable's context
-    bigint subsize; // Upper bound on subproblem size below one OR node if conditioned on context
+    int subCondWidth; // Induced width of subproblem if conditioned on this variable's context
+    bigint subCondBound; // Upper bound on subproblem size below one OR node if conditioned on context
     bigint ownsize; // Own cluster size, i.e. product of cluster variable domain sizes
     bigint numContexts; // Number of possible context instantiations
   public:
-    Complexity() : subwidth(UNKNOWN), subsize(UNKNOWN), ownsize(UNKNOWN), numContexts(UNKNOWN) {}
-    Complexity(int i, bigint b, bigint o, bigint n) : subwidth(i), subsize(b), ownsize(o), numContexts(n) {}
-    Complexity(const Complexity& c) : subwidth(c.subwidth), subsize(c.subsize), ownsize(c.ownsize), numContexts(c.numContexts) {}
+    Complexity() : subCondWidth(UNKNOWN), subCondBound(UNKNOWN), ownsize(UNKNOWN), numContexts(UNKNOWN) {}
+    Complexity(int i, bigint b, bigint o, bigint n) : subCondWidth(i), subCondBound(b), ownsize(o), numContexts(n) {}
+    Complexity(const Complexity& c) : subCondWidth(c.subCondWidth), subCondBound(c.subCondBound), ownsize(c.ownsize), numContexts(c.numContexts) {}
   };
 #endif
 
 protected:
   int m_var; // The node variable
   int m_depth; // The node's depth in the tree
-  int m_height; // The node's height in the tree (distance from farthest child)
+  int m_subHeight; // The node's height in the tree (distance from farthest child)
+  int m_subWidth; // max. width in subproblem
   PseudotreeNode* m_parent; // The parent node
   Pseudotree* m_tree;
 #ifdef PARALLEL_MODE
@@ -162,6 +163,9 @@ public:
   void addChild(PseudotreeNode* p) { m_children.push_back(p); }
   void setChild(PseudotreeNode* p) { m_children.clear(); m_children.push_back(p); }
   const vector<PseudotreeNode*>& getChildren() const { return m_children; }
+  void orderChildren();
+
+  static bool comp(PseudotreeNode* a, PseudotreeNode* b);
 
   void setFullContext(const set<int>& c) { m_context = c; }
   void addFullContext(int v) { m_context.insert(v); }
@@ -181,14 +185,15 @@ public:
 
   int getVar() const { return m_var; }
   int getDepth() const { return m_depth; }
-  int getHeight() const { return m_height; }
+  int getSubHeight() const { return m_subHeight; }
+  int getSubWidth() const { return m_subWidth; }
   size_t getSubprobSize() const { return m_subproblemVars.size(); }
   const set<int>& getSubprobVars() const { return m_subproblemVars; }
 
 public:
 #ifdef PARALLEL_MODE
-  int getSubwidth() const { assert(m_complexity); return m_complexity->subwidth; }
-  bigint getSubsize() const { assert(m_complexity); return m_complexity->subsize; }
+  int getSubCondWidth() const { assert(m_complexity); return m_complexity->subCondWidth; }
+  bigint getSubCondBound() const { assert(m_complexity); return m_complexity->subCondBound; }
   bigint getOwnsize() const { assert(m_complexity); return m_complexity->ownsize; }
   bigint getNumContexts() const { assert(m_complexity); return m_complexity->numContexts; }
 #endif
@@ -197,7 +202,8 @@ public:
   void initSubproblemComplexity();
 #endif
   const set<int>& updateSubprobVars();
-  int updateDepth(int d);
+  int updateDepthHeight(int d);
+  int updateSubWidth();
 
 #ifdef PARALLEL_MODE
 public: // TODO protected:
@@ -240,6 +246,7 @@ inline int Pseudotree::getComponentsCond() const  {
 }
 
 inline void Pseudotree::reset() {
+  assert(m_problem);
   m_height = UNKNOWN; m_heightConditioned = UNKNOWN;
   m_width = UNKNOWN; m_widthConditioned = UNKNOWN;
   m_components = 0;
@@ -249,6 +256,9 @@ inline void Pseudotree::reset() {
     delete *it;
     *it = NULL;
   }
+  m_nodes.reserve(m_problem->getN()+1); // +1 for dummy variable
+  m_nodes.resize(m_problem->getN(), NULL);
+  m_size = m_problem->getN();
 }
 
 inline Pseudotree::Pseudotree(Problem* p) :
@@ -278,13 +288,17 @@ inline bigint PseudotreeNode::computeHWB(const vector<val_t>* assig) {
 }
 #endif /* PARALLEL MODE */
 
+inline void PseudotreeNode::orderChildren() {
+  sort(m_children.begin(), m_children.end(), PseudotreeNode::comp );
+}
+
 
 /* Constructor */
 inline PseudotreeNode::PseudotreeNode(Pseudotree* t, int v, const set<int>& s) :
 #ifdef PARALLEL_MODE
-  m_var(v), m_depth(UNKNOWN), m_height(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_context(s) {}
+  m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_context(s) {}
 #else
-  m_var(v), m_depth(UNKNOWN), m_height(UNKNOWN), m_parent(NULL), m_tree(t), m_context(s) {}
+  m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_context(s) {}
 #endif
 
 #endif /* PSEUDOTREE_H_ */

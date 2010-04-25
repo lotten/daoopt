@@ -19,6 +19,8 @@ double SearchNodeOR::getHeur() const {
 }
 
 
+/* stores the values of the partial solution tree in *bottom-up* order
+ * in the argument vector */
 void SearchNodeOR::getPST(vector<double>& pst) const {
 
   const SearchNode* curAND = NULL;
@@ -34,7 +36,7 @@ void SearchNodeOR::getPST(vector<double>& pst) const {
     const CHILDLIST& children = curAND->getChildren();
     for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
       if (*it != curOR) // skip previous or node
-        label OP_TIMESEQ  (*it)->getHeur();
+        { label OP_TIMESEQ  (*it)->getHeur(); }
     }
     pst.push_back(label);
 

@@ -154,7 +154,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 
       // Stop at subproblem root node (if defined)
       if (cur == m_space->subproblemLocal) {
-        highestDelete = make_pair(cur,prev);
+        if (del) highestDelete = make_pair(cur,prev);
         DIAG(myprint("PROP reached ROOT\n"));
 #ifndef NO_ASSIGNMENT
         if (prop)

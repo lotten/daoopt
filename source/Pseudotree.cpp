@@ -23,7 +23,7 @@ int Pseudotree::restrictSubproblem(int i) {
   m_sizeConditioned = m_root->getSubprobSize()-1; // -1 for bogus
 
   // update subproblem height, substract -1 for bogus node
-  m_heightConditioned = m_root->updateDepth(-1) - 1;
+  m_heightConditioned = m_root->updateDepthHeight(-1) - 1;
 
   // compute subproblem width (when conditioning on subproblem context)
   const set<int>& condset = m_nodes[i]->getFullContext();
@@ -149,12 +149,12 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim) {
 /* builds the pseudo tree according to order 'elim' */
 void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 
+  if (m_height != UNKNOWN)
+    this->reset();
+
   const int n = G.getStatNodes();
   assert(n == (int) m_nodes.size());
   assert(n == (int) elim.size());
-
-  if (m_height != UNKNOWN)
-    this->reset();
 
   list<PseudotreeNode*> roots;
 
@@ -208,7 +208,19 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 
   // initiate depth/height computation for tree and its nodes (bogus variable
   // gets depth -1), then need to subtract 1 from height for bogus as well
-  m_height = m_root->updateDepth(-1) - 1;
+  m_height = m_root->updateDepthHeight(-1) - 1;
+
+  // initiate subproblem width computation (recursive)
+  m_root->updateSubWidth();
+
+//  const vector<Pseudotree*> rootC = m_root->getChildren();
+//  for (vector<Pseudotree*>::iterator it = rootC.begin(); it != rootC.end(); ++it) {
+//    cout << (*it)->getSubWidth();
+//  }
+
+  // reorder each list of child nodes by complexity (width/height)
+  for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it)
+    (*it)->orderChildren();
 
   // initiate subproblem variables computation (recursive)
   m_root->updateSubprobVars();
@@ -265,7 +277,8 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
     }
   }
 
-  m_height = m_root->updateDepth(-1) - 1;
+  m_height = m_root->updateDepthHeight(-1) - 1;
+  m_root->updateSubWidth();
   m_root->updateSubprobVars();
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
@@ -274,6 +287,11 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
   m_widthConditioned = pt.m_widthConditioned;
   m_components = pt.m_components;
   m_sizeConditioned = pt.m_sizeConditioned;
+
+  // reorder each list of child nodes by complexity (width/height)
+  for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it) {
+    (*it)->orderChildren();
+  }
 
 #ifdef PARALLEL_MODE
   // compute depth->list<nodes> mapping
@@ -297,7 +315,7 @@ int Pseudotree::computeComplexities(int workers) {
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!= m_nodes.end(); ++it)
     (*it)->initSubproblemComplexity();
 
-  bigint c = m_root->getSubsize();
+  bigint c = m_root->getSubCondBound();
 
 //  cout << "Complexity bound:\t" << mylog10(c) << " (" << c << ")" << endl;
 
@@ -318,10 +336,10 @@ int Pseudotree::computeComplexities(int workers) {
 //    cout << "# " << central << '\t';
     tmax = 0; tsum=0; tnum=0; wmax=0;
     for (list<PseudotreeNode*>::const_iterator itL = it->begin(); itL!=it->end(); ++itL) {
-      tmax = max(tmax, (*itL)->getSubsize() );
-      tsum += (*itL)->getSubsize() * (*itL)->getNumContexts();
+      tmax = max(tmax, (*itL)->getSubCondBound() );
+      tsum += (*itL)->getSubCondBound() * (*itL)->getNumContexts();
       tnum += (*itL)->getNumContexts();
-      wmax = max(wmax, (*itL)->getSubwidth());
+      wmax = max(wmax, (*itL)->getSubCondWidth());
     }
 
     bigfloat ratio = 1;
@@ -360,23 +378,50 @@ int Pseudotree::computeComplexities(int workers) {
 #endif
 
 
-/* updates a single node's depth, recursively updating the child nodes.
- * return value is max. depth in node's subtree */
-int PseudotreeNode::updateDepth(int d) {
+/* compares two pseudotree nodes, returns true if subtree below a is more complex
+ * than below b (looks at width, then height) */
+bool PseudotreeNode::comp(PseudotreeNode* a, PseudotreeNode* b) {
+  assert (a && b);
+  if ( a->getSubWidth() > b->getSubWidth() )
+    return true;
+  if ( a->getSubWidth() < b->getSubWidth() )
+    return false;
+  if ( a->getSubHeight() > b->getSubHeight() )
+    return true;
+  return false;
+}
+
+
+/* updates a single node's depth and height, recursively updating the child nodes.
+ * return value is height of node's subtree */
+int PseudotreeNode::updateDepthHeight(int d) {
 
   m_depth = d;
 
   if (m_children.empty()) {
-    m_height = 0;
+    m_subHeight = 0;
   }
   else {
     int m=0;
     for (vector<PseudotreeNode*>::iterator it=m_children.begin(); it!=m_children.end(); ++it)
-      m = max(m, (*it)->updateDepth(m_depth+1));
-    m_height = m + 1;
+      m = max(m, (*it)->updateDepthHeight(m_depth+1));
+    m_subHeight = m + 1;
   }
 
-  return m_height;
+  return m_subHeight;
+
+}
+
+
+/* recursively finds and returns the max. width in this node's subproblem */
+int PseudotreeNode::updateSubWidth() {
+
+  m_subWidth = m_context.size();
+
+  for (vector<PseudotreeNode*>::iterator it=m_children.begin(); it!=m_children.end(); ++it)
+    m_subWidth = max(m_subWidth, (*it)->updateSubWidth());
+
+  return m_subWidth;
 
 }
 

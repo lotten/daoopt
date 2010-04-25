@@ -125,8 +125,8 @@ bool SearchMaster::doSolveLocal(SearchNode* node) {
 
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-  int width = ptnode->getSubwidth();
-  int height = ptnode->getHeight();
+  int width = ptnode->getSubCondWidth();
+  int height = ptnode->getSubHeight();
 
   if (width <= m_space->options->cutoff_width) {
     ostringstream ss;
@@ -154,20 +154,25 @@ bool SearchMaster::doParallelize(SearchNode* node) {
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
-  int height = ptnode->getHeight();
-  int width = ptnode->getSubwidth();
+  int height = ptnode->getSubHeight();
+  int width = ptnode->getSubCondWidth();
 
   ss << " d=" << depth;
   ss << " w=" << width;
 
   bigint hwb = ptnode->computeHWB(&m_assignment);
-  bigint twb = ptnode->getSubsize() ;
+  bigint twb = ptnode->getSubCondBound() ;
 
   double lb = lowerBound(node);
   double ub = node->getHeur();
 
   double estimate = NONE;
-  bool cutoff = false; // default no parallelization
+  double thresh = m_space->options->cutoff_size * 100000;
+  double logEst = NONE;
+  double logThresh = log10(thresh);
+
+  bool cutoff = false; // solve parallel? (default no)
+  bool local = false; // too easy -> solve locally (default no)
 
   if (m_space->options->autoCutoff) { // && m_nextThreadId >= (size_t) m_space->options->threads) {
 
@@ -191,13 +196,16 @@ bool SearchMaster::doParallelize(SearchNode* node) {
     ss << " l=" << lb << " u=" << ub << " bra=" << avgBra << " inc=" << avgInc << " h=" << height
        <<  " D: " << estDepth;
 
+    logEst = log10(avgBra)*estDepth;
     estimate = pow(avgBra, estDepth);
     //  double estimate = m_spaceMaster->stats->normalize(rawEst);
 
     ss << " est: " << ((count_t) estimate) << endl;
     myprint(ss.str());
 
-    cutoff = (estimate <= m_space->options->cutoff_size * ((double) 100000));
+//    cutoff = (estimate <= m_space->options->cutoff_size * ((double) 100000));
+    cutoff = logEst <= logThresh;
+    local = logEst <= log10(m_space->options->local_size * 100000);
 
   } else {
     estimate = 0;
@@ -218,8 +226,14 @@ bool SearchMaster::doParallelize(SearchNode* node) {
 //      m_hwbCache <= m_space->options->cutoff_size * bigint(100000) )
     //         ptnode->getSubsize()  <= m_space->options->cutoff_size) {
     //    if (ptnode->getSubwidth() == m_space->options->cutoff_depth) {
-  if (cutoff)
-  {
+
+  if (local) {
+    ostringstream ss;
+    ss << "Solving subproblem with root " << var << " locally, h=" << height << " w=" << width << endl;
+    myprint(ss.str());
+    this->solveLocal(node);
+    return true;
+  } else if (cutoff) {
 
     stringstream ss;
     ss << "** Parallelising at depth " << depth << "\n" ;
@@ -316,7 +330,7 @@ double SearchMaster::estimateIncrement(SearchNode* node) const {
 #endif
 
 //  DIAG (cout << SCALE_LOG(est) << " (" << SCALE_NORM(est) << ")" << endl;);
-  est /= ptnode->getHeight()+1;
+  est /= ptnode->getSubHeight()+1;
 //  DIAG (cout << SCALE_LOG(est) << " (" << SCALE_NORM(est) << ")" << endl;);
   return est;
 

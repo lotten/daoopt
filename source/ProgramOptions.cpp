@@ -35,6 +35,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
       ("cutoff-width,w", po::value<int>()->default_value(-1), "cutoff width for central search")
       ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^6)")
+      ("local-size,u", po::value<int>()->default_value(-1), "minimum subproblem size (* 10^6)")
       ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^6) for local initialization")
       ("noauto,a", "don't determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(5), "max. number of concurrent subproblem processes")
@@ -99,6 +100,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 
     if (vm.count("cutoff-size"))
       opt.cutoff_size = vm["cutoff-size"].as<int>();
+
+    if (vm.count("local-size"))
+      opt.local_size = vm["local-size"].as<int>();
 
     if (vm.count("init-nodes"))
       opt.nodes_init = vm["init-nodes"].as<int>();

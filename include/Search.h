@@ -100,7 +100,11 @@ public:
   bool loadInitialBound(string);
 
   // sets the initial lower bound
-  virtual void setInitialBound(double) = 0;
+  virtual void setInitialBound(double) const = 0;
+
+#ifndef NO_ASSIGNMENT
+  virtual void setInitialSolution(const vector<val_t>&) const = 0;
+#endif
 
 #ifdef PARALLEL_MODE
   // returns the cached lower/upper bounds on the first node at each depth
@@ -126,7 +130,7 @@ protected:
 
   // processes the current node (value instantiation etc.)
   // if trackHeur==true, caches lower/upper bounds for first node at each depth
-  bool doProcess(SearchNode*, bool trackHeur=false);
+  bool doProcess(SearchNode*);
 
   // performs a cache lookup; if successful, stores value into node and returns true
   bool doCaching(SearchNode*);

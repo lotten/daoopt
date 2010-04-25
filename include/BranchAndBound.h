@@ -35,7 +35,11 @@ protected:
 public:
   bool isDone() const;
 
-  void setInitialBound(double d);
+  void setInitialBound(double d) const;
+
+#ifndef NO_ASSIGNMENT
+  void setInitialSolution(const vector<val_t>&) const;
+#endif
 
 public:
   BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) ;

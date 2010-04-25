@@ -44,7 +44,7 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
       int rootvar = prop.getSubRootvarCache();
       maxSubRootDepth = pt.getNode(rootvar)->getDepth();
-      maxSubRootHeight = pt.getNode(rootvar)->getHeight();
+      maxSubRootHeight = pt.getNode(rootvar)->getSubHeight();
 
       maxSubLeaves = prop.getSubLeavesCache();
       maxSubLeafD = prop.getSubLeafDCache();
@@ -83,8 +83,11 @@ void BranchAndBoundMaster::solveLocal(SearchNode* node) const {
   SearchSpace sp(&pt, m_space->options);
 
   BranchAndBound bab(m_problem, &pt, &sp, m_heuristic);
+
   vector<double> pst;
-  node->getPST(pst); // gets the partial solution tree
+  node->getPST(pst); // gets the partial solution tree (bottom-up)
+  reverse(pst.begin(), pst.end()); // reverse to make it top-down
+
   bab.restrictSubproblem(node->getVar(), m_assignment , pst );
 
   BoundPropagator prop(&sp);
@@ -98,6 +101,7 @@ void BranchAndBoundMaster::solveLocal(SearchNode* node) const {
   node->setValue(mpeCost);
   node->setLeaf();
 
+//  cout << "Local solver done: " << mpeCost << " " << bab.getNoNodesOR() << '/' << bab.getNoNodesAND() << " nodes" << endl;
 
 }
 

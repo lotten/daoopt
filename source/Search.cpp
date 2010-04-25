@@ -34,7 +34,7 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 }
 
 
-bool Search::doProcess(SearchNode* node, bool trackHeur) {
+bool Search::doProcess(SearchNode* node) {
   assert(node);
   if (node->getType() == NODE_AND) {
     DIAG( ostringstream ss; ss << *node << " (l=" << node->getLabel() << ")\n"; myprint(ss.str()) );
@@ -76,7 +76,7 @@ bool Search::doCaching(SearchNode* node) {
     if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
       // add cache context information
       addCacheContext(node,ptnode->getCacheContext());
-      DIAG( myprint( str("    Context set: ") + node->getCacheContext() + "\n" ) );
+      //DIAG( myprint( str("    Context set: ") + ptnode->getCacheContext() + "\n" ) );
       // try to get value from cache
       try {
         // will throw int(UNKNOWN) if not found
@@ -147,14 +147,14 @@ SearchNode* Search::nextLeaf() {
   SearchNode* node = NULL;
   while (true) {
     node = this->nextNode();
-    if (doProcess(node,true)) // initial processing
-      return node;
+    if (doProcess(node)) // initial processing
+      { return node; }
     if (doCaching(node)) // caching?
-      return node;
+      { return node; }
     if (doPruning(node)) // pruning?
-      return node;
+      { return node; }
     if (doExpand(node)) // node expansion
-      return node;
+      { return node; }
   }
 
 }
@@ -197,7 +197,7 @@ bool Search::canBePruned(SearchNode* n) const {
 
     // check if moving up in search space is possible
     if (! curOR->getParent())
-      return false;
+      { return false; }
 
     notOptOR.push_back(curOR);
 
@@ -220,6 +220,7 @@ bool Search::canBePruned(SearchNode* n) const {
   }
 
   // default (should never get to this line since false is returned inside loop)
+  assert(false);
   return false;
 
 } // Search::canBePruned
@@ -338,12 +339,57 @@ bool Search::loadInitialBound(string file) {
     double bound;
     BINREAD(infile, bound);
     this->setInitialBound(bound);
+
+#ifndef NO_ASSIGNMENT
+    // read optimal assignment from file
+    int noVars;
+    BINREAD(infile, noVars);
+
+    if (noVars != m_problem->getNOrg()) {
+      cerr << "ERROR reading SLS solution, number of vars doesn't match" << endl;
+      return false;
+    }
+
+    // read full tuple
+    vector<int> tuple; tuple.reserve(noVars);
+    for (int i=0; i<noVars; ++i) {
+      int x;
+      BINREAD(infile,x);
+      tuple.push_back(x);
+    }
+
+    // filter evidence and unary domain variables that were removed during preprocessing
+    vector<val_t> reduced;
+    for (int i=0; i<noVars; ++i) {
+      if (!m_problem->isEliminated(i)) {
+        reduced.push_back( (val_t) tuple.at(i));
+      }
+    }
+
+    // dummy node = 0
+    reduced.push_back((val_t) 0);
+
+    if ((int) reduced.size() != m_problem->getN()) {
+      cerr << "ERROR reading SLS solution, reduced problem size doesn't match" << endl;
+      return false;
+    }
+
+    // store into search space
+    this->setInitialSolution(reduced);
+
+#endif
   }
   infile.close();
   return true;
+
 }
 
 
+/* restricts the search space to a subproblem as specified:
+ * @rootVar: the subproblem root variable
+ * @assig: variable assignment, possibly partial, needed for context instantiation
+ * @pst: the parent partial solution tree, interpreted *top-down* !
+ */
 int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const vector<double>& pst) {
 
   // adjust the pseudo tree, returns original depth of new root node
@@ -467,7 +513,7 @@ bool Search::restrictSubproblem(const string& file) {
   // SECOND: read information about partial solution tree in parent problem
 
   // read encoded PST values for advanced pruning, and save into temporary vector.
-  // the assumed order later is town-down; however, if pstSize from file is negative,
+  // the assumed order later is top-down; however, if pstSize from file is negative,
   // it's bottom-up in the file, so in that case we need to reverse
   double valueOR, labelAND;
   bool reverse = false;

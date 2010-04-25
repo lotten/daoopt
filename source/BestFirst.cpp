@@ -181,7 +181,7 @@ void BestFirst::expandNext() {
     // TODO currently outsource at fixed depth
 //    if (ptnode->getDepth() == m_space->options->cutoff_depth) {
     if ( ptnode->getDepth() == m_space->options->cutoff_depth ||
-        mylog10( ptnode->getSubsize() ) <= m_space->options->cutoff_size) {
+        mylog10( ptnode->getSubCondBound() ) <= m_space->options->cutoff_size) {
 //    if (ptnode->getSubwidth() == m_space->options->cutoff_depth) {
 
       {

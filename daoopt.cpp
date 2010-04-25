@@ -27,7 +27,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.98.1"
+#define VERSIONINFO "0.98.3"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -48,7 +48,12 @@ int main(int argc, char** argv) {
   {
 //    val_t temp=0;
 //    cout << typeid(temp).name() << ")" << endl;
-    cout << sizeof(val_t)*8 << ")" << endl;
+    cout << sizeof(val_t)*8 << ")";
+#ifdef NO_ASSIGNMENT
+    cout << " w/o assig." << endl;
+#else
+    cout << " w. assig." << endl;
+#endif
   }
 
   // Reprint command line
@@ -110,10 +115,14 @@ int main(int argc, char** argv) {
     orderFromFile = p.parseOrdering(opt.in_orderingFile, elim);
   }
 
+  // Init. pseudo tree
+  Pseudotree pt(&p);
+
   if (orderFromFile) { // Reading from file succeeded
     cout << "Read elimination ordering from file " << opt.in_orderingFile << '.' << endl;
   } else {
-    // Search for variable elimination ordering
+    // Search for variable elimination ordering, looking for min. induced
+    // width, breaking ties via pseudo tree height
     cout << "Searching for elimination ordering..." << flush;
     int w = INT_MAX;
     for (int i=opt.order_iterations; i; --i) {
@@ -121,10 +130,21 @@ int main(int argc, char** argv) {
       int new_w = Pseudotree::eliminate(g,elimCand);
       if (new_w < w) {
         elim = elimCand; w = new_w;
-        cout << ' ' << w << flush;
+        pt.build(g,elimCand,opt.cbound);
+        cout << ' ' << w <<'/' << pt.getHeight() << flush;
+      } else if (new_w == w) {
+        Pseudotree ptCand(&p);
+        ptCand.build(g,elimCand,opt.cbound);
+        if (ptCand.getHeight() < pt.getHeight()) {
+          elim = elimCand;
+          pt.build(g,elim,opt.cbound);
+          cout << ' ' << w << '/' << pt.getHeight() << flush;
+        }
+
       }
     }
     cout << endl<< "Lowest induced width found: " << w << endl;
+    cout << "Lowest height for width: " << pt.getHeight() << endl;
   }
 
   // Save order to file?
@@ -140,9 +160,9 @@ int main(int argc, char** argv) {
   }
 #endif
 
-  // Build pseudo tree
-  Pseudotree pt(&p);
-  pt.build(g,elim,opt.cbound); // will add dummy variable
+  // Complete pseudo tree init.
+//  Pseudotree pt(&p);
+//  pt.build(g,elim,opt.cbound); // will add dummy variable
   p.addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   pt.addFunctionInfo(p.getFunctions());
 #ifdef PARALLEL_MODE

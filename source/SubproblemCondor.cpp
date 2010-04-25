@@ -265,7 +265,7 @@ void CondorSubmissionEngine::operator ()() {
     << "universe = vanilla" << endl
     << "notification = never" << endl
     << "should_transfer_files = yes" << endl
-    << "requirements = Arch == \"X86_64\" && (" << reqStr << ")" << endl
+    << "requirements = ( Arch == \"X86_64\" || Arch == \"INTEL\" ) && (" << reqStr << ")" << endl
     << "when_to_transfer_output = always" << endl
     << "executable = daoopt.$$(Arch)" << endl
     << "copy_to_spool = false" << endl;
@@ -458,7 +458,7 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
 
   con.close(); // done with subproblem file
 
-  {
+  /*{
     ostringstream ss;
     ss << " PST ";
     for(vector<double>::iterator it=pst.begin();it!=pst.end();++it) {
@@ -466,8 +466,9 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
     }
     ss << endl;
     myprint(ss.str());
-  }
+  }*/
 
+/*
   // write complexity estimates to disk
   ostringstream estimateFile;
   estimateFile << PREFIX_EST << P->batch << '.' << P->process;
@@ -481,6 +482,7 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
   estFile << P->subproblem->twb << '\t' << P->subproblem->hwb << '\t' << P->subproblem->width;
   estFile.close();
   // estimate written
+*/
 
   // Where the solution will be read from
   ostringstream solutionFile;

@@ -32,7 +32,7 @@ void Statistics::init(int depth, int height, count_t N, count_t L, count_t D, do
   avgD -= depth;
   */
 
-  defHei = height - 1.5 ; // to artificially reduce first set of subproblems  TODO?
+  defHei = height - 1 ; // to artificially reduce first set of subproblems  TODO?
   ss << " h:" << defHei;
 
   defDep = D/(double)L;
