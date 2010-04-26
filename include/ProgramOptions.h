@@ -32,6 +32,8 @@ public:
   int cutoff_size; // fixed cutoff subproblem size (times 10^6)
   int local_size; // lower bound for problem size to be solved locally (times 10^6)
   int maxSubprob; // only generate this many subproblems, then abort (for testing)
+  int lds;  // run initial LDS with this limit (-1: enabled)
+  int seed; // the seed for the random number generator
 
   double initialBound; // initial lower bound
 
@@ -55,6 +57,7 @@ inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), autoCutoff(true), ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
-		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE), initialBound(ELEM_NAN) {}
+		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
+		      lds(NONE), seed(NONE), initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

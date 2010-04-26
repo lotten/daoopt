@@ -44,9 +44,10 @@ protected:
 #endif
 
 public:
-  // computes an elimination order into 'elim' and returns
-  // its induced width
-  static int eliminate(Graph G, vector<int>& elim);
+  // computes an elimination order into 'elim' and returns its induced width
+  // if 'limit' is given, will terminate early if new order is worse than limit
+  // and return INT_MAX
+  static int eliminate(Graph G, vector<int>& elim, int limit=INT_MAX);
 
   // builds the pseudo tree according to order 'elim'
   void build(Graph G, const vector<int>& elim, const int cachelimit = NONE);
@@ -256,6 +257,7 @@ inline void Pseudotree::reset() {
     delete *it;
     *it = NULL;
   }
+  m_nodes.clear();
   m_nodes.reserve(m_problem->getN()+1); // +1 for dummy variable
   m_nodes.resize(m_problem->getN(), NULL);
   m_size = m_problem->getN();

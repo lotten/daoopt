@@ -40,18 +40,18 @@ private:
 public:
 
 #ifndef NO_ASSIGNMENT
-  void write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int);
-  pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int);
+  virtual void write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int);
+  virtual pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int);
 #else
-  void write(int n, size_t inst, const context_t& ctxt, double v) throw (int);
-  double read(int n, size_t inst, const context_t& ctxt) const throw (int);
+  virtual void write(int n, size_t inst, const context_t& ctxt, double v) throw (int);
+  virtual double read(int n, size_t inst, const context_t& ctxt) const throw (int);
 #endif
 
-  void reset(int n);
+  virtual void reset(int n);
 #ifdef PARALLEL_MODE
-  size_t getInstCounter(int n) const;
+  virtual size_t getInstCounter(int n) const;
 #else
-  size_t getInstCounter(int n) const { return 0; }
+  virtual size_t getInstCounter(int n) const { return 0; }
 #endif
 
 private:
@@ -60,6 +60,31 @@ private:
 public:
   CacheTable(int size, int memlimit = NONE);
   ~CacheTable();
+};
+
+
+class UnCacheTable : public CacheTable  {
+public:
+
+#ifndef NO_ASSIGNMENT
+  void write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int) {throw UNKNOWN;}
+  pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int) {throw UNKNOWN;}
+#else
+  void write(int n, size_t inst, const context_t& ctxt, double v) throw (int) {throw UNKNOWN;}
+  double read(int n, size_t inst, const context_t& ctxt) const throw (int) {throw UNKNOWN;}
+#endif
+
+  void reset(int n) {}
+#ifdef PARALLEL_MODE
+  size_t getInstCounter(int n) const { return 0; }
+#else
+  size_t getInstCounter(int n) const { return 0; }
+#endif
+
+public:
+  UnCacheTable() : CacheTable(0,0) {}
+  ~UnCacheTable() {}
+
 };
 
 /* Inline definitions */

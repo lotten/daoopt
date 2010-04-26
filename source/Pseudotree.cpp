@@ -58,7 +58,7 @@ void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
 
 
 /* computes an elimination order into 'elim' and returns its tree width */
-int Pseudotree::eliminate(Graph G, vector<int>& elim) {
+int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
 
   int width = UNKNOWN;
   int n = G.getStatNodes();
@@ -120,6 +120,10 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim) {
 
     // update width of implied tree decomposition
     width = max(width, (int) neighbors.size());
+
+    // early termination condition: width above given limit
+    if (width > limit)
+      return INT_MAX;
 
     // connect neighbors in primal graph
     G.addClique(neighbors);

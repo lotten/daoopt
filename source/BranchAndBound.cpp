@@ -167,6 +167,7 @@ void BranchAndBound::setInitialBound(double d) const {
 
 #ifndef NO_ASSIGNMENT
 void BranchAndBound::setInitialSolution(const vector<val_t>& tuple) const {
+  assert(m_space);
   m_space->root->setOptAssig(tuple);
 }
 #endif

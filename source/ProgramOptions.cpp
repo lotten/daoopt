@@ -43,7 +43,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
+      ("lds,a",po::value<int>()->default_value(-1), "run initial LDS search with given limit (-1: disabled)")
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
+      ("seed", po::value<int>(), "seed for random number generator (uses time() otherwise)")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
       ("reduce,r", po::value<string>(), "outputs the reduced network to this file (removes evidence and unary variables)")
       ("help,h", "produces this help message")
@@ -124,6 +126,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     if (vm.count("initial-bound"))
       opt.initialBound = vm["initial-bound"].as<double>();
 
+    if (vm.count("lds"))
+      opt.lds = vm["lds"].as<int>();
+
     if (vm.count("memlimit"))
       opt.memlimit = vm["memlimit"].as<int>();
 
@@ -131,6 +136,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       opt.nosearch = true;
     else
       opt.nosearch = false;
+
+    if (vm.count("seed"))
+      opt.seed = vm["seed"].as<int>();
 
     if (vm.count("reduce"))
       opt.out_reducedFile = vm["reduce"].as<string>();
@@ -144,14 +152,13 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       //Extract the problem name
       string& fname = opt.in_problemFile;
       size_t len, start, pos1, pos2;
-      static const basic_string <char>::size_type npos = -1;
 #if defined(WIN32)
       pos1 = fname.find_last_of("\\");
 #elif defined(LINUX)
       pos1 = fname.find_last_of("/");
 #endif
       pos2 = fname.find_last_of(".");
-      if (pos1 == npos) { len = pos2; start = 0; }
+      if (pos1 == string::npos) { len = pos2; start = 0; }
       else { len = (pos2-pos1-1); start = pos1+1; }
       opt.problemName = fname.substr(start, len);
     }

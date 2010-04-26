@@ -24,10 +24,11 @@
 #endif
 
 #include "BestFirst.h"
+#include "LimitedDiscrepancy.h"
 
 #include <ctime>
 
-#define VERSIONINFO "0.98.3"
+#define VERSIONINFO "0.98.4"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -106,7 +107,10 @@ int main(int argc, char** argv) {
   cout << "Graph with " << g.getStatNodes() << " nodes and " << g.getStatEdges() << " edges created." << endl;
 //  cout << "Graph has " << g.noComponents() << " disconnected components." << endl;
 
-  rand::seed(time(0));
+  if (opt.seed != NONE)
+    rand::seed(opt.seed);
+  else
+    rand::seed(time(0));
 
   // Find variable ordering
   vector<int> elim;
@@ -120,6 +124,7 @@ int main(int argc, char** argv) {
 
   if (orderFromFile) { // Reading from file succeeded
     cout << "Read elimination ordering from file " << opt.in_orderingFile << '.' << endl;
+    pt.build(g,elim,opt.cbound);
   } else {
     // Search for variable elimination ordering, looking for min. induced
     // width, breaking ties via pseudo tree height
@@ -127,7 +132,7 @@ int main(int argc, char** argv) {
     int w = INT_MAX;
     for (int i=opt.order_iterations; i; --i) {
       vector<int> elimCand;
-      int new_w = Pseudotree::eliminate(g,elimCand);
+      int new_w = Pseudotree::eliminate(g,elimCand,w);
       if (new_w < w) {
         elim = elimCand; w = new_w;
         pt.build(g,elimCand,opt.cbound);
@@ -274,6 +279,25 @@ int main(int argc, char** argv) {
       cout <<  "Setting external lower bound " << opt.initialBound << endl;
       search.setInitialBound( opt.initialBound );
     }
+  }
+
+  // Run LDS if specified
+  if (opt.lds != NONE) {
+    cout << "Running LDS with limit " << opt.lds << endl;
+    SearchSpace* spaceLDS = new SearchSpace(&pt, &opt);
+    LimitedDiscrepancy lds(&p,&pt,spaceLDS,&mbe,opt.lds);
+    BoundPropagator propLDS(spaceLDS);
+    while (!lds.isDone())
+      propLDS.propagate(lds.nextLeaf());
+    cout << "LDS: explored " << lds.getNoNodesAND() << '/' << lds.getNoNodesOR() << " AND/OR nodes" << endl;
+    cout << "LDS: found optimal cost " << lds.getCurOptValue() << endl;
+    if (lds.getCurOptValue() > search.curLowerBound()) {
+      search.setInitialBound(lds.getCurOptValue());
+#ifndef NO_ASSIGNMENT
+      search.setInitialSolution(lds.getCurOptTuple());
+#endif
+    }
+    delete spaceLDS;
   }
 
   // output (sub)problem lower bound, mostly makes sense for conditioned subproblems

@@ -224,14 +224,14 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   // Extract the filename without extension.
   string fname = prob;
   size_t len, start, pos1, pos2;
-  static const basic_string <char>::size_type npos = -1;
+//  static const basic_string <char>::size_type npos = -1;
 #if defined(WINDOWS)
   pos1 = fname.find_last_of("\\");
 #elif defined(LINUX)
   pos1 = fname.find_last_of("/");
 #endif
   pos2 = fname.find_last_of(".");
-  if (pos1 == npos) { len = pos2; start = 0; }
+  if (pos1 == string::npos) { len = pos2; start = 0; }
   else { len = (pos2-pos1-1); start = pos1+1; }
   m_name = fname.substr(start, len);
 

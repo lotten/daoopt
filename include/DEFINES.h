@@ -13,7 +13,7 @@
  * will speed up computation time
  */
 
-//#define NO_ASSIGNMENT
+#define NO_ASSIGNMENT
 
 /*****************************************************************/
 

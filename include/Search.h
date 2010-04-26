@@ -169,6 +169,8 @@ protected:
   virtual bool isMaster() const = 0;
   Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) ;
 
+  virtual ~Search() {}
+
 };
 
 /* Inline definitions */

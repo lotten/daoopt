@@ -56,6 +56,7 @@ protected:
 
 public:
   BoundPropagator(SearchSpace* s) : m_space(s) { /* empty */ }
+  virtual ~BoundPropagator() {}
 };
 
 

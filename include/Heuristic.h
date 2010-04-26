@@ -26,7 +26,8 @@ public:
 
 
 protected:
-  Heuristic() {};
+  Heuristic() {}
+  virtual ~Heuristic() {}
 
 };
 

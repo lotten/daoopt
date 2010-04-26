@@ -289,7 +289,7 @@ public:
   static int max() { return _r.max(); }
   static int next() { return state=_r(); }
   static int next(const int& hi) {
-    return (int) (state=_r()) / (_r.max()+1.0) * hi ;
+    return static_cast<int>( (state=_r()) / (_r.max()+1.0) * hi );
   }
 
 };
