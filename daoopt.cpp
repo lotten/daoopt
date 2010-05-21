@@ -28,7 +28,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.98.4"
+#define VERSIONINFO "0.98.5"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -40,22 +40,25 @@ int main(int argc, char** argv) {
   time(&time_start);
   double time_passed;
 
-  cout << "DAOOPT " << VERSIONINFO ;
+  cout << "-----------------------------------------------" << endl
+       << "DAOOPT " << VERSIONINFO;
 #ifdef PARALLEL_MODE
   cout << " PARALLEL (";
 #else
   cout << " STANDALONE (";
 #endif
-  {
-//    val_t temp=0;
-//    cout << typeid(temp).name() << ")" << endl;
-    cout << sizeof(val_t)*8 << ")";
-#ifdef NO_ASSIGNMENT
-    cout << " w/o assig." << endl;
+  cout << sizeof(val_t)*8 << ")";
+#ifdef LIKELIHOOD
+  cout << " for likelihood" << endl;
 #else
-    cout << " w. assig." << endl;
+#ifdef NO_ASSIGNMENT
+  cout << " w/o assig." << endl;
+#else
+  cout << " w. assig." << endl;
 #endif
-  }
+#endif /* LIKELIHOOD */
+  cout << "  by Lars Otten, UC Irvine <lotten@ics.uci.edu>" << endl
+       << "-----------------------------------------------" << endl;
 
   // Reprint command line
   for (int i=0; i<argc; ++i)
@@ -179,38 +182,6 @@ int main(int argc, char** argv) {
 //  }
 #endif
 
-#ifdef DEBUG
-  //cout << "Elimination: " << elim << endl;
-#endif
-
-#if false
-  //////////////////////////////////////////////////
-  // Begin test
-  set<int> ctxt;
-
-  vector<val_t> assig(p.getN(),UNKNOWN);
-  assig.back() = 0;
-
-  Function* f =  p.getFunctions()[0];
-
-  cout << "Function " << *f << endl;
-  cout << "Tightness " << f->getTightness() << endl;
-
-  ctxt.insert(0);
-  ctxt.insert(2);
-
-//  assig[0] = 0;
-  assig[1] = 0;
-
-  cout << "Tightness " << f->getTightness(ctxt,&assig) << endl;
-
-  //cout << pt.getNode(2)->computeSubCompDet(ctxt,&assig) << endl;
-
-  return EXIT_SUCCESS;
-  // End test
-  //////////////////////////////////////////////////
-#endif
-
   // The main search space
 #ifdef PARALLEL_MODE
   SearchSpaceMaster* space = new SearchSpaceMaster(&pt,&opt);
@@ -218,8 +189,12 @@ int main(int argc, char** argv) {
   SearchSpace* space = new SearchSpace(&pt,&opt);
 #endif
 
+#ifdef NO_HEURISTIC
+  UnHeuristic mbe;
+#else
   // Mini bucket heuristic
   MiniBucketElim mbe(&p,&pt,opt.ibound);
+#endif
 
   // The search engine
 #ifdef PARALLEL_MODE
@@ -245,6 +220,7 @@ int main(int argc, char** argv) {
   malloc_stats();
 #endif
 
+#ifndef NO_HEURISTIC
   int ibound = opt.ibound;
   if (opt.memlimit != NONE) {
     ibound = mbe.limitIbound(ibound, opt.memlimit, & search.getAssignment() );
@@ -263,6 +239,7 @@ int main(int argc, char** argv) {
     sz = mbe.build(& search.getAssignment(), true); // true =  actually compute heuristic
   }
   cout << '\t' << (sz / (1024*1024.0)) * sizeof(double) << " MBytes" << endl;
+#endif /* NO_HEURISTIC */
 
 #ifdef MEMDEBUG
   malloc_stats();

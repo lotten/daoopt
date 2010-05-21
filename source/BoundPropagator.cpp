@@ -33,12 +33,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 
   // going all the way to the root, if we have to
   do {
-#ifdef DEBUG
-    {
-      GETLOCK(mtx_io, lk);
-      cout << "PROP  " << *prev << " + " << *cur << endl;
-    }
-#endif
+    DIAG( ostringstream ss; ss << "PROP  " << *prev << " + " << *cur << endl; myprint(ss.str()); )
 
     if (cur->getType() == NODE_AND) {
       // ===========================================================================
@@ -111,7 +106,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 #endif
           DIAG(myprint(" deleting AND\n") );
         } else {
-          del = false;
+          del = prop = false;
         }
 
       }
@@ -120,14 +115,20 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
     } else { // cur is OR node
       // ===========================================================================
 
-      double v = prev->getValue() OP_TIMES prev->getLabel(); // getValue includes subSolved
-
       if (prop) {
+        double d = prev->getValue() OP_TIMES prev->getLabel(); // getValue includes subSolved
+#ifdef LIKELIHOOD
+        if ( ISNAN( cur->getValue() ) || cur->getValue() == ELEM_ZERO )
+          cur->setValue(d);
+        else
+          cur->setValue( OP_PLUS(d,cur->getValue()) );
+#else
         if ( ISNAN( cur->getValue() ) || v > cur->getValue()) {
           cur->setValue(v); // update max. value
         } else {
           prop = false; // no more value propagation upwards in this call
         }
+#endif /* LIKELIHOOD */
       }
 
       if (del) {
@@ -140,7 +141,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 #endif
           DIAG(myprint(" deleting OR\n"));
         } else {
-          del = false;
+          del = prop = false;
         }
       }
 

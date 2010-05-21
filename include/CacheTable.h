@@ -25,13 +25,6 @@ class CacheTable {
 private:
   bool m_full;
   int m_size;
-  int m_memlimit;
-/*
-  // Cache the previous request
-  int m_cached_n;
-  std::string m_cached_ctxt;
-  hash_map<std::string, double>::iterator m_cached_it;
-*/
 #ifdef PARALLEL_MODE
   vector<size_t> m_instCounter;
 #endif
@@ -58,7 +51,7 @@ private:
   int memused() const;
 
 public:
-  CacheTable(int size, int memlimit = NONE);
+  CacheTable(int size);
   ~CacheTable();
 };
 
@@ -82,7 +75,7 @@ public:
 #endif
 
 public:
-  UnCacheTable() : CacheTable(0,0) {}
+  UnCacheTable() : CacheTable(0) {}
   ~UnCacheTable() {}
 
 };
@@ -103,14 +96,6 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
   // check instance counter
   if (m_instCounter[n] != inst)
     throw UNKNOWN; // mismatch, don't cache
-#endif
-
-#ifdef CACHE_MEMLIMIT
-  // check if mem limit hit
-  if (m_memlimit != NONE && (m_full || memused() > m_memlimit)) {
-    m_full = true;
-    throw NONE;
-  }
 #endif
 
   // create hash table if needed
@@ -178,11 +163,11 @@ inline size_t CacheTable::getInstCounter(int n) const {
 }
 #endif
 
-inline CacheTable::CacheTable(int size, int memlimit) :
+inline CacheTable::CacheTable(int size) :
 #ifdef PARALLEL_MODE
-    m_full(false), m_size(size), m_memlimit(NONE), m_instCounter(size,0), m_tables(size) {
+    m_full(false), m_size(size), m_instCounter(size,0), m_tables(size) {
 #else
-    m_full(false), m_size(size), m_memlimit(memlimit), m_tables(size) {
+    m_full(false), m_size(size), m_tables(size) {
 #endif
   for (int i=0; i<size; ++i)
     m_tables[i] = NULL;

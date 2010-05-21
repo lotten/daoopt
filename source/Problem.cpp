@@ -25,69 +25,92 @@ void Problem::removeEvidence() {
   vector<val_t> new_domains;
   vector<Function*> new_funs;
 
-  // evidFlag[i]==TRUE for evidence variables i
-  vector<bool> evidFlag(m_n,false);
+  // eliminateVar[i]==TRUE iff var. is to be eliminated
+  vector<bool> eliminateVar(m_n,false);
   for (map<int,val_t>::iterator it = m_evidence.begin(); it != m_evidence.end(); ++it) {
-    evidFlag[it->first] = true;
+    eliminateVar[it->first] = true;
   }
 
-  // Identify evidence variables and filter remaining variables
-  idx = new_n = 0;
-  new_k = 0;
-  for (i = 0; i < m_n; ++i)
-  {
-    // Check for evidence variable.
-    if (evidFlag[i]) {
-      // nothing here, variable is already evidence
-    }
-    else if (m_domains[i] == 1) { // regard unary domains as evidence
+  // Identify and tag unary domain variables
+  for (i = 0; i < m_n; ++i) {
+    if (m_domains.at(i) == 1) { // regard unary domains as evidence
       m_evidence.insert(make_pair(i, 0));
       ++m_e;
-      evidFlag[i] = true;
-    }
-    else { // not evidence, keep variable
-      m_old2new[i] = idx; // record translation
-//      cout << "Var. " << i << " -> " << idx << endl;
-      k = m_domains[i];
-      new_k = max(new_k, k);
-      new_domains.push_back(k);
-
-      ++idx;
-      ++new_n;
+      eliminateVar.at(i) = true;
     }
   }
 
-  // Substitute evidence to get reduced functions
-  double globalConstant = ELEM_ONE;
+  // Project functions to account for evidence
+  m_globalConstant = ELEM_ONE;
   new_r = 0; // max. arity
   vector<Function*>::iterator fi = m_functions.begin();
   for (; fi != m_functions.end(); ++fi) {
     Function *fn = (*fi);
     // Substitute evidence variables
     Function* new_fn = fn->substitute(m_evidence);
-    if (new_fn->isConstant()) {
-      globalConstant OP_TIMESEQ new_fn->getTable()[0];
+    if (new_fn->isConstant()) { // now empty scope
+      m_globalConstant OP_TIMESEQ new_fn->getTable()[0];
       delete new_fn;
     } else {
-      new_fn->translateScope(m_old2new); // translate variable indexes
       new_funs.push_back(new_fn); // record new function
       new_r = max(new_r, (int) new_fn->getScope().size());
     }
     delete fn; // delete old function
 
   }
+  m_functions = new_funs;
 
-  // save global constant
-  m_globalConstant = globalConstant;
+
+  /*
+  // === shrink more by eliminating certain vars ===
+
+  // remember which vars are in which function scope
+  map<int, set<Function*> > mapF; // TODO
+
+
+  // first, build primal graph
+  Graph G(m_n);
+  for (fi=m_functions.begin(); fi!=m_functions.end(); ++fi)
+    G.addClique((*fi)->getScope());
+
+  bool repeatLoop = true;
+  while (repeatLoop) {
+
+    for (int i=0; i<m_n; ++i) {
+      if (eliminateVar.at(i) || !G.hasNode(i)) continue; // skip this node
+    }
+
+    break; // TODO
+
+  }
+  */
+
+  // eliminate tagged variables and reorder remaining ones
+  idx = new_n = new_k = 0;
+  for (int i=0; i<m_n; ++i) {
+    if (!eliminateVar.at(i)) {
+
+      m_old2new.insert(make_pair(i,idx));
+
+      k = m_domains.at(i);
+      new_domains.push_back(k);
+      new_k = max(new_k,k);
+
+      ++idx;
+      ++new_n;
+    }
+  }
 
   // update variable information
   m_domains = new_domains;
   m_n = new_n;
   m_k = new_k;
 
+  // translate scopes of the new functions
+  for (fi=m_functions.begin(); fi!=m_functions.end(); ++fi)
+    (*fi)->translateScope(m_old2new);
+
   // update function information
-  m_functions = new_funs;
-  m_r = new_r;
   m_c = m_functions.size();
 
   return;

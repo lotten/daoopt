@@ -8,6 +8,7 @@
 #ifndef HEURISTIC_H_
 #define HEURISTIC_H_
 
+#include "assert.h"
 #include "DEFINES.h"
 #include <vector>
 
@@ -29,6 +30,13 @@ protected:
   Heuristic() {}
   virtual ~Heuristic() {}
 
+};
+
+
+class UnHeuristic : public Heuristic {
+  size_t build(const std::vector<val_t>*, bool) { assert(false); return 0; }
+  double getGlobalUB() const { assert(false); return 0; }
+  double getHeur(int, const std::vector<val_t>&) const { assert(false); return 0; }
 };
 
 

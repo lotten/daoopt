@@ -13,11 +13,18 @@
  * will speed up computation time
  */
 
-#define NO_ASSIGNMENT
+//#define NO_ASSIGNMENT
 
 /*****************************************************************/
 
-#ifndef NOTHREADS
+/******************************************************************
+ * define LIKELIHOOD to compute likelihood instead of MPE
+ * (HIGHLY EXPERIMENTAL)
+ */
+
+#define LIKELIHOOD
+
+/*****************************************************************/
 
 /******************************************************************
  * define PARALLEL_MODE if multithreading should be used (for central
@@ -29,7 +36,6 @@
 #endif
 
 /*****************************************************************/
-#endif
 
 /******************************************************************
  * alias for val_t, the data type for variable values: larger types
@@ -47,6 +53,21 @@ typedef signed char val_t;
 //typedef int val_t;
 
 /*****************************************************************/
+
+
+/* disable threading, tuple computation, and pruning for likelihood computation */
+#ifdef LIKELIHOOD
+  #define NO_ASSIGNMENT
+  #define NO_HEURISTIC
+  #ifndef NOTHREADS
+    #define NOTHREADS
+  #endif
+#endif
+
+/* disable parallelism if NOTHREADS is defined */
+#ifdef NOTHREADS
+  #undef PARALLEL_MODE
+#endif
 
 
 #endif /* DEFS_H_ */

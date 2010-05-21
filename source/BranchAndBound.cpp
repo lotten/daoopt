@@ -26,9 +26,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
   if (node->getType() == NODE_AND) { /*******************************************/
 
     ++m_nodesAND; // count node
-#ifdef PARALLEL_MODE
-    node->setSubCount(1);
-#endif
+    PAR_ONLY(node->setSubCount(1);)
 
     if (depth >= 0) { // ignores dummy nodes
       m_nodeProfile.at(depth) += 1; // count node as expanded
@@ -42,8 +40,10 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 
       SearchNodeOR* n = new SearchNodeOR(node, vChild);
 
+#ifndef NO_HEURISTIC
       // Compute and set heuristic estimate
       heuristicOR(n);
+#endif
 
       node->addChild(n);
       m_stack.push(n);
@@ -57,8 +57,10 @@ bool BranchAndBound::doExpand(SearchNode* node) {
       myprint (ss.str());
 #endif
 
+#ifndef NO_HEURISTIC
       // store initial lower bound on subproblem (needed for master init.)
       PAR_ONLY( n->setInitialBound(lowerBound(n)) );
+#endif
 
     } // for loop
 
@@ -77,39 +79,54 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 
     ++m_nodesOR; // count node expansion
 
+#ifndef NO_HEURISTIC
     // actually create new AND children
     double* heur = node->getHeurCache();
+#endif
 
     vector<SearchNode*> newNodes;
     newNodes.reserve(m_problem->getDomainSize(var));
 
     for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
-
+#ifdef NO_HEURISTIC
+      m_assignment[var] = i;
+      // compute label value
+      double d = ELEM_ONE;
+      const list<Function*>& funs = m_pseudotree->getFunctions(var);
+      for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
+        d OP_TIMESEQ (*it)->getValue(m_assignment);
+      if (d == ELEM_ZERO)
+        continue;
+      SearchNodeAND* n = new SearchNodeAND(node, i, d);
+#else
       // early pruning if heuristic is zero (since it's an upper bound)
       if (heur[2*i+1] == ELEM_ZERO) {
         m_leafProfile.at(depth) += 1;
         PAR_ONLY( node->addSubLeaves(1) );
         continue; // label=0 -> skip
       }
-
       SearchNodeAND* n = new SearchNodeAND(node, i, heur[2*i+1]); // uses cached label
-
       // set cached heur. value
       n->setHeur( heur[2*i] );
+#endif
       // add node as successor
       node->addChild(n);
       // remember new node
       newNodes.push_back(n);
     }
 
+#ifndef NO_HEURISTIC
     node->clearHeurCache(); // clear heur. cache of OR node
+#endif
 
     if (newNodes.size()) {
 
+#ifndef NO_HEURISTIC
       // sort new nodes by increasing heuristic value
       sort(newNodes.begin(), newNodes.end(), SearchNode::heurLess);
+#endif
 
-      // add new child nodes to stack, highest heur. value will end up on top
+      // add new child nodes to stack (for MPE, highest heur. value will end up on top)
       for (vector<SearchNode*>::iterator it = newNodes.begin(); it!=newNodes.end(); ++it) {
         m_stack.push(*it);
         DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )

@@ -21,7 +21,7 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 #ifndef NO_CACHING
   // Init context cache table
 //  cout << "Initialising cache system." << endl;
-  m_space->cache = new CacheTable(prob->getN(), m_space->options->memlimit);
+  m_space->cache = new CacheTable(prob->getN());
 #endif
 
   // initialize the array for counting nodes per level
@@ -114,6 +114,10 @@ bool Search::doCaching(SearchNode* node) {
 
 bool Search::doPruning(SearchNode* node) {
 
+#ifdef NO_HEURISTIC
+  return false;
+#endif
+
   assert(node);
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
@@ -138,7 +142,7 @@ bool Search::doPruning(SearchNode* node) {
 
   return false; // default false
 
-} // Search::doCaching
+} // Search::doPruning
 
 
 

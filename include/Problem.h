@@ -9,6 +9,8 @@
 #define PROBLEM_H_
 
 #include "Function.h"
+#include "Graph.h"
+#include "MiniBucket.h"
 #include "_base.h"
 #include "gzstream.h"
 
