@@ -45,6 +45,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
       ("lds,a",po::value<int>()->default_value(-1), "run initial LDS search with given limit (-1: disabled)")
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
+      ("stacklimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation")
       ("seed", po::value<int>(), "seed for random number generator (uses time() otherwise)")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
       ("reduce,r", po::value<string>(), "outputs the reduced network to this file (removes evidence and unary variables)")
@@ -136,6 +137,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       opt.nosearch = true;
     else
       opt.nosearch = false;
+
+    if (vm.count("stacklimit"))
+      opt.stackLimit = vm["stacklimit"].as<int>();
 
     if (vm.count("seed"))
       opt.seed = vm["seed"].as<int>();

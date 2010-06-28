@@ -26,8 +26,6 @@ protected:
 
   bool doExpand(SearchNode*);
 
-  bool hasMoreNodes() const { return m_stack.size(); }
-
   void resetSearch(SearchNode*);
 
   SearchNode* nextNode();
@@ -35,8 +33,6 @@ protected:
   bool isMaster() const { return false; }
 
 public:
-  bool isDone() const;
-
   void setInitialBound(double d) const;
 
 #ifndef NO_ASSIGNMENT
@@ -57,14 +53,15 @@ public:
 
 /* INLINE DEFINITIONS */
 
-inline bool LimitedDiscrepancy::isDone() const {
-  return !hasMoreNodes();
-}
-
 inline SearchNode* LimitedDiscrepancy::nextNode() {
-  SearchNode* n = m_stack.top().first;
-  m_discCache = m_stack.top().second;
-  m_stack.pop();
+  SearchNode* n;
+  if (m_stack.empty())
+    n = NULL;
+  else {
+    n = m_stack.top().first;
+    m_discCache = m_stack.top().second;
+    m_stack.pop();
+  }
   return n;
 }
 

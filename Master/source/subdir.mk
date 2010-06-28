@@ -12,6 +12,7 @@ CPP_SRCS += \
 ../source/Function.cpp \
 ../source/Graph.cpp \
 ../source/LimitedDiscrepancy.cpp \
+../source/MiniBucket.cpp \
 ../source/MiniBucketElim.cpp \
 ../source/Problem.cpp \
 ../source/ProgramOptions.cpp \
@@ -35,6 +36,7 @@ OBJS += \
 ./source/Function.o \
 ./source/Graph.o \
 ./source/LimitedDiscrepancy.o \
+./source/MiniBucket.o \
 ./source/MiniBucketElim.o \
 ./source/Problem.o \
 ./source/ProgramOptions.o \
@@ -58,6 +60,7 @@ CPP_DEPS += \
 ./source/Function.d \
 ./source/Graph.d \
 ./source/LimitedDiscrepancy.d \
+./source/MiniBucket.d \
 ./source/MiniBucketElim.d \
 ./source/Problem.d \
 ./source/ProgramOptions.d \

@@ -22,7 +22,7 @@
  * (HIGHLY EXPERIMENTAL)
  */
 
-#define LIKELIHOOD
+//#define LIKELIHOOD
 
 /*****************************************************************/
 
@@ -32,8 +32,18 @@
  */
 
 #ifndef PARALLEL_MODE
-#define PARALLEL_MODE
+//#define PARALLEL_MODE
 #endif
+
+/*****************************************************************/
+
+/*
+ * define ANYTIME to enable better anytime behavior of AOBB, at the
+ * expense of some efficiency and memory; AOBB will use separate
+ * stacks for independent subproblems
+ */
+
+#define ANYTIME
 
 /*****************************************************************/
 

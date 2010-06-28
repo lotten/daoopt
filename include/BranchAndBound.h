@@ -11,20 +11,43 @@
 #include "Search.h"
 
 
+#ifdef ANYTIME
+/*
+ * Minor extension of STL stack class, used by AOBB for the 'stack tree'
+ */
+class MyStack : public stack<SearchNode*> {
+protected:
+  size_t m_children;
+  MyStack* m_parent;
+public:
+  size_t getChildren() const { return m_children; }
+  void addChild() { m_children += 1; }
+  void delChild() { m_children -= 1; }
+  MyStack* getParent() const { return m_parent; }
+public:
+  MyStack(MyStack* p) : m_children(0), m_parent(p) {}
+};
+#endif
+
+
 /* Branch and Bound search, implements pure virtual functions from
  * Search.h, most importantly expandNext() */
 class BranchAndBound : virtual public Search {
 
 protected:
+#ifdef ANYTIME
+  size_t m_stackCount;        // counter for current stack
+  MyStack* m_rootStack;       // the root stack
+  queue<MyStack*> m_stacks;   // the queue of active stacks
+#else
   stack<SearchNode*> m_stack; // The DFS stack of nodes
+#endif
 
 
 protected:
   void expandNext();
 
   bool doExpand(SearchNode* n);
-
-  bool hasMoreNodes() const { return !m_stack.empty(); }
 
   void resetSearch(SearchNode* p);
 
@@ -33,7 +56,6 @@ protected:
   bool isMaster() const { return false; }
 
 public:
-  bool isDone() const;
 
   void setInitialBound(double d) const;
 
@@ -48,23 +70,21 @@ public:
 
 /* Inline definitions */
 
-inline bool BranchAndBound::isDone() const {
-  return m_stack.empty();
-}
-
-
-inline SearchNode* BranchAndBound::nextNode() {
-  SearchNode* n = m_stack.top();
-  m_stack.pop();
-  return n;
-}
-
-
 inline void BranchAndBound::resetSearch(SearchNode* p) {
   assert(p);
+#ifdef ANYTIME
+  // TODO
+  while (m_stacks.size()) {
+    delete m_stacks.front();
+    m_stacks.pop();
+  }
+  m_rootStack = new MyStack(NULL);
+  m_rootStack->push(p);
+#else
   while (!m_stack.empty())
       m_stack.pop();
   m_stack.push(p);
+#endif
 }
 
 

@@ -28,7 +28,7 @@
 
 #include <ctime>
 
-#define VERSIONINFO "0.98.5"
+#define VERSIONINFO "0.98.6"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -264,8 +264,11 @@ int main(int argc, char** argv) {
     SearchSpace* spaceLDS = new SearchSpace(&pt, &opt);
     LimitedDiscrepancy lds(&p,&pt,spaceLDS,&mbe,opt.lds);
     BoundPropagator propLDS(spaceLDS);
-    while (!lds.isDone())
-      propLDS.propagate(lds.nextLeaf());
+    SearchNode* n = lds.nextLeaf();
+    while (n) {
+      propLDS.propagate(n);
+      n = lds.nextLeaf();
+    }
     cout << "LDS: explored " << lds.getNoNodesAND() << '/' << lds.getNoNodesOR() << " AND/OR nodes" << endl;
     cout << "LDS: found optimal cost " << lds.getCurOptValue() << endl;
     if (lds.getCurOptValue() > search.curLowerBound()) {
@@ -340,9 +343,10 @@ int main(int argc, char** argv) {
 
 
 #else
-  while (!search.isDone()) {
-//  while (search.getNoNodesAND() < 500000) {
-    prop.propagate(search.nextLeaf());
+  SearchNode* n = search.nextLeaf();
+  while (n) {
+    prop.propagate(n);
+    n = search.nextLeaf();
   }
 #endif
 

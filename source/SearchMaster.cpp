@@ -31,7 +31,7 @@ void SearchMaster::operator ()() {
     myprint(ss.str());
   }
 
-  while ( this->hasMoreNodes() ) {
+  while ( !this->isDone() ) {
 
     { // allowedThreads says how many more subproblems can be processed in parallel
       GETLOCK( m_spaceMaster->mtx_allowedThreads , lk);
@@ -92,7 +92,7 @@ void SearchMaster::operator ()() {
       }
 
       // mark search as done if needed (before releasing the search space)
-      if (! this->hasMoreNodes() ) {
+      if ( this->isDone() ) {
         GETLOCK(m_spaceMaster->mtx_searchDone, lk2);
         m_spaceMaster->searchDone = true;
       }

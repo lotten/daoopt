@@ -16,12 +16,49 @@
 typedef PseudotreeNode PtNode;
 
 
+SearchNode* BranchAndBound::nextNode() {
+  SearchNode* n = NULL;
+#ifdef ANYTIME
+  while (m_stacks.size()) {
+    MyStack* st = m_stacks.front();
+    if (st->getChildren()) {
+      m_stacks.push(st);
+      m_stackCount = 0;
+    } else if (st->empty()) {
+      if (st->getParent())
+        st->getParent()->delChild();
+      delete st;
+      m_stackCount = 0;
+    } else if (m_stackCount++ == 1000) {
+      m_stacks.push(st);
+      m_stackCount = 0;
+    } else {
+      n = st->top();
+      st->pop();
+      break; // while loop
+    }
+    m_stacks.pop();
+  }
+#else
+  if (m_stack.size()) {
+    n = m_stack.top();
+    m_stack.pop();
+  }
+#endif
+  return n;
+}
+
+
 bool BranchAndBound::doExpand(SearchNode* node) {
 
   assert(node);
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
+
+#ifdef ANYTIME
+  MyStack* stack = m_stacks.front();
+#endif
 
   if (node->getType() == NODE_AND) { /*******************************************/
 
@@ -31,6 +68,11 @@ bool BranchAndBound::doExpand(SearchNode* node) {
     if (depth >= 0) { // ignores dummy nodes
       m_nodeProfile.at(depth) += 1; // count node as expanded
     }
+
+#ifdef ANYTIME
+    bool splitStack = false;
+    if (ptnode->getChildren().size() > 1) splitStack = true;
+#endif
 
     // create new OR children
     for (vector<PtNode*>::const_iterator it=ptnode->getChildren().begin();
@@ -46,7 +88,18 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 #endif
 
       node->addChild(n);
+#ifdef ANYTIME
+      if (!splitStack) {
+        stack->push(n);
+      } else {
+        MyStack* s = new MyStack( stack );
+        s->push(n);
+        m_stacks.push(s);
+        stack->addChild();
+      }
+#else
       m_stack.push(n);
+#endif
 
 #ifdef DEBUG
       ostringstream ss;
@@ -73,7 +126,6 @@ bool BranchAndBound::doExpand(SearchNode* node) {
       PAR_ONLY( node->setSubLeaves(1) );
       return true;
     }
-
 
   } else { // NODE_OR /*********************************************************/
 
@@ -128,7 +180,11 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 
       // add new child nodes to stack (for MPE, highest heur. value will end up on top)
       for (vector<SearchNode*>::iterator it = newNodes.begin(); it!=newNodes.end(); ++it) {
+#ifdef ANYTIME
+        stack->push(*it);
+#else
         m_stack.push(*it);
+#endif
         DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
       }
     } else { // all child AND nodes were pruned (counted as leafs above)
@@ -202,10 +258,14 @@ BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space
   // put global constant into dummy AND node label
   m_space->root->addChild(next);
 
+#ifdef ANYTIME
+  m_rootStack = new MyStack(NULL);
+  m_rootStack->push(next);
+  m_stacks.push(m_rootStack);
+  m_stackCount = 0;
+#else
   m_stack.push(next);
-
-
+#endif
 
 }
-
 

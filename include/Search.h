@@ -54,11 +54,8 @@ protected:
 #endif
 
 public:
-  /* for single-threaded execution, returns the next leaf node */
+  /* returns the next leaf node, NULL if search done */
   SearchNode* nextLeaf() ;
-
-public:
-  virtual bool isDone() const = 0;
 
   count_t getNoNodesOR() const { return m_nodesOR; }
   count_t getNoNodesAND() const { return m_nodesAND; }
@@ -112,9 +109,6 @@ public:
 #endif
 
 protected:
-
-  // returns true iff search has more nodes to expand
-  virtual bool hasMoreNodes() const = 0;
 
   // resets the queue/stack/etc. to the given node
   virtual void resetSearch(SearchNode*) = 0;

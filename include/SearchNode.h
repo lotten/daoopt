@@ -259,6 +259,7 @@ inline SearchNode::SearchNode(SearchNode* parent) :
 inline SearchNode::~SearchNode() {
   for (CHILDLIST::iterator it = m_children.begin(); it!=m_children.end(); ++it)
     delete *it;
+//  myprint(string("."));
 }
 
 inline void SearchNode::addChild(SearchNode* node) {

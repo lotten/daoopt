@@ -34,14 +34,6 @@
 /* define if data files (solution and subproblem files) should be written in binary */
 #define BINARY_DATAFILES
 
-/* define to disable caching (for debugging) */
-//#define NO_CACHING
-
-/* define to enable memory limitation for caching (experimental) */
-//#define CACHE_MEMLIMIT
-
-/* define to disable heuristic pruning (for debugging) */
-//#define NO_PRUNING
 
 #ifdef NOTHREADS
 #undef PARALLEL_MODE

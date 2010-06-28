@@ -34,6 +34,7 @@ public:
   int maxSubprob; // only generate this many subproblems, then abort (for testing)
   int lds;  // run initial LDS with this limit (-1: enabled)
   int seed; // the seed for the random number generator
+  int stackLimit; // how many nodes to expand per subproblem stack before rotating
 
   double initialBound; // initial lower bound
 
@@ -58,6 +59,6 @@ inline ProgramOptions::ProgramOptions() :
 		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
-		      lds(NONE), seed(NONE), initialBound(ELEM_NAN) {}
+		      lds(NONE), seed(NONE), stackLimit(NONE), initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

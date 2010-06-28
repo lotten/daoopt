@@ -106,7 +106,10 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 #endif
           DIAG(myprint(" deleting AND\n") );
         } else {
-          del = prop = false;
+          del = false;
+#ifdef LIKELIHOOD
+          prop = false;
+#endif
         }
 
       }
@@ -123,8 +126,8 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
         else
           cur->setValue( OP_PLUS(d,cur->getValue()) );
 #else
-        if ( ISNAN( cur->getValue() ) || v > cur->getValue()) {
-          cur->setValue(v); // update max. value
+        if ( ISNAN( cur->getValue() ) || d > cur->getValue()) {
+          cur->setValue(d); // update max. value
         } else {
           prop = false; // no more value propagation upwards in this call
         }
@@ -141,7 +144,10 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 #endif
           DIAG(myprint(" deleting OR\n"));
         } else {
-          del = prop = false;
+          del = false;
+#ifdef LIKELIHOOD
+          prop = false;
+#endif
         }
       }
 

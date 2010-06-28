@@ -148,9 +148,8 @@ bool Search::doPruning(SearchNode* node) {
 
 SearchNode* Search::nextLeaf() {
 
-  SearchNode* node = NULL;
-  while (true) {
-    node = this->nextNode();
+  SearchNode* node = this->nextNode();
+  while (node) {
     if (doProcess(node)) // initial processing
       { return node; }
     if (doCaching(node)) // caching?
@@ -159,8 +158,9 @@ SearchNode* Search::nextLeaf() {
       { return node; }
     if (doExpand(node)) // node expansion
       { return node; }
+    node = this->nextNode();
   }
-
+  return NULL;
 }
 
 

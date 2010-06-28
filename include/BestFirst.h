@@ -29,7 +29,7 @@ protected:
   pqueue m_queue;
 
 protected:
-  bool hasMoreNodes() const { return !m_queue.empty(); }
+
   void resetSearch(SearchNode* p);
   SearchNode* nextNode();
 
@@ -40,18 +40,11 @@ protected:
   void synchAssignment(SearchNode* cur);
 
 public:
-  bool isDone() const;
-
-public:
   BestFirst(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) ;
 
 };
 
 /* Inline definitions */
-
-inline bool BestFirst::isDone() const {
-  return m_queue.empty();
-}
 
 
 inline SearchNode* BestFirst::nextNode() {
