@@ -26,21 +26,28 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#include <ctime>
+#define VERSIONINFO "0.98.7"
 
-#define VERSIONINFO "0.98.6"
+#if defined(ANYTIME_BREADTH)
+#define VERSIONMOD " /any-bfs"
+#elif defined(ANYTIME_DEPTH)
+#define VERSIONMOD " /any-dfs"
+#else
+#define VERSIONMOD " /plain"
+#endif
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
 
+time_t time_start, time_end, time_pre;
+
 int main(int argc, char** argv) {
 
   // Record start time, end time, and preprocessing time
-  time_t time_start, time_end, time_pre;
   time(&time_start);
   double time_passed;
 
-  cout << "-----------------------------------------------" << endl
+  cout << "------------------------------------------------------" << endl
        << "DAOOPT " << VERSIONINFO;
 #ifdef PARALLEL_MODE
   cout << " PARALLEL (";
@@ -49,16 +56,17 @@ int main(int argc, char** argv) {
 #endif
   cout << sizeof(val_t)*8 << ")";
 #ifdef LIKELIHOOD
-  cout << " for likelihood" << endl;
+  cout << " for likelihood";
 #else
 #ifdef NO_ASSIGNMENT
-  cout << " w/o assig." << endl;
+  cout << " w/o assig.";
 #else
-  cout << " w. assig." << endl;
+  cout << " w. assig.";
 #endif
 #endif /* LIKELIHOOD */
-  cout << "  by Lars Otten, UC Irvine <lotten@ics.uci.edu>" << endl
-       << "-----------------------------------------------" << endl;
+  cout << VERSIONMOD << endl
+       << "  by Lars Otten, UC Irvine <lotten@ics.uci.edu>" << endl
+       << "------------------------------------------------------" << endl;
 
   // Reprint command line
   for (int i=0; i<argc; ++i)
@@ -203,6 +211,10 @@ int main(int argc, char** argv) {
   BranchAndBound search(&p,&pt,space,&mbe);
 #endif
 
+#ifdef ANYTIME_BREADTH
+  search.setStackLimit(opt.stackLimit);
+#endif
+
   // Subproblem specified? If yes, restrict.
   if (!opt.in_subproblemFile.empty()) {
     cout << "Reading subproblem from file " << opt.in_subproblemFile << '.' << endl;
@@ -263,13 +275,13 @@ int main(int argc, char** argv) {
     cout << "Running LDS with limit " << opt.lds << endl;
     SearchSpace* spaceLDS = new SearchSpace(&pt, &opt);
     LimitedDiscrepancy lds(&p,&pt,spaceLDS,&mbe,opt.lds);
-    BoundPropagator propLDS(spaceLDS);
+    BoundPropagator propLDS(&p,spaceLDS);
     SearchNode* n = lds.nextLeaf();
     while (n) {
       propLDS.propagate(n);
       n = lds.nextLeaf();
     }
-    cout << "LDS: explored " << lds.getNoNodesAND() << '/' << lds.getNoNodesOR() << " AND/OR nodes" << endl;
+    cout << "LDS: explored " << spaceLDS->nodesOR << '/' << spaceLDS->nodesAND << " OR/AND nodes" << endl;
     cout << "LDS: found optimal cost " << lds.getCurOptValue() << endl;
     if (lds.getCurOptValue() > search.curLowerBound()) {
       search.setInitialBound(lds.getCurOptValue());
@@ -299,9 +311,9 @@ int main(int argc, char** argv) {
 
   // The propagation engine
 #ifdef PARALLEL_MODE
-  BoundPropagatorMaster prop(space);
+  BoundPropagatorMaster prop(&p,space);
 #else
-  BoundPropagator prop(space);
+  BoundPropagator prop(&p,space);
 #endif
 
   cout << "--- Starting search ---" << endl;
@@ -354,8 +366,8 @@ int main(int argc, char** argv) {
 #ifdef PARALLEL_MODE
   cout << "Condor jobs:   " << search.getThreadCount() << endl;
 #endif
-  cout << "OR nodes:      " << search.getNoNodesOR() << endl;
-  cout << "AND nodes:     " << search.getNoNodesAND() << endl;
+  cout << "OR nodes:      " << space->nodesOR << endl;
+  cout << "AND nodes:     " << space->nodesAND << endl;
 #ifdef PARALLEL_MODE
 //  cout << "Subcount:      " << search.getSubCount() << endl;
 #endif
@@ -398,11 +410,8 @@ int main(int argc, char** argv) {
   }
   cout << endl;
 
-
-  p.outputAndSaveSolution(opt.out_solutionFile, mpeCost, search.getNoNodes(),
-#ifndef NO_ASSIGNMENT
-      search.getCurOptTuple(),
-#endif
+  pair<size_t,size_t> noNodes = make_pair(space->nodesOR, space->nodesAND);
+  p.outputAndSaveSolution(opt.out_solutionFile, noNodes,
       search.getNodeProfile(),search.getLeafProfile(),!opt.in_subproblemFile.empty() );
 
   cout << endl;

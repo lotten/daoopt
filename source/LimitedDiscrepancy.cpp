@@ -25,7 +25,7 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
 
     // we need to generate *all* OR successors
 
-    ++m_nodesAND; // count node
+    ++m_space->nodesAND; // count node
 #ifdef PARALLEL_MODE
     node->setSubCount(1);
 #endif
@@ -79,7 +79,7 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
     // generate only successors whose total discrepancy is not higher
     // than the global limit
 
-    ++m_nodesOR; // count node expansion
+    ++m_space->nodesOR; // count node expansion
 
     // actually create new AND children
     double* heur = node->getHeurCache();

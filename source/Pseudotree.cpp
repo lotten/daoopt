@@ -381,16 +381,34 @@ int Pseudotree::computeComplexities(int workers) {
 }
 #endif
 
+/*
+ * orders the sub pseudo trees of a node
+ */
+void PseudotreeNode::orderChildren() {
+  sort(m_children.begin(), m_children.end(), PseudotreeNode::compGreater ); // def: greater
+}
+
 
 /* compares two pseudotree nodes, returns true if subtree below a is more complex
  * than below b (looks at width, then height) */
-bool PseudotreeNode::comp(PseudotreeNode* a, PseudotreeNode* b) {
+bool PseudotreeNode::compGreater(PseudotreeNode* a, PseudotreeNode* b) {
   assert (a && b);
   if ( a->getSubWidth() > b->getSubWidth() )
     return true;
   if ( a->getSubWidth() < b->getSubWidth() )
     return false;
   if ( a->getSubHeight() > b->getSubHeight() )
+    return true;
+  return false;
+}
+
+bool PseudotreeNode::compLess(PseudotreeNode* a, PseudotreeNode* b) {
+  assert (a && b);
+  if ( a->getSubWidth() < b->getSubWidth() )
+    return true;
+  if ( a->getSubWidth() > b->getSubWidth() )
+    return false;
+  if ( a->getSubHeight() < b->getSubHeight() )
     return true;
   return false;
 }

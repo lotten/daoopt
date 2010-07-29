@@ -33,6 +33,8 @@ protected:
 
   double m_globalConstant;        // Global constant modifier for objective function
 
+  double m_curCost;               // Cost of current solution
+
   string m_name;                  // Problem name
 
   vector<val_t> m_domains;        // Domain sizes of variables
@@ -42,6 +44,8 @@ protected:
   map<int,val_t> m_evidence;      // List of evidence as <index,value>
 
   map<int,int> m_old2new;         // Translation of variable names after removing evidence
+
+  vector<val_t> m_curSolution;       // Current best solution
 
 public:
   val_t getDomainSize(int i) const;
@@ -75,21 +79,23 @@ public:
   // removes evidence and unary-domain variables
   void removeEvidence();
 
+  // report an updated solution
+  void updateSolution(double cost,
+#ifndef NO_ASSIGNMENT
+      const vector<val_t>& sol,
+#endif
+      pair<size_t,size_t> nodes,
+      bool output = true);
+
   // outputs the solution to the screen and, if file!="", writes it to file
   //  - cost is the MPE tuple value
   //  - sol is the optimal solution tuple
   //  - noNodes is the number of OR/AND nodes
   //  - nodeProf and leafProf are the full and leaf node profiles
   // if subprobOnly is true, only the variables from sol will be output to file (for subproblem solving)
-#ifndef NO_ASSIGNMENT
-  void outputAndSaveSolution(const string& file, double cost, pair<count_t,count_t> noNodes, const vector<val_t>& sol,
+  void outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
                              bool subprobOnly = false) const;
-#else
-  void outputAndSaveSolution(const string& file, double cost, pair<count_t,count_t> noNodes,
-                             const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
-                             bool subprobOnly = false) const;
-#endif
 
 #ifndef NO_ASSIGNMENT
   /* returns true iff the index variable from the full set has been eliminated
@@ -132,7 +138,8 @@ inline Problem::Problem() :
     m_e(UNKNOWN),
     m_c(UNKNOWN),
     m_r(UNKNOWN),
-    m_globalConstant(ELEM_NAN) {}
+    m_globalConstant(ELEM_NAN),
+    m_curCost(ELEM_NAN) {}
 
 inline Problem::~Problem() {
   // delete functions

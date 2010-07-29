@@ -28,7 +28,7 @@ protected:
 
 public:
   // simple constructor
-  BoundPropagatorMaster(SearchSpaceMaster* s) : BoundPropagator(s), m_spaceMaster(s) {}
+  BoundPropagatorMaster(Problem* p, SearchSpaceMaster* s) : BoundPropagator(p,s), m_spaceMaster(s) {}
 
 };
 

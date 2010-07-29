@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 
+//extern time_t time_start;
 
 void Problem::removeEvidence() {
 
@@ -404,17 +405,8 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 }
 
 
-#ifndef NO_ASSIGNMENT
-void Problem::outputAndSaveSolution(const string& file, double mpe, pair<count_t,count_t> noNodes, const vector<val_t>& sol,
+void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
     const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
-#else
-void Problem::outputAndSaveSolution(const string& file, double mpe, pair<count_t,count_t> noNodes,
-    const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
-#endif
-
-#ifndef NO_ASSIGNMENT
-	  assert( subprobOnly || (int) sol.size() == m_n );
-#endif
 
   bool writeFile = false;
   if (! file.empty())
@@ -429,60 +421,36 @@ void Problem::outputAndSaveSolution(const string& file, double mpe, pair<count_t
     }
   }
 
-  cout << "s " << SCALE_LOG(mpe);
+  int assigSize = UNKNOWN;
+  if (subprobOnly)
+    assigSize = (int) m_curSolution.size() - 1; // -1 for dummy var
+  else
+    assigSize = m_nOrg;
+
+  cout << "s " << SCALE_LOG(m_curCost);
 #ifndef NO_ASSIGNMENT
-  cout << ' ' << m_nOrg;
+  cout << ' ' << assigSize;
 #endif
 
+  if (writeFile) {
+    BINWRITE(out, m_curCost); // mpe solution cost
+    BINWRITE(out, noNodes.first); // no. of OR nodes expanded
+    BINWRITE(out, noNodes.second); // no. of AND nodes expanded
+  }
 
 #ifndef NO_ASSIGNMENT
 
-  int fileAssigSize = UNKNOWN;
-  if (subprobOnly)
-    fileAssigSize = (int) sol.size() -1; // -1 for dummy var.
-  else
-    fileAssigSize = m_nOrg;
-
   if (writeFile) {
-    BINWRITE(out,mpe); // mpe solution cost
-    BINWRITE(out, noNodes.first); // no. of OR nodes expanded
-    BINWRITE(out, noNodes.second); // no. of AND nodes expanded
-    BINWRITE(out,fileAssigSize); // no. of variables in opt. assignment
+    BINWRITE(out,assigSize); // no. of variables in opt. assignment
   }
 
-  int v = UNKNOWN; // output domain values as int, regardless of internal type
+  int v = UNKNOWN;
+  for (int i=0; i<assigSize; ++i) {
+    v = (int) m_curSolution.at(i);
+    cout << ' ' << v;
+    if (writeFile) BINWRITE(out, v);
+  }
 
-  for (int i=0; i<fileAssigSize; ++i) {
-    if (subprobOnly) { // only output subproblem assignment
-      v = (int) sol.at(i);
-      cout << ' ' << (int) v;
-      if (writeFile) BINWRITE(out, v);
-    } else { // ouptut full assignment (incl. evidence)
-      map<int,int>::const_iterator itRen = m_old2new.find(i);
-      if (itRen != m_old2new.end()) {
-        v = (int) sol.at( itRen->second);
-        cout << ' ' << (int) v;
-        if (writeFile) BINWRITE(out,v);
-      } else {
-        map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
-        if (itEvid != m_evidence.end()) { // var. i was evidence
-          v = (int) itEvid->second;
-          cout << ' ' << (int) v;
-          if (writeFile) BINWRITE(out,v);
-        } else { // var. had unary domain and was removed
-          v = 0;
-          cout << ' ' << (int) v;
-          if (writeFile) BINWRITE(out,v);
-        }
-      }
-    }
-  }
-#else
-  if (writeFile) {
-    BINWRITE(out,mpe); // mpe solution cost
-    BINWRITE(out, noNodes.first); // no. of OR nodes expanded
-    BINWRITE(out, noNodes.second); // no. of AND nodes expanded
-  }
 #endif
 
   // output node profiles in case of subproblem processing
@@ -502,6 +470,73 @@ void Problem::outputAndSaveSolution(const string& file, double mpe, pair<count_t
   cout << endl;
   if (writeFile)
     out.close();
+
+}
+
+
+void Problem::updateSolution(double cost,
+#ifndef NO_ASSIGNMENT
+    const vector<val_t>& sol,
+#endif
+    pair<size_t,size_t> nodes,
+    bool output) {
+
+#ifndef NO_ASSIGNMENT
+  bool subprob = ((int) sol.size() != m_n) ? true : false;
+#endif
+
+  if ( (ISNAN(m_curCost) || cost > m_curCost ) && cost != ELEM_ZERO )
+    m_curCost = cost;
+  else
+    return;
+
+  ostringstream ss;
+
+  if (output) {
+//    time_t now; time(&now);
+//    double T = difftime(now,time_start);
+    ss << "u " << nodes.first << ' ' <<  nodes.second << ' ' << SCALE_LOG(cost) ;
+  }
+
+#ifndef NO_ASSIGNMENT
+
+  int solsize = -1;
+  if (subprob) { // only subproblem
+    m_curSolution = sol;
+    solsize = (int) sol.size() -1 ;
+  }
+  else { // reconstruct full solution
+    m_curSolution.resize(m_nOrg, UNKNOWN);
+    solsize = m_nOrg;
+
+    for (int i=0; i<m_nOrg; ++i) {
+      map<int,int>::const_iterator itRen = m_old2new.find(i);
+      if (itRen != m_old2new.end()) { // var part of solution
+	m_curSolution.at(i) = sol.at(itRen->second);
+      } else {
+	map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
+	if (itEvid != m_evidence.end()) { // var part of evidence
+	  m_curSolution.at(i) = itEvid->second;
+	} else { // var had unary domain
+	  m_curSolution.at(i) = 0;
+	}
+      }
+    }
+
+  }
+
+  if (output) {
+    ss << ' ' << m_curSolution.size();
+    for (vector<val_t>::const_iterator it=m_curSolution.begin(); it!=m_curSolution.end(); ++it) {
+      ss << ' ' << (int) (*it); 
+    }
+  }
+#endif
+
+  if (output) {
+    ss << endl;
+    myprint(ss.str());
+  }
 
 }
 

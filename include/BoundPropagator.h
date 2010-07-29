@@ -17,6 +17,7 @@ class BoundPropagator {
 
 protected:
 
+  Problem*     m_problem;
   SearchSpace* m_space;
 
 #ifdef PARALLEL_MODE
@@ -34,9 +35,13 @@ protected:
 
 public:
 
-  // propagates the value of the specified search node and removes unneeded nodes
-  // returns a pointer to the parent of the highest deleted node
-  SearchNode* propagate(SearchNode*);
+  /*
+   * propagates the value of the specified search node and removes unneeded nodes
+   * returns a pointer to the parent of the highest deleted node
+   * @n: the search node to be propagated
+   * @reportSolution: should root updates be reported to problem instance?
+   */
+  SearchNode* propagate(SearchNode* n, bool reportSolution = true);
 
 #ifdef PARALLEL_MODE
   int getSubRootvarCache() const { return m_subRootvarCache; }
@@ -55,7 +60,7 @@ protected:
   virtual bool isMaster() const { return false; }
 
 public:
-  BoundPropagator(SearchSpace* s) : m_space(s) { /* empty */ }
+  BoundPropagator(Problem* p, SearchSpace* s) : m_problem(p), m_space(s) { /* empty */ }
   virtual ~BoundPropagator() {}
 };
 

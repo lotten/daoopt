@@ -25,8 +25,8 @@ class Search {
 
 protected:
 
-  count_t m_nodesOR;             // Keeps track of the number of OR nodes
-  count_t m_nodesAND;            // Keeps track of the number of AND nodes
+//  count_t m_nodesOR;             // Keeps track of the number of OR nodes
+//  count_t m_nodesAND;            // Keeps track of the number of AND nodes
   count_t m_nextThreadId;        // Next subproblem thread id
 
   Problem* m_problem;           // The problem instance
@@ -57,12 +57,15 @@ public:
   /* returns the next leaf node, NULL if search done */
   SearchNode* nextLeaf() ;
 
-  count_t getNoNodesOR() const { return m_nodesOR; }
-  count_t getNoNodesAND() const { return m_nodesAND; }
+  /* returns true iff the search is complete */
+  virtual bool isDone() const = 0;
+
+//  count_t getNoNodesOR() const { return m_nodesOR; }
+//  count_t getNoNodesAND() const { return m_nodesAND; }
 #ifdef PARALLEL_MODE
   count_t getSubCount() const { return m_space->getTrueRoot()->getSubCount(); }
 #endif
-  pair<count_t,count_t> getNoNodes() const { return make_pair(m_nodesOR, m_nodesAND); }
+//  pair<count_t,count_t> getNoNodes() const { return make_pair(m_nodesOR, m_nodesAND); }
   count_t getThreadCount() const { return m_nextThreadId; }
 
   const vector<count_t>& getNodeProfile() const { return m_nodeProfile; }

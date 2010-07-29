@@ -11,8 +11,7 @@
 #include "ProgramOptions.h"
 
 Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
-  m_nodesOR(0), m_nodesAND(0), m_nextThreadId(0), m_problem(prob),
-  m_pseudotree(pt), m_space(s), m_heuristic(h) //, m_nextLeaf(NULL)
+  m_nextThreadId(0), m_problem(prob), m_pseudotree(pt), m_space(s), m_heuristic(h)
 #ifdef PARALLEL_MODE
   , m_nextSubprob(NULL)
 #endif

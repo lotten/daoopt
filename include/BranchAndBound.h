@@ -11,7 +11,7 @@
 #include "Search.h"
 
 
-#ifdef ANYTIME
+#ifdef ANYTIME_BREADTH
 /*
  * Minor extension of STL stack class, used by AOBB for the 'stack tree'
  */
@@ -35,17 +35,23 @@ public:
 class BranchAndBound : virtual public Search {
 
 protected:
-#ifdef ANYTIME
+#ifdef ANYTIME_BREADTH
   size_t m_stackCount;        // counter for current stack
+  size_t m_stackLimit;        // expansion limit for stack rotation
   MyStack* m_rootStack;       // the root stack
   queue<MyStack*> m_stacks;   // the queue of active stacks
 #else
+#ifdef ANYTIME_DEPTH
+  stack<SearchNode*> m_stackDive; // first stack for initial dives
+#endif
   stack<SearchNode*> m_stack; // The DFS stack of nodes
 #endif
 
 
 protected:
   void expandNext();
+
+  bool isDone() const;
 
   bool doExpand(SearchNode* n);
 
@@ -56,6 +62,10 @@ protected:
   bool isMaster() const { return false; }
 
 public:
+
+#ifdef ANYTIME_BREADTH
+  void setStackLimit(size_t s) { m_stackLimit = s; }
+#endif
 
   void setInitialBound(double d) const;
 
@@ -70,9 +80,20 @@ public:
 
 /* Inline definitions */
 
+
+inline bool BranchAndBound::isDone() const {
+#if defined ANYTIME_BREADTH
+  assert(false); // TODO
+#elif defined ANYTIME_DEPTH
+  return (m_stack.empty() && m_stackDive.empty());
+#else
+  return m_stack.empty();
+#endif
+}
+
 inline void BranchAndBound::resetSearch(SearchNode* p) {
   assert(p);
-#ifdef ANYTIME
+#ifdef ANYTIME_BREADTH
   // TODO
   while (m_stacks.size()) {
     delete m_stacks.front();
@@ -81,6 +102,10 @@ inline void BranchAndBound::resetSearch(SearchNode* p) {
   m_rootStack = new MyStack(NULL);
   m_rootStack->push(p);
 #else
+#ifdef ANYTIME_DEPTH
+  while (!m_stackDive.empty())
+    m_stackDive.pop();
+#endif
   while (!m_stack.empty())
       m_stack.pop();
   m_stack.push(p);

@@ -166,7 +166,8 @@ public:
   const vector<PseudotreeNode*>& getChildren() const { return m_children; }
   void orderChildren();
 
-  static bool comp(PseudotreeNode* a, PseudotreeNode* b);
+  static bool compGreater(PseudotreeNode* a, PseudotreeNode* b);
+  static bool compLess(PseudotreeNode* a, PseudotreeNode* b);
 
   void setFullContext(const set<int>& c) { m_context = c; }
   void addFullContext(int v) { m_context.insert(v); }
@@ -289,10 +290,6 @@ inline bigint PseudotreeNode::computeHWB(const vector<val_t>* assig) {
   return computeSubCompDet(this->getFullContext(), assig);
 }
 #endif /* PARALLEL MODE */
-
-inline void PseudotreeNode::orderChildren() {
-  sort(m_children.begin(), m_children.end(), PseudotreeNode::comp );
-}
 
 
 /* Constructor */

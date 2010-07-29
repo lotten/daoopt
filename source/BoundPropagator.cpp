@@ -10,7 +10,7 @@
 #include "BoundPropagator.h"
 
 
-SearchNode* BoundPropagator::propagate(SearchNode* n) {
+SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
 
   // these two pointers move upward in the search space, always one level
   // apart s.t. cur is the parent node of prev
@@ -163,11 +163,17 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
       if (cur == m_space->subproblemLocal) {
         if (del) highestDelete = make_pair(cur,prev);
         DIAG(myprint("PROP reached ROOT\n"));
+        if (prop) {
 #ifndef NO_ASSIGNMENT
-        if (prop)
           propagateTuple(n,cur);
+          if (reportSolution) m_problem->updateSolution(cur->getValue(), cur->getOptAssig(),
+              make_pair(m_space->nodesOR,m_space->nodesAND), true);
+#else
+          if (reportSolution) m_problem->updateSolution(cur->getValue(),
+              make_pair(m_space->nodesOR,m_space->nodesAND), true);
 #endif
-        break;
+      }
+      break;
       }
 
       // ===========================================================================
@@ -183,12 +189,16 @@ SearchNode* BoundPropagator::propagate(SearchNode* n) {
 
   } while (cur); // until cur==NULL, i.e. 'parent' of root
 
-#ifndef NO_ASSIGNMENT
   // propagated up to root node, update tuple as well
-  if (prop && !cur)
+  if (prop && !cur) {
+#ifndef NO_ASSIGNMENT
     propagateTuple(n,prev);
+    if (reportSolution) m_problem->updateSolution(prev->getValue(), prev->getOptAssig(),
+        make_pair(m_space->nodesOR, m_space->nodesAND), true);
+#else
+    if (reportSolution) m_problem->updateSolution(prev->getValue(), make_pair(m_space->nodesOR, m_space->nodesAND), true);
 #endif
-
+  }
   if(highestDelete.first->getType() == NODE_AND) {
     // Store value of OR node to be deleted into AND parent
     highestDelete.first->addSubSolved(highestDelete.second->getValue());

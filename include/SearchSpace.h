@@ -45,6 +45,10 @@ class Pseudotree;
 
 /* main search space structure for worker nodes */
 struct SearchSpace{
+
+  size_t nodesOR;               // number of OR nodes expanded
+  size_t nodesAND;              // number of AND nodes expanded
+
   SearchNode* root;             // true root of the search space, always a dummy OR node
   SearchNode* subproblemLocal;  // pseudo root node when processing subproblem (NULL otherwise)
   ProgramOptions* options;      // Pointer to instance of program options container
@@ -59,6 +63,7 @@ struct SearchSpace{
 
 
 inline SearchSpace::SearchSpace(Pseudotree* pt, ProgramOptions* opt) :
+    nodesOR(0), nodesAND(0),
     root(NULL), subproblemLocal(NULL), options(opt), pseudotree(pt), cache(NULL)
 { /* intentionally empty at this point */ }
 

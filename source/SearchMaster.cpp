@@ -200,7 +200,7 @@ bool SearchMaster::doParallelize(SearchNode* node) {
     estimate = pow(avgBra, estDepth);
     //  double estimate = m_spaceMaster->stats->normalize(rawEst);
 
-    ss << " est: " << ((count_t) estimate) << endl;
+    ss << " est: " << ((count_t) estimate) << endl; // TODO handle overflow
     myprint(ss.str());
 
 //    cutoff = (estimate <= m_space->options->cutoff_size * ((double) 100000));

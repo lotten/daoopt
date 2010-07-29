@@ -22,7 +22,7 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
   bab.setInitialBound( lowerBound(m_space->root) );
 
-  BoundPropagator prop(&sp);
+  BoundPropagator prop(m_problem,&sp);
 
   int maxSubRootDepth = pt.getHeight();
   int maxSubRootHeight = 0;
@@ -35,7 +35,9 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
   do {
 
-    parent = prop.propagate(bab.nextLeaf());
+    parent = bab.nextLeaf(); // temp. assignment to parent
+    if (!parent) break; // search complete!
+    parent = prop.propagate(parent);
 
     count_t subCount = prop.getSubCountCache();
 
@@ -60,14 +62,14 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
     }
 
-  } while (!bab.isDone() && ( (bab.getNoNodesAND() < limitN) || (maxSubCount==0) ) ) ;
+  } while ( (sp.nodesAND < limitN) || (maxSubCount==0) ) ;
 
-  limitN = bab.getNoNodesAND();
+  limitN = sp.nodesAND;
 
   // initialize stats using max. subproblem except for full leaf profile
   m_spaceMaster->stats->init(maxSubRootDepth, maxSubRootHeight, maxSubCount, maxSubLeaves, maxSubLeafD, lbound, ubound);
 
-  if (bab.isDone())
+  if (! bab.nextLeaf())
     return true; // solved within time limit
 
   return false; // not solved
@@ -90,10 +92,12 @@ void BranchAndBoundMaster::solveLocal(SearchNode* node) const {
 
   bab.restrictSubproblem(node->getVar(), m_assignment , pst );
 
-  BoundPropagator prop(&sp);
+  BoundPropagator prop(m_problem,&sp);
 
-  while (!bab.isDone()) {
-    prop.propagate(bab.nextLeaf());
+  SearchNode* n = bab.nextLeaf();
+  while (n) {
+    prop.propagate(n);
+    n = bab.nextLeaf();
   }
 
   double mpeCost = bab.getCurOptValue();

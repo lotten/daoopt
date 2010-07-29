@@ -13,7 +13,7 @@
  * will speed up computation time
  */
 
-//#define NO_ASSIGNMENT
+#define NO_ASSIGNMENT
 
 /*****************************************************************/
 
@@ -32,18 +32,20 @@
  */
 
 #ifndef PARALLEL_MODE
-//#define PARALLEL_MODE
+#define PARALLEL_MODE
 #endif
 
 /*****************************************************************/
 
 /*
- * define ANYTIME to enable better anytime behavior of AOBB, at the
- * expense of some efficiency and memory; AOBB will use separate
- * stacks for independent subproblems
+ * define one of the below to enable better anytime behavior of AOBB,
+ * possibly at the expense of some efficiency and memory;
+ * ANYTIME_BREADTH uses separate stacks for independent subproblems
+ * ANYTIME_DEPTH   performs one initial dive for a subproblem solution
  */
 
-#define ANYTIME
+//#define ANYTIME_BREADTH
+//#define ANYTIME_DEPTH
 
 /*****************************************************************/
 
@@ -72,11 +74,22 @@ typedef signed char val_t;
   #ifndef NOTHREADS
     #define NOTHREADS
   #endif
+  #ifdef ANYTIME_BREADTH
+    #undef ANYTIME_BREADH
+  #endif
+  #ifdef ANYTIME_DEPTH
+    #undef ANYTIME_DEPTH
+  #endif
 #endif
 
 /* disable parallelism if NOTHREADS is defined */
 #ifdef NOTHREADS
   #undef PARALLEL_MODE
+#endif
+
+/* only allow one of the anytime modifications */
+#ifdef ANYTIME_BREADTH
+#undef ANYTIME_DEPTH
 #endif
 
 

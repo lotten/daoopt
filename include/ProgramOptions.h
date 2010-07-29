@@ -59,6 +59,6 @@ inline ProgramOptions::ProgramOptions() :
 		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
-		      lds(NONE), seed(NONE), stackLimit(NONE), initialBound(ELEM_NAN) {}
+		      lds(NONE), seed(NONE), stackLimit(0), initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */
