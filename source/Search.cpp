@@ -229,6 +229,114 @@ bool Search::canBePruned(SearchNode* n) const {
 } // Search::canBePruned
 
 
+bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
+
+  assert(n && n->getType() == NODE_AND);
+  m_space->nodesAND += 1;
+
+  int var = n->getVar();
+  PseudotreeNode* ptnode = m_pseudotree->getNode(var);
+  int depth = ptnode->getDepth();
+
+  PAR_ONLY(n->setSubCount(1));
+
+  if (depth>=0) m_nodeProfile[depth] +=1; // ignores dummy node
+
+  // create new OR children
+  for (vector<PseudotreeNode*>::const_iterator it=ptnode->getChildren().begin();
+       it!=ptnode->getChildren().end(); ++it)
+  {
+    int vChild = (*it)->getVar();
+    SearchNodeOR* c = new SearchNodeOR(n, vChild);
+#ifndef NO_HEURISTIC
+    // Compute and set heuristic estimate
+    heuristicOR(c);
+#endif
+    n->addChild(c);
+    chi.push_back(c);
+
+#ifndef NO_HEURISTIC
+    // store initial lower bound on subproblem (needed for master init.)
+    PAR_ONLY( c->setInitialBound(lowerBound(c)) );
+#endif
+
+  } // for loop over new OR children
+
+  if (chi.empty()) {
+    n->setLeaf(); // terminal node
+    n->setValue(ELEM_ONE);
+    if (depth!=-1) m_leafProfile[depth] += 1;
+    PAR_ONLY( n->setSubLeaves(1) );
+    return true; // no children
+  }
+
+  return false; // default
+
+} // Search::generateChildrenAND
+
+
+bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
+
+  assert (n && n->getType() == NODE_OR);
+  m_space->nodesOR +=1 ;
+
+  int var = n->getVar();
+  PseudotreeNode* ptnode = m_pseudotree->getNode(var);
+  int depth = ptnode->getDepth();
+
+#ifndef NO_HEURISTIC
+    // retrieve precomputed labels and heuristic values
+    double* heur = n->getHeurCache();
+#endif
+
+  for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
+#ifdef NO_HEURISTIC
+    // compute label value for new child node
+    m_assignment[var] = i;
+    double d = ELEM_ONE;
+    const list<Function*>& funs = m_pseudotree->getFunctions(var);
+    for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
+      d OP_TIMESEQ (*it)->getValue(m_assignment);
+    if (d == ELEM_ZERO) {
+      m_leafProfile[depth] += 1;
+      PAR_ONLY( n->addSubLeaves(1) );
+      continue; // label=0 -> skip
+    }
+    SearchNodeAND* c = new SearchNodeAND(n, i, d);
+#else
+    // early pruning if heuristic is zero (since it's an upper bound)
+    if (heur[2*i+1] == ELEM_ZERO) {
+      m_leafProfile[depth] += 1;
+      PAR_ONLY( n->addSubLeaves(1) );
+      continue;
+    }
+    SearchNodeAND* c = new SearchNodeAND(n, i, heur[2*i+1]); // uses cached label
+    // set cached heur. value
+    c->setHeur( heur[2*i] );
+#endif
+    n->addChild(c);
+    chi.push_back(c);
+  }
+
+#ifndef NO_HEURISTIC
+  n->clearHeurCache();
+#endif
+
+  if (chi.empty()) {
+    n->setLeaf();
+    n->setValue(ELEM_ZERO);
+    return true; // no children
+  } else {
+#ifndef NO_HEURISTIC
+    // sort new nodes by increasing heuristic value
+    sort(chi.begin(), chi.end(), SearchNode::heurLess);
+#endif
+  }
+
+  return false; // default
+
+} // Search::generateChildrenOR
+
 
 double Search::heuristicOR(SearchNode* n) {
 

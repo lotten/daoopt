@@ -26,7 +26,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.7"
+#define VERSIONINFO "0.98.7b"
 
 #if defined(ANYTIME_BREADTH)
 #define VERSIONMOD " /any-bfs"
@@ -139,22 +139,22 @@ int main(int argc, char** argv) {
   } else {
     // Search for variable elimination ordering, looking for min. induced
     // width, breaking ties via pseudo tree height
-    cout << "Searching for elimination ordering..." << flush;
+    cout << "Searching for elimination ordering over " << opt.order_iterations << " iterations..." << flush;
     int w = INT_MAX;
-    for (int i=opt.order_iterations; i; --i) {
+    for (int i=0; i<opt.order_iterations; ++i) {
       vector<int> elimCand;
-      int new_w = Pseudotree::eliminate(g,elimCand,w);
+      int new_w = pt.eliminate(g,elimCand,w);
       if (new_w < w) {
         elim = elimCand; w = new_w;
         pt.build(g,elimCand,opt.cbound);
-        cout << ' ' << w <<'/' << pt.getHeight() << flush;
+        cout << " " << i << ':' << w <<'/' << pt.getHeight() << flush;
       } else if (new_w == w) {
         Pseudotree ptCand(&p);
         ptCand.build(g,elimCand,opt.cbound);
         if (ptCand.getHeight() < pt.getHeight()) {
           elim = elimCand;
           pt.build(g,elim,opt.cbound);
-          cout << ' ' << w << '/' << pt.getHeight() << flush;
+          cout << " " << i << ':' << w << '/' << pt.getHeight() << flush;
         }
 
       }
@@ -278,11 +278,11 @@ int main(int argc, char** argv) {
     BoundPropagator propLDS(&p,spaceLDS);
     SearchNode* n = lds.nextLeaf();
     while (n) {
-      propLDS.propagate(n);
+      propLDS.propagate(n,true); // true = report solution
       n = lds.nextLeaf();
     }
     cout << "LDS: explored " << spaceLDS->nodesOR << '/' << spaceLDS->nodesAND << " OR/AND nodes" << endl;
-    cout << "LDS: found optimal cost " << lds.getCurOptValue() << endl;
+    cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
     if (lds.getCurOptValue() > search.curLowerBound()) {
       search.setInitialBound(lds.getCurOptValue());
 #ifndef NO_ASSIGNMENT
@@ -357,12 +357,15 @@ int main(int argc, char** argv) {
 #else
   SearchNode* n = search.nextLeaf();
   while (n) {
-    prop.propagate(n);
+    prop.propagate(n, true); // true = report solutions
     n = search.nextLeaf();
   }
 #endif
 
-  cout << endl << "-------- Search done --------" << endl;
+  // Output cache statistics
+  space->cache->printStats();
+
+  cout << endl << "--------- Search done ---------" << endl;
 #ifdef PARALLEL_MODE
   cout << "Condor jobs:   " << search.getThreadCount() << endl;
 #endif
@@ -385,7 +388,7 @@ int main(int argc, char** argv) {
 //    mpeCost OP_TIMESEQ p.getGlobalConstant();
   }
 
-  cout << "-----------------------------\n"
+  cout << "-------------------------------\n"
     << SCALE_LOG(mpeCost) << " (" << SCALE_NORM(mpeCost) << ')' << endl;
 
   /*

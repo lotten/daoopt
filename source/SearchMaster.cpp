@@ -107,10 +107,10 @@ void SearchMaster::operator ()() {
     } // mtx_space is released
   } // end of while loop
 
-  myprint("\n!Search done!\n\n");
+  myprint("\t!!! Search done !!!\n");
 
   } catch (boost::thread_interrupted i) {
-    myprint("\n!Search aborted!\n");
+    myprint("\t!!! Search aborted !!!\n");
   }
 
 }

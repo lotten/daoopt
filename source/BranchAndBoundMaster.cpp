@@ -37,7 +37,7 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
     parent = bab.nextLeaf(); // temp. assignment to parent
     if (!parent) break; // search complete!
-    parent = prop.propagate(parent);
+    parent = prop.propagate(parent, true);
 
     count_t subCount = prop.getSubCountCache();
 
@@ -101,8 +101,12 @@ void BranchAndBoundMaster::solveLocal(SearchNode* node) const {
   }
 
   double mpeCost = bab.getCurOptValue();
-
   node->setValue(mpeCost);
+
+#ifndef NO_ASSIGNMENT
+  node->setOptAssig(bab.getCurOptTuple());
+#endif
+
   node->setLeaf();
 
 //  cout << "Local solver done: " << mpeCost << " " << bab.getNoNodesOR() << '/' << bab.getNoNodesAND() << " nodes" << endl;

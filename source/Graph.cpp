@@ -8,12 +8,12 @@
 #include "Graph.h"
 
 
-double Graph::scoreMinfill(const int& i) {
+nCost Graph::scoreMinfill(const int& i) {
   MAPCLASS<int,set<int> >::iterator iti = m_neighbors.find(i);
   assert(iti != m_neighbors.end());
 
   set<int>& S = iti->second;
-  double c = 0.0;
+  nCost c = 0;
   set<int>::iterator it1,it2;
   for (it1 = S.begin(); it1 != S.end(); ++it1) {
     it2 = it1;

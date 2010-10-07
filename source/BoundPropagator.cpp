@@ -33,7 +33,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
 
   // going all the way to the root, if we have to
   do {
-    DIAG( ostringstream ss; ss << "PROP  " << *prev << " + " << *cur << endl; myprint(ss.str()); )
+    DIAG( ostringstream ss; ss << "PROP  " << prev <<": " << *prev << " + " << cur << ": " << *cur << endl; myprint(ss.str()); )
 
     if (cur->getType() == NODE_AND) {
       // ===========================================================================
@@ -104,7 +104,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
           // climb up one level
           subLeafD += subLeaves;
 #endif
-          DIAG(myprint(" deleting AND\n") );
+          DIAG(myprint(" marking OR for deletion\n") );
         } else {
           del = false;
 #ifdef LIKELIHOOD
@@ -142,7 +142,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
           subLeaves += prev->getSubLeaves();
           subLeafD += prev->getSubLeafD();
 #endif
-          DIAG(myprint(" deleting OR\n"));
+          DIAG(myprint(" marking AND for deletion\n"));
         } else {
           del = false;
 #ifdef LIKELIHOOD

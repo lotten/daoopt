@@ -13,7 +13,7 @@
  * will speed up computation time
  */
 
-#define NO_ASSIGNMENT
+//#define NO_ASSIGNMENT
 
 /*****************************************************************/
 
@@ -32,7 +32,7 @@
  */
 
 #ifndef PARALLEL_MODE
-#define PARALLEL_MODE
+//#define PARALLEL_MODE
 #endif
 
 /*****************************************************************/

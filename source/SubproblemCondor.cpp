@@ -8,6 +8,7 @@
 #include "SubproblemCondor.h"
 
 #include "ProgramOptions.h"
+#include "utils.h"
 #include "gzstream.h"
 
 #ifdef PARALLEL_MODE
@@ -176,7 +177,7 @@ void SubproblemCondor::removeJob() const {
   rmCmd << " > /dev/null";
 #endif
 
-  size_t noTries = 0;
+  int noTries = 0;
   bool success = false;
   while (!success) {
 
@@ -366,7 +367,7 @@ void CondorSubmissionEngine::submitToCondor(const ostringstream& jobstr) const {
   submitCmd << " > /dev/null";
 #endif
 
-  size_t noTries = 0;
+  int noTries = 0;
   bool success = false;
 
   while (!success) {
@@ -379,8 +380,10 @@ void CondorSubmissionEngine::submitToCondor(const ostringstream& jobstr) const {
 
     if (!success) {
       if (noTries++ == MAX_SUBMISSION_TRIES) {
-        GETLOCK(mtx_io,lk2);
-        cerr << "Failed invoking condor_submit for batch " << m_curBatch << "." << endl;
+//        GETLOCK(mtx_io,lk2);
+        ostringstream ss;
+        ss << "Failed invoking condor_submit for batch " << m_curBatch << "." << endl;
+        myerror(ss.str());
         return;
       } else {
         myprint("Problem invoking condor_submit, retrying...\n");
@@ -388,8 +391,10 @@ void CondorSubmissionEngine::submitToCondor(const ostringstream& jobstr) const {
       }
     } else {
       // submission successful
-      GETLOCK(mtx_io,lk2);
-      cout << "----> Submitted " << m_nextProcess <<" jobs in batch " << m_curBatch << '.' << endl;
+//      GETLOCK(mtx_io,lk2);
+      ostringstream ss;
+      ss << "----> Submitted " << m_nextProcess <<" jobs in batch " << m_curBatch << '.' << endl;
+      myprint(ss.str());
       //break;
     }
 
@@ -420,8 +425,10 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
   subprobFile << PREFIX_SUB << P->batch << '.' << P->process << ".gz";
   ogzstream con(subprobFile.str().c_str(), ios::out | ios::binary );
   if(!con) {
-    GETLOCK(mtx_io,lk2);
-    cerr << "Problem writing context file for thread " << P->threadID << '.' << endl;
+//    GETLOCK(mtx_io,lk2);
+    ostringstream ss;
+    ss << "Problem writing context file for thread " << P->threadID << '.' << endl;
+    myerror(ss.str());
     return "";
   }
 

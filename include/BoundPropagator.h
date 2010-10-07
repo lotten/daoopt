@@ -41,7 +41,7 @@ public:
    * @n: the search node to be propagated
    * @reportSolution: should root updates be reported to problem instance?
    */
-  SearchNode* propagate(SearchNode* n, bool reportSolution = true);
+  SearchNode* propagate(SearchNode* n, bool reportSolution = false);
 
 #ifdef PARALLEL_MODE
   int getSubRootvarCache() const { return m_subRootvarCache; }

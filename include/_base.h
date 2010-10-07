@@ -34,6 +34,9 @@
 /* define if data files (solution and subproblem files) should be written in binary */
 #define BINARY_DATAFILES
 
+/* define if gmp lib should be used for large numbers */
+//#define USE_GMP
+
 
 #ifdef NOTHREADS
 #undef PARALLEL_MODE
@@ -147,6 +150,7 @@ static boost::mutex mtx_io;
 #include <utility>
 #include <limits>
 #include <sstream>
+#include <algorithm>
 
 /* which hashtable to use? define only *one*  */
 #define HASH_BOOST
@@ -225,14 +229,21 @@ template<> struct hash<std::string> {
 #endif
 
 /* type for counting nodes, fixed precision for 32/64 bit machines. */
+#include <stdint.h>
 typedef uint64_t count_t;
 
 /* LibGMP C++ interface */
 #ifdef PARALLEL_MODE
-#include <gmpxx.h>
-typedef mpz_class bigint;
-typedef mpf_class bigfloat;
-typedef mpq_class bigfrac;
+ #ifdef USE_GMP
+ #include <gmpxx.h>
+ typedef mpz_class bigint;
+ typedef mpf_class bigfloat;
+ typedef mpq_class bigfrac;
+ #else
+ typedef unsigned long int bigint;
+ typedef double bigfloat;
+ typedef double bigfrac;
+ #endif
 #endif
 
 /* Boost random number library */
@@ -399,26 +410,14 @@ inline double decodeDoubleFromString(std::string s) {
 /*///////////////////////////////////////////////////////////*/
 
 
-inline void myprint(std::string s) {
-  {
-    GETLOCK(mtx_io, lk);
-    std::cout << s << std::flush;
-  }
-}
-
-inline void myerror(std::string s) {
-  {
-    GETLOCK(mtx_io, lk);
-    std::cerr << s << std::flush;
-  }
-}
-
 inline double mylog10(unsigned long a) {
   return log10(a);
 }
 
 #ifdef PARALLEL_MODE
-double mylog10(bigint a);
+ #ifdef USE_GMP
+ double mylog10(bigint a);
+ #endif
 #endif
 
 

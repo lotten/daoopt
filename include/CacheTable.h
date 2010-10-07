@@ -9,6 +9,8 @@
 #define CACHETABLE_H_
 
 #include "_base.h"
+#include "utils.h"
+
 #include <vector>
 #include <string>
 #include <malloc.h>
@@ -51,6 +53,9 @@ private:
   int memused() const;
 
 public:
+  virtual void printStats() const;
+
+public:
   CacheTable(int size);
   ~CacheTable();
 };
@@ -73,6 +78,9 @@ public:
 #else
   size_t getInstCounter(int n) const { return 0; }
 #endif
+
+public:
+  void printStats() const {}
 
 public:
   UnCacheTable() : CacheTable(0) {}
@@ -173,10 +181,20 @@ inline CacheTable::CacheTable(int size) :
     m_tables[i] = NULL;
 }
 
-inline CacheTable::~CacheTable() {
-  for (vector< context_hash_map * >::iterator it=m_tables.begin(); it!=m_tables.end(); ++it) {
-    if (*it) delete *it;
+inline void CacheTable::printStats() const {
+  ostringstream ss;
+  ss << "Cache statistics:" ;
+  for (vector< context_hash_map * >::const_iterator it=m_tables.begin(); it!=m_tables.end(); ++it) {
+    if (*it) ss << " " << (*it)->size();
+    else     ss << " .";
   }
+  ss << endl;
+  myprint(ss.str());
+}
+
+inline CacheTable::~CacheTable() {
+  for (vector< context_hash_map * >::iterator it=m_tables.begin(); it!=m_tables.end(); ++it)
+    if (*it) delete *it;
 }
 
 #ifdef WINDOWS

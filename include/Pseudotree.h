@@ -37,6 +37,9 @@ protected:
   Problem* m_problem;
   PseudotreeNode* m_root;
 
+  // for minfill
+  vector<nCost> m_initialScores;
+
   vector<PseudotreeNode*> m_nodes;
   vector<int> m_elimOrder;
 #ifdef PARALLEL_MODE
@@ -47,7 +50,7 @@ public:
   // computes an elimination order into 'elim' and returns its induced width
   // if 'limit' is given, will terminate early if new order is worse than limit
   // and return INT_MAX
-  static int eliminate(Graph G, vector<int>& elim, int limit=INT_MAX);
+  int eliminate(Graph G, vector<int>& elim, int limit=INT_MAX);
 
   // builds the pseudo tree according to order 'elim'
   void build(Graph G, const vector<int>& elim, const int cachelimit = NONE);

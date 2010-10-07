@@ -72,11 +72,11 @@ public:
   const vector<count_t>& getLeafProfile() const { return m_leafProfile; }
   const vector<val_t>& getAssignment() const { return m_assignment; }
 
-  // returns the current lower bound on the root problem solution
-  // (mostly makes sense for conditioned subproblems)
+  /* returns the current lower bound on the root problem solution
+   * (mostly makes sense for conditioned subproblems) */
   double curLowerBound() const { return lowerBound(m_space->getTrueRoot()); }
 
-  // cur value of root OR node
+  /* cur value of root OR node */
   double getCurOptValue() const;
 #ifndef NO_ASSIGNMENT
   const vector<val_t>& getCurOptTuple() const;
@@ -84,22 +84,22 @@ public:
 
 //  void outputAndSaveSolution(const string& filename) const;
 
-  // restricts search to a subproblem as specified in file with path 's'
-  // parses the file and then calls the next function.
-  // returns true on success, false otherwise
+  /* restricts search to a subproblem as specified in file with path 's'
+   * parses the file and then calls the next function.
+   * returns true on success, false otherwise */
   bool restrictSubproblem(const string& s);
 
-  // restricts search to a subproblem rooted at 'rootVar'. Context instantiation
-  // is extracted from 'assig', ancestral partial solution tree from 'pst' vector.
-  // pst containst [OR value, AND label] top-down.
-  // returns the (original) depth of the new root node
+  /* restricts search to a subproblem rooted at 'rootVar'. Context instantiation
+   * is extracted from 'assig', ancestral partial solution tree from 'pst' vector.
+   * pst containst [OR value, AND label] top-down.
+   * returns the (original) depth of the new root node */
   int restrictSubproblem(int rootVar, const vector<val_t>& assig, const vector<double>& pst);
 
-  // loads an initial lower bound from a file (in binary, for precision reasons).
-  // returns true on success, false on error
+  /* loads an initial lower bound from a file (in binary, for precision reasons).
+   * returns true on success, false on error */
   bool loadInitialBound(string);
 
-  // sets the initial lower bound
+  /* sets the initial lower bound */
   virtual void setInitialBound(double) const = 0;
 
 #ifndef NO_ASSIGNMENT
@@ -107,58 +107,63 @@ public:
 #endif
 
 #ifdef PARALLEL_MODE
-  // returns the cached lower/upper bounds on the first node at each depth
+  /* returns the cached lower/upper bounds on the first node at each depth */
 //  const vector<pair<double,double> >& getBounds() const { return m_bounds; }
 #endif
 
 protected:
 
-  // resets the queue/stack/etc. to the given node
+  /* resets the queue/stack/etc. to the given node */
   virtual void resetSearch(SearchNode*) = 0;
 
-  // returns the next search node for processing (top of stack/queue/etc.)
+  /* returns the next search node for processing (top of stack/queue/etc.) */
   virtual SearchNode* nextNode() = 0;
 
-  // expands the current node, returns true if no children were generated
-  // (needs to be implemented in derived search classes)
+  /* expands the current node, returns true if no children were generated
+   * (needs to be implemented in derived search classes) */
   virtual bool doExpand(SearchNode*) = 0;
 
-protected:
-
-  // processes the current node (value instantiation etc.)
-  // if trackHeur==true, caches lower/upper bounds for first node at each depth
+  /* processes the current node (value instantiation etc.)
+   * if trackHeur==true, caches lower/upper bounds for first node at each depth */
   bool doProcess(SearchNode*);
 
-  // performs a cache lookup; if successful, stores value into node and returns true
+  /* performs a cache lookup; if successful, stores value into node and returns true */
   bool doCaching(SearchNode*);
 
-  // checks if node can be pruned, returns true if so
+  /* checks if node can be pruned, returns true if so */
   bool doPruning(SearchNode*);
 
-  // checks if the node can be pruned (only meant for AND nodes)
+  /* generates the children of an AND node, writes them into argument vector,
+   * returns true if no children */
+  bool generateChildrenAND(SearchNode*, vector<SearchNode*>&);
+  /* generates the children of an OR node, writes them into argument vector,
+   * returns true if no children */
+  bool generateChildrenOR(SearchNode*, vector<SearchNode*>&);
+
+  /* checks if the node can be pruned (only meant for AND nodes) */
   bool canBePruned(SearchNode*) const;
 
-  // computes the heuristic of a new OR node, which requires precomputing
-  // its child AND nodes' heuristic and label values, which are cached
-  // for their explicit generation
+  /* computes the heuristic of a new OR node, which requires precomputing
+   * its child AND nodes' heuristic and label values, which are cached
+   * for their explicit generation */
   double heuristicOR(SearchNode*);
 
-  // returns the current lower bound on the subproblem solution rooted at
-  // n, taking into account solutions to parent problems (or the dummy partial
-  // solution tree, in case of conditioned subproblems)
+  /* returns the current lower bound on the subproblem solution rooted at
+   * n, taking into account solutions to parent problems (or the dummy partial
+   * solution tree, in case of conditioned subproblems) */
   double lowerBound(SearchNode*) const;
 
-  // the next two functions add context information to a search node. The difference
-  // between the Cache and the Subprob version is that Cache might only be the partial
-  // context (for adaptive caching)
+  /* the next two functions add context information to a search node. The difference
+   * between the Cache and the Subprob version is that Cache might only be the partial
+   * context (for adaptive caching) */
 #ifndef NO_CACHING
   void addCacheContext(SearchNode*, const set<int>&) const;
 #endif
 #ifdef PARALLEL_MODE
-  // see comment above
+  /* see comment above */
   void addSubprobContext(SearchNode*, const set<int>&) const;
 
-  // adds PST information for advanced pruning in (external) subproblem
+  /* adds PST information for advanced pruning in (external) subproblem */
   void addPSTlist(SearchNode* node) const;
 #endif
 

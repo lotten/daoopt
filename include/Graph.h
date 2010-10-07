@@ -29,6 +29,9 @@
 //#define SETCLASS unordered_set
 #define SETCLASS hash_set
 
+/* node elimination cost */
+typedef int nCost;
+
 #include "_base.h"
 
 #ifdef USE_EDGE_LIST
@@ -85,7 +88,7 @@ public:
   bool hasEdge(const int& i, const int& j);
 
 public:
-  double scoreMinfill(const int& i);
+  nCost scoreMinfill(const int& i);
 
 protected:
   void addAdjacency(const int& i, const int& j);

@@ -7,6 +7,8 @@
 
 #include "Statistics.h"
 
+#include "utils.h"
+
 #ifdef PARALLEL_MODE
 
 #define FALLOFF 0.9

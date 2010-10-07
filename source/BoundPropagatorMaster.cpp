@@ -69,7 +69,7 @@ void BoundPropagatorMaster::operator() () {
 
       { // actual propagation
         GETLOCK(m_spaceMaster->mtx_space, lk);
-        propagate(n);
+        propagate(n, true);
         ++noPropagated;
       }
 
@@ -100,10 +100,10 @@ void BoundPropagatorMaster::operator() () {
 
   } // overall while(!allDone) loop
 
-  myprint("\n!PROP done!\n\n");
+  myprint("\t!!! PROP done !!!\n");
 
   } catch (boost::thread_interrupted i) {
-    myprint("\n!PROP aborted!\n");
+    myprint("\t!!! PROP aborted !!!\n");
   }
 
 }

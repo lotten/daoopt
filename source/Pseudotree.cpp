@@ -67,23 +67,32 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
     elim.clear();
   elim.reserve(n);
 
-  vector<double> scores(n);
-
   const set<int>& nodes = G.getNodes();
 
-  for (set<int>::const_iterator it = nodes.begin(); it!=nodes.end(); ++it) {
-    scores[*it] = G.scoreMinfill(*it);
+  // keeps track of node scores
+  vector<nCost> scores;
+
+  // have initial scores already been computed? then reuse!
+  if (m_initialScores.size()) {
+    scores = m_initialScores;
+  } else {
+    scores.resize(n);
+    for (set<int>::const_iterator it = nodes.begin(); it!=nodes.end(); ++it)
+      scores[*it] = G.scoreMinfill(*it);
+    m_initialScores = scores;
   }
 
-  // keeps track of the roots of the separate sub pseudo trees
-  // that exist throughout the process
+  int nextNode = NONE;
+  nCost minScore = UNKNOWN;
+
+  // eliminate nodes until all gone
   while (G.getStatNodes() != 0) {
 
-    int minNode = UNKNOWN;
-    double minScore = numeric_limits<double>::max();
     // keeps track of minimal score nodes
     vector<int> minCand; // minimal score of 1 or higher
     vector<int> simplicial; // simplicial nodes (score 0)
+
+    minScore = numeric_limits<nCost>::max();
 
     // find node to eliminate
     for (int i=0; i<n; ++i) {
@@ -103,20 +112,20 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
       elim.push_back(*it);
       width = max(width,(int)G.getNeighbors(*it).size());
       G.removeNode(*it);
-      scores[*it] = DBL_MAX;
+      scores[*it] = numeric_limits<nCost>::max();
     }
 
     // anything left to eliminate? If not, we are done!
-    if (minScore == numeric_limits<double>::max())
+    if (minScore == numeric_limits<nCost>::max())
       return width;
 
     // Pick one of the minimal score nodes (with score >= 1),
     // breaking ties randomly
-    minNode = minCand[rand::next(minCand.size())];
-    elim.push_back(minNode);
+    nextNode = minCand[rand::next(minCand.size())];
+    elim.push_back(nextNode);
 
     // remember it's neighbors, to be used later
-    const set<int>& neighbors = G.getNeighbors(minNode);
+    const set<int>& neighbors = G.getNeighbors(nextNode);
 
     // update width of implied tree decomposition
     width = max(width, (int) neighbors.size());
@@ -134,15 +143,15 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
       const set<int>& X = G.getNeighbors(*it);
       updateCand.insert(X.begin(),X.end());
     }
-    updateCand.erase(minNode);
+    updateCand.erase(nextNode);
 
     // remove node from primal graph
-    G.removeNode(minNode);
-    scores[minNode] = DBL_MAX; // tag score
+    G.removeNode(nextNode);
+    scores[nextNode] = numeric_limits<nCost>::max(); // tag score
 
     // update scores in primal graph (candidate nodes computed earlier)
     for (set<int>::const_iterator it = updateCand.begin(); it != updateCand.end(); ++it) {
-      scores[*it] = G.scoreMinfill(*it); // TODO generalize
+      scores[*it] = G.scoreMinfill(*it);
     }
   }
 

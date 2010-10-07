@@ -68,7 +68,7 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
     } else { // no children
       node->setLeaf(); // -> terminal node
       node->setValue(ELEM_ONE);
-      m_leafProfile.at(depth) += 1; // count leaf node
+      if (depth!=-1) m_leafProfile.at(depth) += 1; // count leaf node
       PAR_ONLY( node->setSubLeaves(1) );
       return true;
     }

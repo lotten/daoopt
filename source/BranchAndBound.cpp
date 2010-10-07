@@ -57,6 +57,76 @@ SearchNode* BranchAndBound::nextNode() {
 }
 
 
+bool BranchAndBound::doExpand(SearchNode* n) {
+
+  assert(n);
+  vector<SearchNode*> chi;
+
+#ifdef ANYTIME_BREADTH
+  MyStack* stack = m_stacks.front();
+#endif
+
+  if (n->getType() == NODE_AND) { /////////////////////////////////////
+
+    if (generateChildrenAND(n,chi))
+      return true; // no children
+
+#ifdef DEBUG
+    ostringstream ss;
+    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+      ss << '\t' << *it << ": " << *(*it) << endl;
+    myprint (ss.str());
+#endif
+
+
+#if defined(ANYTIME_BREADTH)
+    if (chi.size() == 1) { // no decomposition
+      stack->push(chi.at(0));
+    } else { // decomposition, split stacks
+      for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
+        MyStack* s = new MyStack(stack);
+        stack.addChild(s);
+        s->push(*it);
+        m_stacks.push(s);
+      }
+    }
+#elif defined(ANYTIME_DEPTH)
+    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+      m_stackDive.push(*it);
+#else
+    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+      m_stack.push(*it);
+#endif
+
+  } else { // NODE_OR /////////////////////////////////////////////////
+
+    if (generateChildrenOR(n,chi))
+      return true; // no children
+
+    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
+#if defined(ANYTIME_BREADTH)
+      stack->push(*it);
+#else
+      m_stack.push(*it);
+#endif
+      DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
+    } // for loop
+    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildren().size() <<  " child AND nodes" << endl; myprint(ss.str()); )
+
+#ifdef ANYTIME_DEPTH
+    // pull last node from normal stack for dive
+    m_stackDive.push(m_stack.top());
+    m_stack.pop();
+#endif
+
+  } // if over node type //////////////////////////////////////////////
+
+  return false; // default false
+
+}
+
+
+#if false
 bool BranchAndBound::doExpand(SearchNode* node) {
 
   assert(node);
@@ -215,6 +285,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
   return false; // default false
 
 } // BranchAndBound::doExpand
+#endif
 
 
 void BranchAndBound::setInitialBound(double d) const {

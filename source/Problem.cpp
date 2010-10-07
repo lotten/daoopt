@@ -131,6 +131,11 @@ bool Problem::parseOrdering(const string& file, vector<int>& elim) const {
 
   igzstream in(file.c_str());
 
+  // ignore first line if there's a pound '#' sign (comment)
+  if (in.peek() == '#') {
+    in.ignore(8192,'\n');
+  }
+
   int nIn;
   in >> nIn; // length of ordering
   if (nIn != m_n && nIn != m_nOrg) {
@@ -212,11 +217,14 @@ void Problem::saveOrdering(const string& file, const vector<int>& elim) const {
     exit(1);
   }
 
+  out << "# daoopt ordering for " << m_name << endl;
+
   out << elim.size() ;
 
   for (vector<int>::const_iterator it=elim.begin(); it!=elim.end(); ++it)
     out << ' ' << *it;
 
+  out << endl;
   out.close();
 
 }
