@@ -12,6 +12,7 @@ RM := rm -rf
 -include source/subdir.mk
 -include lib/subdir.mk
 -include lib/boost.src/program_options/src/subdir.mk
+-include include/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)

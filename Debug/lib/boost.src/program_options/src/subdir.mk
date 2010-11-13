@@ -10,6 +10,7 @@ CPP_SRCS += \
 ../lib/boost.src/program_options/src/options_description.cpp \
 ../lib/boost.src/program_options/src/parsers.cpp \
 ../lib/boost.src/program_options/src/positional_options.cpp \
+../lib/boost.src/program_options/src/split.cpp \
 ../lib/boost.src/program_options/src/utf8_codecvt_facet.cpp \
 ../lib/boost.src/program_options/src/value_semantic.cpp \
 ../lib/boost.src/program_options/src/variables_map.cpp \
@@ -22,6 +23,7 @@ OBJS += \
 ./lib/boost.src/program_options/src/options_description.o \
 ./lib/boost.src/program_options/src/parsers.o \
 ./lib/boost.src/program_options/src/positional_options.o \
+./lib/boost.src/program_options/src/split.o \
 ./lib/boost.src/program_options/src/utf8_codecvt_facet.o \
 ./lib/boost.src/program_options/src/value_semantic.o \
 ./lib/boost.src/program_options/src/variables_map.o \
@@ -34,6 +36,7 @@ CPP_DEPS += \
 ./lib/boost.src/program_options/src/options_description.d \
 ./lib/boost.src/program_options/src/parsers.d \
 ./lib/boost.src/program_options/src/positional_options.d \
+./lib/boost.src/program_options/src/split.d \
 ./lib/boost.src/program_options/src/utf8_codecvt_facet.d \
 ./lib/boost.src/program_options/src/value_semantic.d \
 ./lib/boost.src/program_options/src/variables_map.d \

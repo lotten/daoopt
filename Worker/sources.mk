@@ -26,5 +26,6 @@ SUBDIRS := \
 source \
 lib \
 lib/boost.src/program_options/src \
+include \
 . \
 

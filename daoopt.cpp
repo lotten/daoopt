@@ -26,7 +26,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.7b"
+#define VERSIONINFO "0.98.8"
 
 #if defined(ANYTIME_BREADTH)
 #define VERSIONMOD " /any-bfs"
