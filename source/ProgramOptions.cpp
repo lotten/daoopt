@@ -23,6 +23,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("input-file,f", po::value<string>(), "path to problem file (required)")
       ("evid-file,e", po::value<string>(), "path to optional evidence file")
       ("ordering,o", po::value<string>(), "read elimination ordering from this file (first to last)")
+      ("adaptive", "enable adaptive ordering scheme")
       ("subproblem,s", po::value<string>(), "limit search to subproblem specified in file")
       ("sol-file,c", po::value<string>(), "path to output optimal solution to")
       ("ibound,i", po::value<int>()->default_value(10), "i-bound for mini bucket heuristics")
@@ -76,6 +77,11 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 
     if (vm.count("ordering"))
       opt.in_orderingFile = vm["ordering"].as<string>();
+
+    if (vm.count("adaptive"))
+      opt.autoIter = true;
+    else
+      opt.autoIter = false;
 
     if (vm.count("subproblem"))
       opt.in_subproblemFile = vm["subproblem"].as<string>();

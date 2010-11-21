@@ -26,7 +26,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.8"
+#define VERSIONINFO "0.98.8b"
 
 #if defined(ANYTIME_BREADTH)
 #define VERSIONMOD " /any-bfs"
@@ -125,6 +125,7 @@ int main(int argc, char** argv) {
 
   // Find variable ordering
   vector<int> elim;
+  int w = INT_MAX;
   bool orderFromFile = false;
   if (!opt.in_orderingFile.empty()) {
     orderFromFile = p.parseOrdering(opt.in_orderingFile, elim);
@@ -133,35 +134,38 @@ int main(int argc, char** argv) {
   // Init. pseudo tree
   Pseudotree pt(&p);
 
-  if (orderFromFile) { // Reading from file succeeded
-    cout << "Read elimination ordering from file " << opt.in_orderingFile << '.' << endl;
+  if (orderFromFile) { // Reading from file succeeded (i.e. file exists)
     pt.build(g,elim,opt.cbound);
+    w = pt.getWidth();
+    cout << "Read elimination ordering from file " << opt.in_orderingFile << " (" << w << '/' << pt.getHeight() << ")." << endl;
   } else {
-    // Search for variable elimination ordering, looking for min. induced
-    // width, breaking ties via pseudo tree height
-    cout << "Searching for elimination ordering over " << opt.order_iterations << " iterations..." << flush;
-    int w = INT_MAX;
-    for (int i=0; i<opt.order_iterations; ++i) {
-      vector<int> elimCand;
-      int new_w = pt.eliminate(g,elimCand,w);
-      if (new_w < w) {
-        elim = elimCand; w = new_w;
-        pt.build(g,elimCand,opt.cbound);
-        cout << " " << i << ':' << w <<'/' << pt.getHeight() << flush;
-      } else if (new_w == w) {
-        Pseudotree ptCand(&p);
-        ptCand.build(g,elimCand,opt.cbound);
-        if (ptCand.getHeight() < pt.getHeight()) {
-          elim = elimCand;
-          pt.build(g,elim,opt.cbound);
-          cout << " " << i << ':' << w << '/' << pt.getHeight() << flush;
-        }
+    opt.order_iterations = max(opt.order_iterations,1); // no ordering from file, compute at least one
+  }
 
+  // Search for variable elimination ordering, looking for min. induced
+  // width, breaking ties via pseudo tree height
+  cout << "Searching for elimination ordering over at least " << opt.order_iterations << " iterations..." << flush;
+  int i=0, j=0;
+  for (int remaining=opt.order_iterations; remaining--; ++i, ++j) {
+    vector<int> elimCand;
+    int new_w = pt.eliminate(g,elimCand,w);
+    if (new_w < w) {
+      elim = elimCand; w = new_w;
+      pt.build(g,elimCand,opt.cbound);
+      cout << " " << i << ':' << w <<'/' << pt.getHeight() << flush;
+      if (opt.autoIter) { remaining = max(remaining,j+1); j=0; }
+    } else if (new_w == w) {
+      Pseudotree ptCand(&p);
+      ptCand.build(g,elimCand,opt.cbound);
+      if (ptCand.getHeight() < pt.getHeight()) {
+        elim = elimCand;
+        pt.build(g,elim,opt.cbound);
+        cout << " " << i << ':' << w << '/' << pt.getHeight() << flush;
+        if (opt.autoIter) { remaining = max(remaining,j+1); j=0; }
       }
     }
-    cout << endl<< "Lowest induced width found: " << w << endl;
-    cout << "Lowest height for width: " << pt.getHeight() << endl;
   }
+  cout << endl << "Ran " << i << " iterations, lowest width/height found: " << w << '/' << pt.getHeight() << '\n';
 
   // Save order to file?
 #ifdef PARALLEL_MODE
