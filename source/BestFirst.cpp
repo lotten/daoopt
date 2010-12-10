@@ -177,7 +177,7 @@ void BestFirst::expandNext() {
 #endif
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
     // TODO currently outsource at fixed depth
 //    if (ptnode->getDepth() == m_space->options->cutoff_depth) {
     if ( ptnode->getDepth() == m_space->options->cutoff_depth ||

@@ -12,7 +12,7 @@
 
 Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
   m_nextThreadId(0), m_problem(prob), m_pseudotree(pt), m_space(s), m_heuristic(h)
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   , m_nextSubprob(NULL)
 #endif
   {
@@ -188,7 +188,7 @@ bool Search::canBePruned(SearchNode* n) const {
   list<SearchNode*> notOptOR; // marks nodes for tagging as possibly not optimal
 
   // up to root node, if we have to
-  while (true) {
+  while (curOR->getParent()) {
     DIAG( ostringstream ss; ss << "\t ?PST root: " << *curOR << " pst=" << curPSTVal << " v=" << curOR->getValue() << endl; myprint(ss.str()); )
 
     //if ( fpLt(curPSTVal, curOR->getValue()) ) {
@@ -197,10 +197,6 @@ bool Search::canBePruned(SearchNode* n) const {
         (*it)->setNotOpt(); // mark as possibly not optimal
       return true; // pruning is possible!
     }
-
-    // check if moving up in search space is possible
-    if (! curOR->getParent())
-      { return false; }
 
     notOptOR.push_back(curOR);
 
@@ -222,8 +218,7 @@ bool Search::canBePruned(SearchNode* n) const {
     curOR = curAND->getParent();
   }
 
-  // default (should never get to this line since false is returned inside loop)
-  assert(false);
+  // default, no pruning possible
   return false;
 
 } // Search::canBePruned
@@ -390,7 +385,7 @@ void Search::addCacheContext(SearchNode* node, const set<int>& ctxt) const {
 #endif /* NO_CACHING */
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 void Search::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
 
   context_t sig;
@@ -400,7 +395,7 @@ void Search::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
   }
   node->setSubprobContext(sig);
 }
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 
 double Search::lowerBound(SearchNode* node) const {

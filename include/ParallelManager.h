@@ -10,50 +10,60 @@
 
 #include "_base.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_STATIC
 
-#include "SearchMaster.h"
-#include "BoundPropagatorMaster.h"
-#include "SearchSpace.h"
-#include "Subproblem.h"
+#include "Search.h"
 
-//#include "inotify-cxx.h"
-
-class ParallelManager {
+class ParallelManager : virtual public Search {
 
 protected:
-  SearchMaster*          m_search;
-  BoundPropagatorMaster* m_prop;
-  SearchSpaceMaster*     m_space;
 
-  set<Subproblem*>       m_activeSubproblems;
+  /* queue of subproblems, i.e. OR nodes, ordered according to
+   * evaluation function */
+  priority_queue<pair<double, SearchNode*> > m_open;
 
 protected:
-  /* */
 
+  bool isDone() const;
 
+  bool doExpand(SearchNode* n);
+
+  void resetSearch(SearchNode* p);
+
+  SearchNode* nextNode();
+
+  bool isMaster() const { return true; }
+
+  double evaluate(SearchNode* n) const;
 
 public:
-  /* Constructor */
-  ParallelManager(SearchMaster* sm, BoundPropagatorMaster* bp, SearchSpaceMaster* ss);
 
-  /* for threaded execution */
-  void operator () ();
+  void setInitialBound(double d) const;
 
-  void run();
+#ifndef NO_ASSIGNMENT
+  void setInitialSolution(const vector<val_t>&) const;
+#endif
+
+public:
+  ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h);
 
 };
 
 
-/********************** Inline definitions ****************************/
+/* Inline definitions */
 
-inline ParallelManager::ParallelManager(SearchMaster* sm, BoundPropagatorMaster* bp, SearchSpaceMaster* ss) :
-    m_search(sm), m_prop(bp), m_space(ss)
-{
-  /* empty */
+inline bool ParallelManager::isDone() const {
+  return m_open.empty();
 }
 
-#endif /* PARALLEL_MODE */
+inline void ParallelManager::resetSearch(SearchNode* p) {
+  while (m_open.size())
+      m_open.pop();
+  m_open.push(make_pair(evaluate(p),p));
+}
+
+
+#endif /* PARALLEL_STATIC */
 
 #endif /* PARALLELMANAGER_H_ */
 

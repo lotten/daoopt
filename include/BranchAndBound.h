@@ -30,8 +30,8 @@ public:
 #endif
 
 
-/* Branch and Bound search, implements pure virtual functions from
- * Search.h, most importantly expandNext() */
+/* Branch and Bound search, implements pure virtual functions
+ * from Search.h */
 class BranchAndBound : virtual public Search {
 
 protected:
@@ -49,7 +49,6 @@ protected:
 
 
 protected:
-  void expandNext();
 
   bool isDone() const;
 

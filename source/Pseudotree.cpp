@@ -239,8 +239,9 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
   m_root->updateSubprobVars();
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   // compute depth->list<nodes> mapping
+  m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!= m_nodes.end(); ++it) {
     m_levels.at((*it)->getDepth()+1).push_back(*it);
@@ -306,11 +307,12 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
     (*it)->orderChildren();
   }
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   // compute depth->list<nodes> mapping
+  m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!= m_nodes.end(); ++it) {
-    if (*it) m_levels.at((*it)->getDepth()+1).push_back(*it);
+    m_levels.at((*it)->getDepth()+1).push_back(*it); // dummy root has depth -1
   }
 #endif
 
@@ -318,7 +320,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
 
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 /* a-priori computation of several complexity estimates, outputs various
  * results for increasing depth-based cutoff. Returns suggested optimal
  * cutoff depth (bad choice in practice) */
@@ -329,8 +331,7 @@ int Pseudotree::computeComplexities(int workers) {
     (*it)->initSubproblemComplexity();
 
   bigint c = m_root->getSubCondBound();
-
-//  cout << "Complexity bound:\t" << mylog10(c) << " (" << c << ")" << endl;
+  cout << "State space bound:\t" << mylog10(c) << " (" << c << ")" << endl;
 
   /*
    * iterate over levels, assuming cutoff, and compute upper bounds as follows:
@@ -473,7 +474,7 @@ const set<int>& PseudotreeNode::updateSubprobVars() {
   }
 
 #ifdef DEBUG
-  cout << "Subproblem at var. " << m_var << ": " << m_subproblemVars << endl;
+//  cout << "Subproblem at var. " << m_var << ": " << m_subproblemVars << endl;
 #endif
 
   // return a const reference
@@ -481,7 +482,7 @@ const set<int>& PseudotreeNode::updateSubprobVars() {
 }
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 /* computes subproblem complexity parameters for a particular pseudo tree node */
 void PseudotreeNode::initSubproblemComplexity() {
 
@@ -537,14 +538,14 @@ void PseudotreeNode::initSubproblemComplexity() {
   m_complexity = new Complexity(w,s,own,ctxtsize);
 
 #ifdef DEBUG
-  cout << "Subproblem at node " << m_var << ": w = " << w << ", twb = " << s << endl;
+//  cout << "Subproblem at node " << m_var << ": w = " << w << ", twb = " << s << endl;
 #endif
 
 }
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 /* compute upper bound on subproblem size, assuming conditioning on 'cond' */
 bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_t>* assig) const {
 
@@ -575,7 +576,7 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
   set<int> uncovered(vars); // everything uncovered initially
   list<Function*> cover;
   while (!uncovered.empty()) {
-    bigfloat ratio = 1, ctemp = 1;
+    bigfloat ratio = 1;//, ctemp = 1;
     Function* cand = NULL;
     list<Function*>::iterator candIt = funcs.begin();
 
@@ -620,7 +621,7 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
   return bound;
 
 }
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 
 void Pseudotree::insertNewNode(const int i, const set<int>& N, list<PseudotreeNode*>& roots) {

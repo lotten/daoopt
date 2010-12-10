@@ -9,16 +9,16 @@
 
 #include "SearchMaster.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
-void SearchMaster::operator ()() {
+bool SearchMaster::init() {
 
-  try {
+  myprint("Init: Beginning initialisation\n");
 
   bool solvedDuringInit = false;
 
   /*
-   * this tries to find the initial parameters for the cutoff desicion:
+   * this tries to find the initial parameters for the cutoff decision:
    * Explores the problem depth-first allowing only a small number of
    * nodes, and takes the largest solves subproblem (lowest depth) to
    * extract parameters
@@ -30,6 +30,23 @@ void SearchMaster::operator ()() {
     ss << "Init: explored " << limit << " nodes" << endl;// for cutoff " << cutoff << endl;
     myprint(ss.str());
   }
+
+  if (solvedDuringInit) {
+    m_spaceMaster->searchDone = true;
+    ostringstream ss;
+    ss << "Init: Problem solved during initialization" << endl;
+    myprint(ss.str());
+    return true; // problem solved
+  }
+
+  return false; // default
+
+}
+
+
+void SearchMaster::operator ()() {
+
+  try {
 
   while ( !this->isDone() ) {
 
@@ -97,6 +114,7 @@ void SearchMaster::operator ()() {
         m_spaceMaster->searchDone = true;
       }
 
+      // only do a limited number of subprob's?
       if (m_spaceMaster->options->maxSubprob != NONE &&
           ((count_t) m_spaceMaster->options->maxSubprob) <= m_nextThreadId) {
         GETLOCK(m_spaceMaster->mtx_searchDone, lk2);
@@ -338,4 +356,4 @@ double SearchMaster::estimateIncrement(SearchNode* node) const {
 
 
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */

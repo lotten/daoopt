@@ -22,7 +22,6 @@ protected:
   stack<pair<SearchNode*,size_t> > m_stack;
 
 protected:
-  void expandNext();
 
   bool isDone() const;
 

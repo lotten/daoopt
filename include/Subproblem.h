@@ -10,7 +10,7 @@
 
 #include "_base.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 // forward declaration
 #include "SearchNode.h"
@@ -47,6 +47,6 @@ public:
 
 };
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 #endif /* SUBPROBLEM_H_ */

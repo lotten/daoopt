@@ -39,10 +39,10 @@
 
 
 #ifdef NOTHREADS
-#undef PARALLEL_MODE
+#undef PARALLEL_DYNAMIC
 #endif
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 /* Boost thread libraries */
 #include "boost/thread.hpp"
@@ -70,7 +70,7 @@ static boost::mutex mtx_io;
 #endif
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 #define PAR_ONLY(X) X
 #else
 #define PAR_ONLY(X) ;
@@ -233,7 +233,7 @@ template<> struct hash<std::string> {
 typedef uint64_t count_t;
 
 /* LibGMP C++ interface */
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
  #ifdef USE_GMP
  #include <gmpxx.h>
  typedef mpz_class bigint;
@@ -414,7 +414,7 @@ inline double mylog10(unsigned long a) {
   return log10(a);
 }
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
  #ifdef USE_GMP
  double mylog10(bigint a);
  #endif

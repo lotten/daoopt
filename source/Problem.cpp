@@ -210,22 +210,33 @@ bool Problem::parseOrdering(const string& file, vector<int>& elim) const {
 void Problem::saveOrdering(const string& file, const vector<int>& elim) const {
   assert( (int) elim.size() == m_n);
 
-  ogzstream out(file.c_str());
+  if (file.substr(file.size()-3,3) == ".gz") { // write gzipped
 
-  if (!out) {
-    cerr << "Error writing ordering to file " << file << endl;
-    exit(1);
+    ogzstream out(file.c_str());
+    if ( ! out ) {
+      cerr << "Error writing ordering to file " << file << endl;
+      exit(1);
+    }
+    out << "# daoopt ordering for " << m_name << endl << elim.size();
+    for (vector<int>::const_iterator it=elim.begin(); it!=elim.end(); ++it)
+      out << ' ' << *it;
+    out << endl;
+    out.close();
+
+  } else { // write straight text
+
+    ofstream out(file.c_str());
+    if ( ! out ) {
+      cerr << "Error writing ordering to file " << file << endl;
+      exit(1);
+    }
+    out << "# daoopt ordering for " << m_name << endl << elim.size();
+    for (vector<int>::const_iterator it=elim.begin(); it!=elim.end(); ++it)
+      out << ' ' << *it;
+    out << endl;
+    out.close();
+
   }
-
-  out << "# daoopt ordering for " << m_name << endl;
-
-  out << elim.size() ;
-
-  for (vector<int>::const_iterator it=elim.begin(); it!=elim.end(); ++it)
-    out << ' ' << *it;
-
-  out << endl;
-  out.close();
 
 }
 

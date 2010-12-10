@@ -11,7 +11,7 @@
 #include "SearchSpace.h"
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 //#include "pstream.h"
 
@@ -40,6 +40,6 @@ public:
 inline SubproblemHandler::SubproblemHandler(SearchSpaceMaster* p, SearchNode* n) :
   m_spaceMaster(p), m_rootnode(n) {}
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 #endif /* SUBPROBLEMHANDLER_H_ */

@@ -10,7 +10,7 @@
 
 #include "DEFINES.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 #include "Subproblem.h"
 
@@ -81,6 +81,6 @@ inline Statistics::Statistics() :
 { /* intentionally empty */ }
 
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 #endif /* STATISTICS_H_ */

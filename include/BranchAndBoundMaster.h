@@ -10,7 +10,7 @@
 
 #include "BranchAndBound.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 #include "SearchMaster.h"
 
@@ -40,6 +40,6 @@ inline BranchAndBoundMaster::BranchAndBoundMaster(Problem* prob, Pseudotree* pt,
     Search(prob, pt,space, heur), SearchMaster(prob,pt,space,heur), BranchAndBound(prob,pt,space,heur) {}
 
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 #endif /* BRANCHANDBOUNDMASTER_H_ */

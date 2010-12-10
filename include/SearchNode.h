@@ -40,7 +40,7 @@ protected:
   SearchNode* m_parent;              // pointer to the parent
   double m_nodeValue;                // node value (as in cost)
   double m_heurValue;                // heuristic estimate of the node's value
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   count_t m_subCount;                // number of nodes expanded below this node
   count_t m_subLeaves;               // number leaf nodes generated below this node
   count_t m_subLeafD;                // cumulative depth of leaf nodes below this node, division
@@ -73,7 +73,7 @@ public:
   virtual void setCacheInst(size_t i) = 0;
   virtual size_t getCacheInst() const = 0;
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   count_t getSubCount() const { return m_subCount; }
   void setSubCount(count_t c) { m_subCount = c; }
   void addSubCount(count_t c) { m_subCount += c; }
@@ -162,7 +162,7 @@ public:
   const context_t& getCacheContext() const { assert(false); return emptyCtxt; }
   void setCacheInst(size_t i) { assert(false); }
   size_t getCacheInst() const { assert(false); return 0; }
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   void setInitialBound(double d) { assert(false); }
   double getInitialBound() const { assert(false); }
 
@@ -184,14 +184,14 @@ public:
 class SearchNodeOR : public SearchNode {
 protected:
   int m_var;             // Node variable
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   size_t m_cacheInst;    // Cache instance counter
   double m_initialBound; // the lower bound when the node was first generated
 #endif
   double* m_heurCache;   // Stores the precomputed heuristic values of the AND children
   context_t m_cacheContext; // Stores the context (for caching)
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   context_t m_subprobContext; // Stores the context values to this subproblem
 #endif
 
@@ -213,7 +213,7 @@ public:
   void setCacheContext(const context_t& t) { m_cacheContext = t; }
   const context_t& getCacheContext() const { return m_cacheContext; }
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   void setCacheInst(size_t i) { m_cacheInst = i; }
   size_t getCacheInst() const { return m_cacheInst; }
 #else
@@ -221,12 +221,12 @@ public:
   size_t getCacheInst() const { return 0; }
 #endif
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   void setInitialBound(double d) { m_initialBound = d; }
   double getInitialBound() const { return m_initialBound; }
 #endif
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   void setSubprobContext(const context_t& c) { m_subprobContext = c; }
   const context_t& getSubprobContext() const { return m_subprobContext; }
 #endif
@@ -251,7 +251,7 @@ ostream& operator << (ostream&, const SearchNode&);
 
 inline SearchNode::SearchNode(SearchNode* parent) :
   m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY)
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   , m_subCount(0), m_subLeaves(0), m_subLeafD(0)
 #endif
   { /* intentionally empty */ }

@@ -27,12 +27,16 @@
 /*****************************************************************/
 
 /******************************************************************
- * define PARALLEL_MODE if multithreading should be used (for central
+ * define PARALLEL_DYNAMIC if multithreading should be used (for central
  * process), used only if NOTHREADS hasn't been set externally
  */
 
-#ifndef PARALLEL_MODE
-//#define PARALLEL_MODE
+#ifndef PARALLEL_DYNAMIC
+#define PARALLEL_DYNAMIC
+#endif
+
+#ifndef PARALLEL_STATIC
+//#define PARALLEL_STATIC
 #endif
 
 /*****************************************************************/
@@ -84,7 +88,13 @@ typedef signed char val_t;
 
 /* disable parallelism if NOTHREADS is defined */
 #ifdef NOTHREADS
-  #undef PARALLEL_MODE
+  #undef PARALLEL_DYNAMIC
+  #undef PARALLEL_STATIC
+#endif
+
+/* only allow one parallel mode */
+#ifdef PARALLEL_STATIC
+#undef PARALLEL_DYNAMIC
 #endif
 
 /* only allow one of the anytime modifications */

@@ -13,7 +13,7 @@
 #include <csignal>
 #include "_base.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 /* watches for signals like SIGINT and SIGTERM, catches them
  * and takes care of processing */
@@ -43,6 +43,6 @@ public:
 
 };
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 #endif /* SIGHANDLER_H_ */

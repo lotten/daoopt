@@ -54,7 +54,7 @@ public:
   // if computeTables=false, only returns size estimate (no tables computed)
   size_t build(const vector<val_t>* assignment = NULL, bool computeTables = true);
 
-  // gets and sets the global upper bound
+  // returns the global upper bound
   double getGlobalUB() const { return m_globalUB; }
 
   // computes the heuristic for variable var given a (partial) assignment
@@ -62,6 +62,8 @@ public:
 
   // reset the i-bound
   void setIbound(int ibound) { m_ibound = ibound; }
+  // gets the i-bound
+  int getIbound() const { return m_ibound; }
 
 public:
   MiniBucketElim(Problem* p, Pseudotree* pt, int ib);

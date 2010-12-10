@@ -9,7 +9,7 @@
 
 #include "BranchAndBoundMaster.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
@@ -21,6 +21,9 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
   BranchAndBound bab(m_problem, &pt, &sp, m_heuristic);
 
   bab.setInitialBound( lowerBound(m_space->root) );
+#ifndef NO_ASSIGNMENT
+  bab.setInitialSolution(m_space->root->getOptAssig());
+#endif
 
   BoundPropagator prop(m_problem,&sp);
 
@@ -45,6 +48,7 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
       maxSubCount = subCount;
 
       int rootvar = prop.getSubRootvarCache();
+      cout << rootvar << ' ' << flush;
       maxSubRootDepth = pt.getNode(rootvar)->getDepth();
       maxSubRootHeight = pt.getNode(rootvar)->getSubHeight();
 
@@ -69,8 +73,13 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
   // initialize stats using max. subproblem except for full leaf profile
   m_spaceMaster->stats->init(maxSubRootDepth, maxSubRootHeight, maxSubCount, maxSubLeaves, maxSubLeafD, lbound, ubound);
 
-  if (! bab.nextLeaf())
+  if (! bab.nextLeaf()) {
+    this->setInitialBound(bab.getCurOptValue());
+#ifndef NO_ASSIGNMENT
+    this->setInitialSolution(bab.getCurOptTuple());
+#endif
     return true; // solved within time limit
+  }
 
   return false; // not solved
 
@@ -113,4 +122,4 @@ void BranchAndBoundMaster::solveLocal(SearchNode* node) const {
 
 }
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */

@@ -15,7 +15,7 @@
 #include "Pseudotree.h"
 #include "utils.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 #include "SubproblemHandler.h"
 #include "SubproblemCondor.h"
 #endif
@@ -33,11 +33,11 @@ protected:
   Pseudotree* m_pseudotree;     // Pseudo tree
   SearchSpace* m_space;         // Search space (incl. cache table)
   Heuristic* m_heuristic;       // Heuristic for search
-#ifdef PARALLEL_MODE
-  Subproblem* m_nextSubprob;    // Next subproblem for external solving (set by expandNext() )
+#ifdef PARALLEL_DYNAMIC
+  Subproblem* m_nextSubprob;    // Next subproblem for external solving
 #endif
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   bigint m_twbCache;            // caches the twb bound
   bigint m_hwbCache;            // caches the hwb bound
 #endif
@@ -47,7 +47,7 @@ protected:
 
   vector<val_t> m_assignment;   // The current (partial assignment)
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   /* keeps tracks up lower/upper bound on first OR node generated for
    * each depth level. used for initialization of cutoff scheme. */
 //  vector<pair<double,double> > m_bounds;
@@ -62,7 +62,7 @@ public:
 
 //  count_t getNoNodesOR() const { return m_nodesOR; }
 //  count_t getNoNodesAND() const { return m_nodesAND; }
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   count_t getSubCount() const { return m_space->getTrueRoot()->getSubCount(); }
 #endif
 //  pair<count_t,count_t> getNoNodes() const { return make_pair(m_nodesOR, m_nodesAND); }
@@ -106,7 +106,7 @@ public:
   virtual void setInitialSolution(const vector<val_t>&) const = 0;
 #endif
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   /* returns the cached lower/upper bounds on the first node at each depth */
 //  const vector<pair<double,double> >& getBounds() const { return m_bounds; }
 #endif
@@ -159,7 +159,7 @@ protected:
 #ifndef NO_CACHING
   void addCacheContext(SearchNode*, const set<int>&) const;
 #endif
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   /* see comment above */
   void addSubprobContext(SearchNode*, const set<int>&) const;
 

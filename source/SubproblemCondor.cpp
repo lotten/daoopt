@@ -11,7 +11,7 @@
 #include "utils.h"
 #include "gzstream.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 /* Suppress condor output if not in debug mode */
 #ifndef DEBUG
@@ -549,5 +549,5 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
 }
 
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 

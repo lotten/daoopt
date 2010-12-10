@@ -12,7 +12,7 @@
 #include "ProgramOptions.h"
 #include "MiniBucketElim.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 //#include "ParallelManager.h"
 #include "BranchAndBoundMaster.h"
 #include "BoundPropagatorMaster.h"
@@ -26,7 +26,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.8b"
+#define VERSIONINFO "0.98.8c"
 
 #if defined(ANYTIME_BREADTH)
 #define VERSIONMOD " /any-bfs"
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
   cout << "------------------------------------------------------" << endl
        << "DAOOPT " << VERSIONINFO;
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   cout << " PARALLEL (";
 #else
   cout << " STANDALONE (";
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   << "+ i-bound:\t" << opt.ibound << endl
   << "+ j-bound:\t" << opt.cbound << endl
   << "+ Memory limit:\t" << opt.memlimit << endl
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   << "+ Cutoff depth:\t" << opt.cutoff_depth << endl
   << "+ Cutoff size:\t" << opt.cutoff_size << endl
   << "+ Max. workers:\t" << opt.threads << endl
@@ -168,12 +168,14 @@ int main(int argc, char** argv) {
   cout << endl << "Ran " << i << " iterations, lowest width/height found: " << w << '/' << pt.getHeight() << '\n';
 
   // Save order to file?
-#ifdef PARALLEL_MODE
-  if (!orderFromFile) {
-    if (opt.in_orderingFile.empty())
-      opt.in_orderingFile = string("elim_") + p.getName() + string(".gz");
-    p.saveOrdering(opt.in_orderingFile,elim);
-  }
+#ifdef PARALLEL_DYNAMIC
+  opt.in_orderingFile = string("temp_elim-") + p.getName() + string(".gz");
+  p.saveOrdering(opt.in_orderingFile,elim);
+//  if (!orderFromFile || opt.order_iterations) {
+//    if (opt.in_orderingFile.empty() || opt.order_iterations)
+//    opt.in_orderingFile = string("temp_elim-") + p.getName() + string(".gz");
+//  p.saveOrdering(opt.in_orderingFile,elim);
+//  }
 #else
   if (!opt.in_orderingFile.empty() && !orderFromFile) {
     p.saveOrdering(opt.in_orderingFile,elim);
@@ -185,7 +187,7 @@ int main(int argc, char** argv) {
 //  pt.build(g,elim,opt.cbound); // will add dummy variable
   p.addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   pt.addFunctionInfo(p.getFunctions());
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   int cutoff = pt.computeComplexities(opt.threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
 //  if (opt.autoCutoff) {
@@ -195,7 +197,7 @@ int main(int argc, char** argv) {
 #endif
 
   // The main search space
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   SearchSpaceMaster* space = new SearchSpaceMaster(&pt,&opt);
 #else
   SearchSpace* space = new SearchSpace(&pt,&opt);
@@ -209,7 +211,7 @@ int main(int argc, char** argv) {
 #endif
 
   // The search engine
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   BranchAndBoundMaster search(&p,&pt,space,&mbe);
 #else
   BranchAndBound search(&p,&pt,space,&mbe);
@@ -237,7 +239,7 @@ int main(int argc, char** argv) {
 #endif
 
 #ifndef NO_HEURISTIC
-  int ibound = opt.ibound;
+  int ibound = min(opt.ibound,pt.getWidthCond());
   if (opt.memlimit != NONE) {
     ibound = mbe.limitIbound(ibound, opt.memlimit, & search.getAssignment() );
     cout << "Enforcing memory limit resulted in i-bound " << ibound << endl;
@@ -252,7 +254,11 @@ int main(int argc, char** argv) {
   }
   else {
     cout << "Computing mini bucket heuristic..." << endl;
+    time(&time_pre);
     sz = mbe.build(& search.getAssignment(), true); // true =  actually compute heuristic
+    time(&time_end);
+    time_passed = difftime(time_end, time_pre);
+    cout << "\tMini bucket finished in " << time_passed << " seconds" << endl;
   }
   cout << '\t' << (sz / (1024*1024.0)) * sizeof(double) << " MBytes" << endl;
 #endif /* NO_HEURISTIC */
@@ -273,6 +279,22 @@ int main(int argc, char** argv) {
       search.setInitialBound( opt.initialBound );
     }
   }
+
+  bool solved = false;
+#ifndef NO_HEURISTIC
+  if (search.getCurOptValue() >= mbe.getGlobalUB()) {
+    solved = true;
+    cout << endl << "--------- Solved during preprocessing ---------" << endl;
+  }
+#endif
+
+#ifndef NO_HEURISTIC
+  if (mbe.getIbound() >= pt.getWidth()) {
+    cout << endl << "Mini bucket is accurate (i-bound >= induced width)!" << endl;
+    opt.lds = 0; // 0 is sufficient for perfect heuristic
+    solved = true;
+  }
+#endif
 
   // Run LDS if specified
   if (opt.lds != NONE) {
@@ -296,6 +318,13 @@ int main(int argc, char** argv) {
     delete spaceLDS;
   }
 
+#ifndef NO_HEURISTIC
+  if (search.getCurOptValue() >= mbe.getGlobalUB()) {
+    solved = true;
+    cout << endl << "--------- Solved by LDS ---------" << endl;
+  }
+#endif
+
   // output (sub)problem lower bound, mostly makes sense for conditioned subproblems
   // in parallelized setting
   double lb = search.curLowerBound();
@@ -313,21 +342,21 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  // The propagation engine
-#ifdef PARALLEL_MODE
-  BoundPropagatorMaster prop(&p,space);
-#else
-  BoundPropagator prop(&p,space);
-#endif
-
+  if (!solved) {
   cout << "--- Starting search ---" << endl;
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
   /*
   ParallelManager manager(&search,&prop,space);
   manager.run();
   */
+  bool solved = search.init();
+
+  if (!solved) { // TODO check whether local AOBB is better?
+
+  // The propagation engine
+  BoundPropagatorMaster prop(&p,space);
 
   // take care of signal handling
   sigset_t new_signal_mask;//, old_signal_mask;
@@ -357,27 +386,28 @@ int main(int argc, char** argv) {
   // unblock signals
   pthread_sigmask(SIG_UNBLOCK, &new_signal_mask, NULL);
 
-
-#else
-  SearchNode* n = search.nextLeaf();
-  while (n) {
-    prop.propagate(n, true); // true = report solutions
-    n = search.nextLeaf();
-  }
+  } else // if !solved
 #endif
+  {
+    // The propagation engine
+    BoundPropagator prop(&p,space);
+    SearchNode* n = search.nextLeaf();
+    while (n) {
+      prop.propagate(n, true); // true = report solutions
+      n = search.nextLeaf();
+    }
+  }
 
   // Output cache statistics
   space->cache->printStats();
 
   cout << endl << "--------- Search done ---------" << endl;
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   cout << "Condor jobs:   " << search.getThreadCount() << endl;
 #endif
   cout << "OR nodes:      " << space->nodesOR << endl;
   cout << "AND nodes:     " << space->nodesAND << endl;
-#ifdef PARALLEL_MODE
-//  cout << "Subcount:      " << search.getSubCount() << endl;
-#endif
+  }
 
   time(&time_end);
   time_passed = difftime(time_end,time_start);

@@ -65,21 +65,21 @@ public:
 
 public:
 
-  // parses a UAI format input file
+  /* parses a UAI format input file */
   bool parseUAI(const string& prob, const string& evid);
 
-  // writes the current problem to a UAI file
+  /* writes the current problem to a UAI file */
   void writeUAI(const string& prob) const;
 
-  // parses an ordering from file 'file' and stores it in 'elim'
+  /* parses an ordering from file 'file' and stores it in 'elim' */
   bool parseOrdering(const string& file, vector<int>& elim) const;
-  // stores ordering from 'elim' in file 'file'
+  /* stores ordering from 'elim' in file 'file' */
   void saveOrdering(const string& file, const vector<int>& elim) const;
 
-  // removes evidence and unary-domain variables
+  /* removes evidence and unary-domain variables */
   void removeEvidence();
 
-  // report an updated solution
+  /* report an updated solution */
   void updateSolution(double cost,
 #ifndef NO_ASSIGNMENT
       const vector<val_t>& sol,
@@ -87,12 +87,13 @@ public:
       pair<size_t,size_t> nodes,
       bool output = true);
 
-  // outputs the solution to the screen and, if file!="", writes it to file
-  //  - cost is the MPE tuple value
-  //  - sol is the optimal solution tuple
-  //  - noNodes is the number of OR/AND nodes
-  //  - nodeProf and leafProf are the full and leaf node profiles
-  // if subprobOnly is true, only the variables from sol will be output to file (for subproblem solving)
+  /* outputs the solution to the screen and, if file!="", writes it to file
+   *  - cost is the MPE tuple value
+   *  - sol is the optimal solution tuple
+   *  - noNodes is the number of OR/AND nodes
+   *  - nodeProf and leafProf are the full and leaf node profiles
+   * if subprobOnly is true, only the variables from sol will be output to
+   * file (for subproblem solving) */
   void outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
                              bool subprobOnly = false) const;
@@ -103,7 +104,7 @@ public:
   bool isEliminated(int i) const;
 #endif
 
-  // adds the dummy variable to connect disconnected pseudo tree components
+  /* adds the dummy variable to connect disconnected pseudo tree components */
   void addDummy();
 
 public:

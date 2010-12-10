@@ -27,7 +27,7 @@ void myerror(std::string s) {
   }
 }
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
  #ifdef USE_GMP
 double mylog10(bigint a) {
   double l = 0;

@@ -97,12 +97,13 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
     // compute global upper bound for root (dummy) bucket
     if (*itV == elimOrder[0]) {// variable is dummy root variable
       if (computeTables && assignment) { // compute upper bound if assignment is given
+        m_globalUB = ELEM_ONE;
         for (vector<Function*>::iterator itF=funs.begin(); itF!=funs.end(); ++itF)
           m_globalUB OP_TIMESEQ (*itF)->getValue(*assignment); // all constant functions, tablesize==1
 
-        double mbval = m_globalUB OP_TIMES m_problem->getGlobalConstant();
-        cout << "    MBE-ROOT = " << SCALE_LOG(m_globalUB) << " (" << SCALE_NORM(m_globalUB) << ")" << endl
-             << "    MBE-ALL  = " << SCALE_LOG(mbval) << " (" << SCALE_NORM(mbval) << ")" << endl;
+        cout << "    MBE-ROOT = " << SCALE_LOG(m_globalUB) << " (" << SCALE_NORM(m_globalUB) << ")" << endl;
+        m_globalUB OP_TIMESEQ m_problem->getGlobalConstant();
+        cout << "    MBE-ALL  = " << SCALE_LOG(m_globalUB) << " (" << SCALE_NORM(m_globalUB) << ")" << endl;
       }
       continue; // skip the dummy variable's bucket
     }

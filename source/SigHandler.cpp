@@ -8,7 +8,7 @@
 #include "SigHandler.h"
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 volatile sig_atomic_t SigHandler::flag = 1;
 
@@ -53,4 +53,4 @@ void SigHandler::operator ()() {
 
 }
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */

@@ -28,17 +28,17 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("sol-file,c", po::value<string>(), "path to output optimal solution to")
       ("ibound,i", po::value<int>()->default_value(10), "i-bound for mini bucket heuristics")
       ("cbound,j", po::value<int>()->default_value(1000), "context size bound for caching")
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
       ("cbound-worker,k", po::value<int>()->default_value(1000), "context size bound for caching in worker nodes")
 #endif
       ("iterations,t", po::value<int>()->default_value(25), "iterations for finding ordering")
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
       ("cutoff-width,w", po::value<int>()->default_value(-1), "cutoff width for central search")
       ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^6)")
       ("local-size,u", po::value<int>()->default_value(-1), "minimum subproblem size (* 10^6)")
       ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^6) for local initialization")
-      ("noauto,a", "don't determine cutoff automatically")
+      ("noauto", "don't determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(5), "max. number of concurrent subproblem processes")
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
 #endif

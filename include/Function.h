@@ -33,7 +33,7 @@ protected:
   vector<size_t> m_offsets;  // Precomputed offsets for value lookup
 #endif
 
-  // Tightness related information
+  /* Tightness related information */
   size_t m_tightness;     // number of valid entries in table
   size_t m_tCache;        // cached number of valid entries in reduced table
   set<int> m_tCacheScope; // cached scope for reduced tightness computation
@@ -46,63 +46,59 @@ public:
   const set<int>& getScope() const { return m_scope; }
   int getArity() const { return m_scope.size(); }
 
-  // returns true iff the function is constant
+  /* returns true iff the function is constant */
   bool isConstant() const { return m_tableSize==1; }
 
-  // true iff var. i is in scope
+  /* true iff var. i is in scope */
   bool hasInScope(const int& i) const { return (m_scope.find(i) != m_scope.end()); }
 
-  // true iff at least one var from S is in scope
+  /* true iff at least one var from S is in scope */
   bool hasInScope(const set<int>& S) const { return !intersectionEmpty(S,m_scope); }
 
-  /*
-   * generates a new (smaller) function with reduced scope and the <var,val>
+  /* generates a new (smaller) function with reduced scope and the <var,val>
    * pairs from the argument factored into the new table.
-   * ! HAS TO BE IMPLEMENTED IN SUBCLASSES !
-   */
+   * ! HAS TO BE IMPLEMENTED IN SUBCLASSES !  */
   virtual Function* substitute(const map<int,val_t>& assignment) const = 0;
 
-  // translates the variables in the function scope
+  /* translates the variables in the function scope */
   void translateScope(const map<int,int>& translate);
 
-  // checks if all variables in the function's scope are instantiated in assignment
-  // (note that assignment is a full problem assignment, not just the function scope)
+  /* checks if all variables in the function's scope are instantiated in assignment
+   * (note that assignment is a full problem assignment, not just the function scope) */
   bool isInstantiated(const vector<val_t>& assignment) const;
 
-  // returns the table entry for an assignment
+  /* returns the table entry for an assignment */
   double getValue(const vector<val_t>& assignment) const;
 
-  // returns the function value for the tuple (which is pointered function scope)
+  /* returns the function value for the tuple (which is pointered function scope) */
   double getValuePtr(const vector<val_t*>& tuple) const;
 
 protected:
-  // main work for substitution: computes new scope, new table and table size
-  // and stores them in the three non-const argument references
+  /* main work for substitution: computes new scope, new table and table size
+   * and stores them in the three non-const argument references */
   void substitute_main(const map<int,val_t>& assignment, set<int>&, double*&, size_t&) const;
 
 public:
-  // generates a clone of this function object
+  /* generates a clone of this function object */
   virtual Function* clone() const = 0;
 
-  // gets static tightness
+  /* gets static tightness */
   size_t getTightness() const { return m_tightness; }
 
-#ifdef PARALLEL_MODE
-  // tightness when projected down to 'proj'
+#ifdef PARALLEL_DYNAMIC
+  /* tightness when projected down to 'proj' */
   size_t getTightness(const set<int>& proj, const set<int>& cond,
                        const vector<val_t>* assig = NULL);
 
-  /*
-   * computes the gain ratio for greedy covering algorithm
+  /* computes the gain ratio for greedy covering algorithm
    *  uncovered: the set of still uncovered variables in this iteration
    *  proj: Set of vars to project function scope to
    *  cond: Set of vars whose assignment is checked
-   *  assig: Actual assignment to vars named in 'cond'
-   */
+   *  assig: Actual assignment to vars named in 'cond' */
   bigfloat gainRatio(const set<int>& uncovered, const set<int>& proj,
                       const set<int>& cond, const vector<val_t>* assig = NULL);
-  // computes and returns the average value, conditioned on the variables indicated
-  // in the set, where the actual assignments are pulled from the assignment vector
+  /* computes and returns the average value, conditioned on the variables indicated
+   * in the set, where the actual assignments are pulled from the assignment vector */
   double getAverage(const set<int>&, const vector<val_t>&);
 
 #endif

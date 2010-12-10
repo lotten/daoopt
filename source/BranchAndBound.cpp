@@ -9,7 +9,7 @@
 
 #include "BranchAndBound.h"
 
-#ifdef PARALLEL_MODE
+#if defined(PARALLEL_DYNAMIC) || defined(PARALLEL_STATIC)
 #undef DEBUG
 #endif
 
@@ -85,7 +85,7 @@ bool BranchAndBound::doExpand(SearchNode* n) {
     } else { // decomposition, split stacks
       for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
         MyStack* s = new MyStack(stack);
-        stack.addChild(s);
+        stack->addChild();
         s->push(*it);
         m_stacks.push(s);
       }
@@ -290,9 +290,7 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 
 void BranchAndBound::setInitialBound(double d) const {
   assert(m_space);
-
   m_space->root->setValue(d);
-
   return;
 /*
   // clear existing dummy nodes (new ones will be created)

@@ -9,7 +9,7 @@
 
 #include "LimitedDiscrepancy.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 #undef DEBUG
 #endif
 
@@ -26,7 +26,7 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
     // we need to generate *all* OR successors
 
     ++m_space->nodesAND; // count node
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
     node->setSubCount(1);
 #endif
 

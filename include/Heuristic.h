@@ -34,6 +34,7 @@ protected:
 
 
 class UnHeuristic : public Heuristic {
+public:
   size_t build(const std::vector<val_t>*, bool) { assert(false); return 0; }
   double getGlobalUB() const { assert(false); return 0; }
   double getHeur(int, const std::vector<val_t>&) const { assert(false); return 0; }

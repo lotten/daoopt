@@ -24,11 +24,15 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
   // 'del' signals whether we are still deleting nodes in this call
   bool prop = true, del = true;
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   // keeps track of the size of the deleted subspace and its number of leaf nodes
   count_t subCount = 0;
   count_t subLeaves = 0;
   count_t subLeafD = 0;
+
+  m_subCountCache = 0;
+  m_subLeavesCache = 0;
+  m_subLeafDCache = 0;
 #endif
 
   // going all the way to the root, if we have to
@@ -52,7 +56,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
         // store into value (thus includes cost of subSolved)
         cur->setValue(d);
 
-        if ( ISNAN(d) ) {
+        if ( ISNAN(d) ) { // not all OR children solved yet, propagation stops here
           prop = false;
 #ifndef NO_ASSIGNMENT
           propagateTuple(n,cur); // save (partial) opt. subproblem solution at current AND node
@@ -88,7 +92,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
           }
 #endif
           highestDelete = make_pair(cur,prev);
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
           subCount += prev->getSubCount();
           subLeaves += prev->getSubLeaves();
           subLeafD += prev->getSubLeafD();
@@ -137,7 +141,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
       if (del) {
         if (prev->getChildren().size() <= 1) { // prev has no or one children?
           highestDelete = make_pair(cur,prev);
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
           subCount += prev->getSubCount();
           subLeaves += prev->getSubLeaves();
           subLeafD += prev->getSubLeafD();
@@ -203,7 +207,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
     // Store value of OR node to be deleted into AND parent
     highestDelete.first->addSubSolved(highestDelete.second->getValue());
   }
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
   // store size of deleted subproblem in parent node
   highestDelete.first->addSubCount(subCount);
   highestDelete.first->addSubLeaves(subLeaves);
@@ -226,7 +230,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
 
   assert(start && end);
 
-  DIAG(cout << "< REC opt. assignment from " << *start << " to " << *end << endl);
+  DIAG(ostringstream ss; ss << "< REC opt. assignment from " << *start << " to " << *end << endl; myprint(ss.str());)
 
   int endVar = end->getVar();
   const set<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
@@ -282,7 +286,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
     ++itVar, ++itVal;
   }
 
-  DIAG(cout << "< Tuple for "<< *end << " after recording: " << (end->getOptAssig()) << endl);
+  DIAG(ostringstream ss; ss << "< Tuple for "<< *end << " after recording: " << (end->getOptAssig()) << endl; myprint(ss.str());)
 
 }
 

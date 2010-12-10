@@ -14,7 +14,7 @@
 
 //#include "pstream.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 /* a container for information exchange between SubproblemCondor and
  * CondorSubmissionEngine (which in itself wraps around the
@@ -92,7 +92,7 @@ inline CondorSubmissionEngine::CondorSubmissionEngine(SearchSpaceMaster* p)
   : m_curBatch(0), m_nextProcess(0), m_spaceMaster(p) {}
 
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 
 #endif /* SUBPROBLEMCONDOR_H_ */

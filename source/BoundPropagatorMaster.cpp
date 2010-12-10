@@ -9,7 +9,7 @@
 
 #include "BoundPropagatorMaster.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 void BoundPropagatorMaster::operator() () {
 
@@ -36,7 +36,7 @@ void BoundPropagatorMaster::operator() () {
           // new leaf node to propagate
           n = m_spaceMaster->leaves.front();
           m_spaceMaster->leaves.pop();
-        } else {
+        } else if (m_spaceMaster->solved.size()) {
           // new externally solved subproblem
           sp = m_spaceMaster->solved.front();
           n = sp->root; // root node of subproblem
@@ -108,4 +108,4 @@ void BoundPropagatorMaster::operator() () {
 
 }
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */

@@ -9,7 +9,7 @@
 
 #include "utils.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 
 #define FALLOFF 0.9
 
@@ -190,5 +190,5 @@ double Statistics::normalize(double d) const {
 }
 
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 

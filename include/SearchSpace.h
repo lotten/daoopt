@@ -15,17 +15,17 @@
 
 #include "SearchNode.h"
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 #include "Subproblem.h"
 #include "Statistics.h"
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 #ifndef NO_CACHING
 #include "CacheTable.h"
 #endif
 
 /* forward declarations */
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 namespace boost {
   class thread;
 }
@@ -33,7 +33,7 @@ struct CondorSubmission;
 #endif
 
 /* declare ProgramOptions */
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 #include "ProgramOptions.h"
 #else
 struct ProgramOptions;
@@ -83,47 +83,47 @@ inline SearchNode* SearchSpace::getTrueRoot() const {
 
 
 
-#ifdef PARALLEL_MODE
+#ifdef PARALLEL_DYNAMIC
 /* search space for master node, extends worker search space to allow threading */
 struct SearchSpaceMaster : public SearchSpace {
 
   Statistics* stats; // keeps track of the statistics
 
-  // queue for information exchange between components
+  /* queue for information exchange between components */
   queue< Subproblem* > solved; // for externally solved subproblems
   queue< SearchNode* > leaves; // for fully solved leaf nodes
   map< Subproblem*, boost::thread* > activeThreads;
 
-  // for pipelining the condor submissions
+  /* for pipelining the condor submissions */
   queue< CondorSubmission* > condorQueue;
   boost::mutex mtx_condorQueue;
   boost::condition_variable_any cond_condorQueue;
-  // to signal SubproblemHandlers that their job has been submitted
+  /* to signal SubproblemHandlers that their job has been submitted */
   boost::condition_variable_any cond_jobsSubmitted;
 
-  // limits the number of processing leaves/threads at any time
+  /* limits the number of processing leaves/threads at any time */
   volatile size_t allowedThreads;
   boost::mutex mtx_allowedThreads;
   boost::condition_variable_any cond_allowedThreads;
 
-  // counts the number of active threads
+  /* counts the number of active threads */
   volatile bool searchDone;
   boost::mutex mtx_searchDone;
 
-  // mutex and condition variable for search space *and* cache
+  /* mutex and condition variable for search space *and* cache */
   boost::mutex mtx_space;
 
-  // mutex for Statistics object
+  /* mutex for Statistics object */
   boost::mutex mtx_stats;
 
-  // mutex and condition var. for the list of solved leaf nodes
+  /* mutex and condition var. for the list of solved leaf nodes */
   boost::mutex mtx_solved;
   boost::condition_variable_any cond_solved;
 
-  // mutex for active threads
+  /* mutex for active threads */
   boost::mutex mtx_activeThreads;
 
-  // mutex for condor
+  /* mutex for condor */
   boost::mutex mtx_condor;
 
   SearchSpaceMaster(Pseudotree* pt, ProgramOptions* opt);
@@ -142,7 +142,7 @@ inline SearchSpaceMaster::~SearchSpaceMaster() {
   if (stats) delete stats;
 }
 
-#endif /* PARALLEL_MODE */
+#endif /* PARALLEL_DYNAMIC */
 
 
 #endif /* SEARCHSPACE_H_ */
