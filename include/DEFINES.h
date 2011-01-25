@@ -13,7 +13,7 @@
  * will speed up computation time
  */
 
-//#define NO_ASSIGNMENT
+#define NO_ASSIGNMENT
 
 /*****************************************************************/
 
@@ -32,7 +32,7 @@
  */
 
 #ifndef PARALLEL_DYNAMIC
-#define PARALLEL_DYNAMIC
+//#define PARALLEL_DYNAMIC
 #endif
 
 #ifndef PARALLEL_STATIC
@@ -50,6 +50,14 @@
 
 //#define ANYTIME_BREADTH
 //#define ANYTIME_DEPTH
+
+/*****************************************************************/
+
+/*****************************************************************
+ * define NO_HEURISTIC to disable Mini Buckets and thus pruning
+ */
+
+//#define NO_HEURISTIC
 
 /*****************************************************************/
 
@@ -93,8 +101,8 @@ typedef signed char val_t;
 #endif
 
 /* only allow one parallel mode */
-#ifdef PARALLEL_STATIC
-#undef PARALLEL_DYNAMIC
+#ifdef PARALLEL_DYNAMIC
+#undef PARALLEL_STATIC
 #endif
 
 /* only allow one of the anytime modifications */

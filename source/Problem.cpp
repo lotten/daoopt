@@ -303,6 +303,9 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   in >> x; // No. of variables
   m_n = x;
   m_domains.resize(m_n,UNKNOWN);
+#ifndef NO_ASSIGNMENT
+  m_curSolution.resize(m_n,UNKNOWN);
+#endif
   m_k = -1;
   for (int i=0; i<m_n; ++i) { // Domain sizes
     in >> x; // read into int first
@@ -504,16 +507,15 @@ void Problem::updateSolution(double cost,
   bool subprob = ((int) sol.size() != m_n) ? true : false;
 #endif
 
-  if ( (ISNAN(m_curCost) || cost > m_curCost ) && cost != ELEM_ZERO )
+  if ( (ISNAN(m_curCost) || cost > m_curCost ) ) // TODO? && cost != ELEM_ZERO )
     m_curCost = cost;
   else
     return;
 
+  if (cost == ELEM_ZERO) output = false;
   ostringstream ss;
 
   if (output) {
-//    time_t now; time(&now);
-//    double T = difftime(now,time_start);
     ss << "u " << nodes.first << ' ' <<  nodes.second << ' ' << SCALE_LOG(cost) ;
   }
 

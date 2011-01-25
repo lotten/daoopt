@@ -83,7 +83,8 @@ bool BranchAndBound::doExpand(SearchNode* n) {
     if (chi.size() == 1) { // no decomposition
       stack->push(chi.at(0));
     } else { // decomposition, split stacks
-      for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
+      // reverse iterator needed since new stacks are put in queue (and not depth-first stack)
+      for (vector<SearchNode*>::reverse_iterator it=chi.rbegin(); it!=chi.rend(); ++it) {
         MyStack* s = new MyStack(stack);
         stack->addChild();
         s->push(*it);
@@ -91,7 +92,8 @@ bool BranchAndBound::doExpand(SearchNode* n) {
       }
     }
 #elif defined(ANYTIME_DEPTH)
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    // reverse iterator needed since dive step reverses subproblem order
+    for (vector<SearchNode*>::reverse_iterator it=chi.rbegin(); it!=chi.rend(); ++it)
       m_stackDive.push(*it);
 #else
     for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)

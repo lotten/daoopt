@@ -13,7 +13,7 @@
 #endif
 
 #ifdef DEBUG
-#define DIAG(X) { X ;}
+#define DIAG(X) { X ; }
 #else
 #define DIAG(X) ;
 #endif
@@ -40,6 +40,7 @@
 
 #ifdef NOTHREADS
 #undef PARALLEL_DYNAMIC
+#undef PARALLEL_STATIC
 #endif
 
 #ifdef PARALLEL_DYNAMIC
@@ -233,7 +234,7 @@ template<> struct hash<std::string> {
 typedef uint64_t count_t;
 
 /* LibGMP C++ interface */
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
  #ifdef USE_GMP
  #include <gmpxx.h>
  typedef mpz_class bigint;
@@ -414,7 +415,7 @@ inline double mylog10(unsigned long a) {
   return log10(a);
 }
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
  #ifdef USE_GMP
  double mylog10(bigint a);
  #endif

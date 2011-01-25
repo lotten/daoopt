@@ -57,7 +57,7 @@ public:
 
 public:
   CacheTable(int size);
-  ~CacheTable();
+  virtual ~CacheTable();
 };
 
 

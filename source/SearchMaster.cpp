@@ -278,7 +278,7 @@ bool SearchMaster::doParallelize(SearchNode* node) {
 
 }
 
-
+#if true
 double SearchMaster::avgIncrement(SearchNode* node) const {
 
   assert(node->getType() == NODE_OR); // only OR nodes
@@ -307,9 +307,9 @@ double SearchMaster::avgIncrement(SearchNode* node) const {
 #endif
 
 }
+#endif // false
 
-
-
+#if true
 double SearchMaster::estimateIncrement(SearchNode* node) const {
 
   assert(node);
@@ -353,7 +353,7 @@ double SearchMaster::estimateIncrement(SearchNode* node) const {
   return est;
 
 }
-
+#endif // false
 
 
 #endif /* PARALLEL_DYNAMIC */

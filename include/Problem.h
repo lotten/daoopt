@@ -140,7 +140,8 @@ inline Problem::Problem() :
     m_c(UNKNOWN),
     m_r(UNKNOWN),
     m_globalConstant(ELEM_NAN),
-    m_curCost(ELEM_NAN) {}
+    m_curCost(ELEM_NAN)
+{ /* empty*/ }
 
 inline Problem::~Problem() {
   // delete functions

@@ -72,6 +72,10 @@ bool Search::doCaching(SearchNode* node) {
 
   } else { // OR node, try actual caching
 
+#ifdef PARALLEL_STATIC
+    if (!ptnode->getParent()) return false;
+#endif
+
     if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
       // add cache context information
       addCacheContext(node,ptnode->getCacheContext());
@@ -90,12 +94,13 @@ bool Search::doCaching(SearchNode* node) {
         node->setLeaf(); // mark as leaf
 #ifdef DEBUG
         {
-          GETLOCK(mtx_io,lk);
-          cout << "-Read " << *node
+          ostringstream ss;
+          ss << "-Read " << *node << " with value " << node->getValue()
 #ifndef NO_ASSIGNMENT
-          << " with opt. solution " << node->getOptAssig()
+          << " and opt. solution " << node->getOptAssig()
 #endif
           << endl;
+          myprint(ss.str());
         }
 #endif
         return true;

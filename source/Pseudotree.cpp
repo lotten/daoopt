@@ -159,6 +159,111 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
 
 }
 
+
+void Pseudotree::buildChain(Graph G, const vector<int>& elim, const int cachelimit) {
+
+  if (m_height != UNKNOWN)
+    this->reset();
+
+  const int n = G.getStatNodes();
+  assert(n == (int) m_nodes.size());
+  assert(n == (int) elim.size());
+
+  set<int> context; // maintain the running context
+  PseudotreeNode* prev = NULL;
+
+  // build actual pseudo tree
+  for (vector<int>::const_iterator it=elim.begin(); it!=elim.end(); ++it) {
+    const set<int>& N = G.getNeighbors(*it);
+
+    // update running context
+    context.erase(*it);
+    context.insert(N.begin(),N.end());
+
+    m_width = max(m_width,(int)context.size());
+
+    // create pseudo tree node
+    m_nodes[*it] = new PseudotreeNode(this,*it,context);
+    if (prev) {
+      m_nodes[*it]->setChild(prev);
+      prev->setParent(m_nodes[*it]);
+    }
+    prev = m_nodes[*it];
+
+    G.addClique(N);
+    G.removeNode(*it);
+
+  }
+
+  // compute contexts for adaptive caching
+  for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it) {
+    const set<int>& ctxt = (*it)->getFullContext();
+    if (cachelimit == NONE || cachelimit >= (int) ctxt.size()) {
+      (*it)->setCacheContext(ctxt);
+      continue; // proceed to next node
+    }
+    int j = cachelimit;
+    PseudotreeNode* p = (*it)->getParent();
+    while (j--) { // note: cachelimit < ctxt.size()
+      while (ctxt.find(p->getVar()) == ctxt.end() )
+        p = p->getParent();
+      (*it)->addCacheContext(p->getVar());
+      p = p->getParent();
+    }
+    // find reset variable for current node's cache table
+    while (ctxt.find(p->getVar()) == ctxt.end() )
+      p = p->getParent();
+    p->addCacheReset((*it)->getVar());
+//    cout << "AC for var. " << (*it)->getVar() << " context " << (*it)->getCacheContext()
+//         << " out of " << (*it)->getFullContext() << ", reset at " << p->getVar() << endl;
+  }
+
+  // add artificial root node to connect disconnected components
+  int bogusIdx = elim.size();
+  PseudotreeNode* p = new PseudotreeNode(this,bogusIdx,set<int>());
+  //p->addToContext(bogusIdx);
+
+  p->addChild(prev);
+  prev->setParent(p);
+  m_components = 1;
+
+  m_nodes.push_back(p);
+  m_root = p;
+
+  // remember the elim. order
+  m_elimOrder = elim;
+  m_elimOrder.push_back(bogusIdx); // add dummy variable as first node in ordering
+
+  // initiate depth/height computation for tree and its nodes (bogus variable
+  // gets depth -1), then need to subtract 1 from height for bogus as well
+  m_height = m_root->updateDepthHeight(-1) - 1;
+
+  // initiate subproblem width computation (recursive)
+  m_root->updateSubWidth();
+
+  // reorder each list of child nodes by complexity (width/height)
+//  for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it)
+//    (*it)->orderChildren();
+
+  // initiate subproblem variables computation (recursive)
+  m_root->updateSubprobVars();
+  m_size = m_root->getSubprobSize() -1; // -1 for bogus
+
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+  // compute depth->list<nodes> mapping
+  m_levels.clear();
+  m_levels.resize(m_height+2); // +2 bco. bogus node
+  for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!= m_nodes.end(); ++it) {
+    m_levels.at((*it)->getDepth()+1).push_back(*it);
+  }
+#endif
+
+  return;
+
+
+}
+
+
 /* builds the pseudo tree according to order 'elim' */
 void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 
@@ -239,7 +344,7 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
   m_root->updateSubprobVars();
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -307,7 +412,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
     (*it)->orderChildren();
   }
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -320,7 +425,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
 
 
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
 /* a-priori computation of several complexity estimates, outputs various
  * results for increasing depth-based cutoff. Returns suggested optimal
  * cutoff depth (bad choice in practice) */
@@ -392,7 +497,7 @@ int Pseudotree::computeComplexities(int workers) {
 #endif
 
 /*
- * orders the sub pseudo trees of a node
+ * orders the sub pseudo trees of a node ("less" -> ascending)
  */
 void PseudotreeNode::orderChildren() {
   sort(m_children.begin(), m_children.end(), PseudotreeNode::compGreater ); // def: greater
@@ -482,7 +587,7 @@ const set<int>& PseudotreeNode::updateSubprobVars() {
 }
 
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
 /* computes subproblem complexity parameters for a particular pseudo tree node */
 void PseudotreeNode::initSubproblemComplexity() {
 
@@ -542,10 +647,10 @@ void PseudotreeNode::initSubproblemComplexity() {
 #endif
 
 }
-#endif /* PARALLEL_DYNAMIC */
+#endif /* PARALLEL */
 
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
 /* compute upper bound on subproblem size, assuming conditioning on 'cond' */
 bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_t>* assig) const {
 
@@ -621,7 +726,7 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
   return bound;
 
 }
-#endif /* PARALLEL_DYNAMIC */
+#endif /* PARALLEL */
 
 
 void Pseudotree::insertNewNode(const int i, const set<int>& N, list<PseudotreeNode*>& roots) {

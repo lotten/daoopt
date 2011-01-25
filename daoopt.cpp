@@ -13,20 +13,22 @@
 #include "MiniBucketElim.h"
 
 #ifdef PARALLEL_DYNAMIC
-//#include "ParallelManager.h"
-#include "BranchAndBoundMaster.h"
-#include "BoundPropagatorMaster.h"
-#include "SubproblemHandler.h"
-#include "SigHandler.h"
+  #include "BranchAndBoundMaster.h"
+  #include "BoundPropagatorMaster.h"
+  #include "SubproblemHandler.h"
+  #include "SigHandler.h"
 #else
-#include "BranchAndBound.h"
-#include "BoundPropagator.h"
+  #ifdef PARALLEL_STATIC
+    #include "ParallelManager.h"
+  #endif
+  #include "BranchAndBound.h"
+  #include "BoundPropagator.h"
 #endif
 
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.8c"
+#define VERSIONINFO "0.98.8d"
 
 #if defined(ANYTIME_BREADTH)
 #define VERSIONMOD " /any-bfs"
@@ -50,7 +52,9 @@ int main(int argc, char** argv) {
   cout << "------------------------------------------------------" << endl
        << "DAOOPT " << VERSIONINFO;
 #ifdef PARALLEL_DYNAMIC
-  cout << " PARALLEL (";
+  cout << " PARALLEL-DYNAMIC (";
+#elif defined PARALLEL_STATIC
+  cout << " PARALLEL-STATIC (";
 #else
   cout << " STANDALONE (";
 #endif
@@ -81,7 +85,7 @@ int main(int argc, char** argv) {
   << "+ i-bound:\t" << opt.ibound << endl
   << "+ j-bound:\t" << opt.cbound << endl
   << "+ Memory limit:\t" << opt.memlimit << endl
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   << "+ Cutoff depth:\t" << opt.cutoff_depth << endl
   << "+ Cutoff size:\t" << opt.cutoff_size << endl
   << "+ Max. workers:\t" << opt.threads << endl
@@ -168,9 +172,10 @@ int main(int argc, char** argv) {
   cout << endl << "Ran " << i << " iterations, lowest width/height found: " << w << '/' << pt.getHeight() << '\n';
 
   // Save order to file?
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   opt.in_orderingFile = string("temp_elim-") + p.getName() + string(".gz");
   p.saveOrdering(opt.in_orderingFile,elim);
+  cout << "Saved ordering to file " << opt.in_orderingFile << endl;
 //  if (!orderFromFile || opt.order_iterations) {
 //    if (opt.in_orderingFile.empty() || opt.order_iterations)
 //    opt.in_orderingFile = string("temp_elim-") + p.getName() + string(".gz");
@@ -179,15 +184,21 @@ int main(int argc, char** argv) {
 #else
   if (!opt.in_orderingFile.empty() && !orderFromFile) {
     p.saveOrdering(opt.in_orderingFile,elim);
+    cout << "Saved ordering to file " << opt.in_orderingFile << endl;
   }
 #endif
+
+  // OR search?
+  if (opt.orSearch) {
+    pt.buildChain(g,elim,opt.cbound);
+  }
 
   // Complete pseudo tree init.
 //  Pseudotree pt(&p);
 //  pt.build(g,elim,opt.cbound); // will add dummy variable
   p.addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   pt.addFunctionInfo(p.getFunctions());
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   int cutoff = pt.computeComplexities(opt.threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
 //  if (opt.autoCutoff) {
@@ -223,9 +234,14 @@ int main(int argc, char** argv) {
 
   // Subproblem specified? If yes, restrict.
   if (!opt.in_subproblemFile.empty()) {
-    cout << "Reading subproblem from file " << opt.in_subproblemFile << '.' << endl;
-    if (!search.restrictSubproblem(opt.in_subproblemFile) ) {
-      delete space; return 1;
+    if (opt.in_orderingFile.empty())
+      cout << "Ignoring subproblem specification since no ordering was given." << endl;
+    else {
+      opt.order_iterations = 0;
+      cout << "Reading subproblem from file " << opt.in_subproblemFile << '.' << endl;
+      if (!search.restrictSubproblem(opt.in_subproblemFile) ) {
+        delete space; return 1;
+      }
     }
   }
 
@@ -386,8 +402,9 @@ int main(int argc, char** argv) {
   // unblock signals
   pthread_sigmask(SIG_UNBLOCK, &new_signal_mask, NULL);
 
-  } else // if !solved
+  } else // end if (!solved)
 #endif
+#ifndef PARALLEL_STATIC
   {
     // The propagation engine
     BoundPropagator prop(&p,space);
@@ -397,17 +414,27 @@ int main(int argc, char** argv) {
       n = search.nextLeaf();
     }
   }
+#else
+  ParallelManager pm(&p, &pt, space, &mbe);
+
+  bool success = pm.run();
+  if (!success) {
+    myprint("!!! Search failed.\n !!!");
+  }
+#endif
 
   // Output cache statistics
   space->cache->printStats();
 
   cout << endl << "--------- Search done ---------" << endl;
+  cout << "Problem name:  " << p.getName() << endl;
 #ifdef PARALLEL_DYNAMIC
   cout << "Condor jobs:   " << search.getThreadCount() << endl;
 #endif
   cout << "OR nodes:      " << space->nodesOR << endl;
   cout << "AND nodes:     " << space->nodesAND << endl;
-  }
+
+  } // end if (!solved)
 
   time(&time_end);
   time_passed = difftime(time_end,time_start);

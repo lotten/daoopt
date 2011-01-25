@@ -80,12 +80,13 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
 #endif
 #ifdef DEBUG
               {
-                GETLOCK(mtx_io, lk);
-                cout << "-Cached " << *prev
+                ostringstream ss;
+                ss << "-Cached " << *prev << " with value " << prev->getValue()
 #ifndef NO_ASSIGNMENT
-                << " with opt. solution " << prev->getOptAssig()
+                << " and opt. solution " << prev->getOptAssig()
 #endif
                 << endl;
+                myprint(ss.str());
               }
 #endif
             } catch (...) { /* wrong cache instance counter */ }

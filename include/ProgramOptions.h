@@ -21,6 +21,7 @@ public:
   bool nosearch; // abort before starting the actual search
   bool autoCutoff; // enable automatic cutoff
   bool autoIter; // enable adaptive ordering limit
+  bool orSearch; // use OR search (builds pseudo tree as chain)
   int ibound; // bucket elim. i-bound
   int cbound; // cache context size bound
   int cbound_worker; // cache bound for worker processes
@@ -56,7 +57,8 @@ public:
 ProgramOptions parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
-		      nosearch(false), autoCutoff(true), autoIter(false), ibound(0), cbound(0), cbound_worker(0),
+		      nosearch(false), autoCutoff(true), autoIter(false), orSearch(false),
+		      ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
