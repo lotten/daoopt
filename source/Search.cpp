@@ -390,6 +390,7 @@ void Search::addCacheContext(SearchNode* node, const set<int>& ctxt) const {
 #endif /* NO_CACHING */
 
 
+
 #ifdef PARALLEL_DYNAMIC
 void Search::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
 

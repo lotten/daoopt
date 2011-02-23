@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.8d"
+#define VERSIONINFO "0.98.8e"
 
 #if defined(ANYTIME_BREADTH)
 #define VERSIONMOD " /any-bfs"
@@ -190,6 +190,7 @@ int main(int argc, char** argv) {
 
   // OR search?
   if (opt.orSearch) {
+    cout << "Rebuilding pseudo tree as chain." << endl;
     pt.buildChain(g,elim,opt.cbound);
   }
 
@@ -224,6 +225,8 @@ int main(int argc, char** argv) {
   // The search engine
 #ifdef PARALLEL_DYNAMIC
   BranchAndBoundMaster search(&p,&pt,space,&mbe);
+#elif defined PARALLEL_STATIC
+  ParallelManager search(&p,&pt,space,&mbe);
 #else
   BranchAndBound search(&p,&pt,space,&mbe);
 #endif
@@ -326,6 +329,7 @@ int main(int argc, char** argv) {
     cout << "LDS: explored " << spaceLDS->nodesOR << '/' << spaceLDS->nodesAND << " OR/AND nodes" << endl;
     cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
     if (lds.getCurOptValue() > search.curLowerBound()) {
+      cout <<"LDS: updating initial lower bound" << endl;
       search.setInitialBound(lds.getCurOptValue());
 #ifndef NO_ASSIGNMENT
       search.setInitialSolution(lds.getCurOptTuple());
@@ -415,9 +419,8 @@ int main(int argc, char** argv) {
     }
   }
 #else
-  ParallelManager pm(&p, &pt, space, &mbe);
 
-  bool success = pm.run();
+  bool success = search.run();
   if (!success) {
     myprint("!!! Search failed.\n !!!");
   }
@@ -428,11 +431,15 @@ int main(int argc, char** argv) {
 
   cout << endl << "--------- Search done ---------" << endl;
   cout << "Problem name:  " << p.getName() << endl;
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   cout << "Condor jobs:   " << search.getThreadCount() << endl;
 #endif
   cout << "OR nodes:      " << space->nodesOR << endl;
   cout << "AND nodes:     " << space->nodesAND << endl;
+#if defined PARALLEL_STATIC
+  cout << "OR external:   " << space->nodesORext << endl;
+  cout << "AND external:  " << space->nodesANDext << endl;
+#endif
 
   } // end if (!solved)
 

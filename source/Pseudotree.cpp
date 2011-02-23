@@ -13,6 +13,9 @@ int Pseudotree::restrictSubproblem(int i) {
 
   assert(m_root && i<(int)m_nodes.size() && m_nodes[i]);
 
+  if (m_root->getVar()==i) // root remains unchanged
+    return m_root->getDepth();
+
   int rootOldDepth = m_nodes[i]->getDepth();
 
   m_root->setChild(m_nodes[i]);

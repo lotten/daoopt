@@ -50,6 +50,8 @@ ostream& operator <<(ostream& os, const vector<signed char>& s);
 ostream& operator <<(ostream& os, const set<int>& s);
 ostream& operator <<(ostream& os, const set<uint>& s);
 
+ostream& operator <<(ostream& os, const vector<double>& s);
+
 /*
  * increments the tuple value, up to each entry's limit. Returns false
  * iff no more tuples can be generated
@@ -181,80 +183,6 @@ inline int setminusSize(const set<int>& a, const set<int>& b) {
     ++s; ++ita;
   }
   return s;
-}
-
-
-/***************************************/
-/*        some cout functions          */
-
-inline ostream& operator <<(ostream& os, const vector<int>& s) {
-  os << '[';
-  for (vector<int>::const_iterator it = s.begin(); it != s.end(); ) {
-    os << *it;
-    if (++it != s.end()) os << ',';
-  }
-  os << ']';
-  return os;
-}
-
-inline ostream& operator <<(ostream& os, const vector<uint>& s) {
-  os << '[';
-  for (vector<uint>::const_iterator it = s.begin(); it != s.end(); ) {
-    os << *it;
-    if (++it != s.end()) os << ',';
-  }
-  os << ']';
-  return os;
-}
-
-inline ostream& operator <<(ostream& os, const vector<signed short>& s) {
-  os << '[';
-  for (vector<signed short>::const_iterator it = s.begin(); it != s.end(); ) {
-    os << (int) *it;
-    if (++it != s.end()) os << ',';
-  }
-  os << ']';
-  return os;
-}
-
-inline ostream& operator <<(ostream& os, const vector<signed char>& s) {
-  os << '[';
-  for (vector<signed char>::const_iterator it = s.begin(); it != s.end(); ) {
-    os << (int) *it;
-    if (++it != s.end()) os << ',';
-  }
-  os << ']';
-  return os;
-}
-
-inline ostream& operator <<(ostream& os, const vector<int*>& s) {
-  os << '[';
-  for (vector<int*>::const_iterator it = s.begin(); it != s.end(); ) {
-    os << **it;
-    if (++it != s.end()) os << ',';
-  }
-  os << ']';
-  return os;
-}
-
-inline ostream& operator <<(ostream& os, const set<int>& s) {
-  os << '{';
-  for (set<int>::const_iterator it = s.begin(); it != s.end(); ) {
-    os << *it;
-    if (++it != s.end()) os << ',';
-  }
-  os << '}';
-  return os;
-}
-
-inline ostream& operator <<(ostream& os, const set<uint>& s) {
-  os << '{';
-  for (set<uint>::const_iterator it = s.begin(); it != s.end(); ) {
-    os << *it;
-    if (++it != s.end()) os << ',';
-  }
-  os << '}';
-  return os;
 }
 
 

@@ -29,6 +29,7 @@
 #define PREFIX_STDERR "temp_err."
 
 #define REQUIREMENTS_FILE "requirements.txt"
+#define CSV_STATS_FILE "temp_stats.csv"
 
 /* custom attributes for generated condor jobs */
 #define CONDOR_ATTR_PROBLEM "daoopt_problem"
@@ -41,12 +42,18 @@ bool ParallelManager::run() {
   SearchNode* node;
   double eval;
 
+#ifndef NO_HEURISTIC
+  // precompute heuristic of initial dummy OR node (couldn't be done earlier)
+  heuristicOR(m_open.top().second);
+#endif
+
   // split subproblems
   while (m_open.size() && (int) m_open.size() < m_space->options->threads) {
 
     eval = m_open.top().first;
     node = m_open.top().second;
     m_open.pop();
+    DIAG(ostringstream ss; ss << "Top " << node <<"(" << *node << ") with eval " << eval << endl; myprint(ss.str());)
 
     syncAssignment(node);
 
@@ -67,6 +74,7 @@ bool ParallelManager::run() {
 
   // move from open stack to external queue
   m_external.reserve(m_open.size());
+  m_nextThreadId = m_open.size(); // thread count
   while (m_open.size()) {
     m_open.top().second->setExtern();
     m_external.push_back(m_open.top().second);
@@ -77,15 +85,20 @@ bool ParallelManager::run() {
   ss << "Generated " << m_external.size() << " external subproblems, " << m_local.size() << " local" << endl;
   myprint(ss.str());
 
-  for (vector<SearchNode*>::iterator it = m_local.begin(); it!=m_local.end(); ++it) {
-    solveLocal(*it);
-  }
+#ifdef DEBUG
+  sleep(5);
+#endif
 
   // generates files for grid jobs and submits
   if (m_external.size()) {
     if (!submitToGrid())
       return false;
   }
+
+  for (vector<SearchNode*>::iterator it = m_local.begin(); it!=m_local.end(); ++it) {
+    solveLocal(*it);
+  }
+  myprint("Local jobs (if any) done.\n");
 
   if (m_subprobCount) {
     // wait for grid jobs to finish
@@ -145,6 +158,11 @@ bool ParallelManager::submitToGrid() {
   << "output = " << PREFIX_STDOUT << "$(Process).txt" << endl
   << "error = " << PREFIX_STDERR << "$(Process).txt" << endl
   << "log = " << PREFIX_LOG << "txt" << endl << endl; // one global log
+
+  // reset CSV file
+  ofstream csv(CSV_STATS_FILE,ios_base::out | ios_base::trunc);
+  csv << "#id\troot\tlb\tub\theight\twidth" << endl;
+  csv.close();
 
   // encode actual subproblems
   for (vector<SearchNode*>::const_iterator it=nodes.begin(); it!=nodes.end(); ++it) {
@@ -223,6 +241,17 @@ bool ParallelManager::readExtResults() {
 
   bool success = true;
 
+  // read current stats CSV
+  string line,csvheader;
+  vector<string> stats;
+  fstream csv(CSV_STATS_FILE, ios_base::in);
+  getline(csv,csvheader);
+  for (size_t id=0; id<m_subprobCount; ++id) {
+    getline(csv,line);
+    stats.push_back(line);
+  }
+  csv.close();
+
   for (size_t id=0; id<m_subprobCount; ++id) {
 
     SearchNode* node = m_external.at(id);
@@ -238,6 +267,7 @@ bool ParallelManager::readExtResults() {
         ss << "Problem reading subprocess solution for job " << id << '.' << endl;
         myerror(ss.str());
         success = false;
+        continue; // skip rest of loop
       }
     }
     igzstream in(solutionFile.str().c_str(), ios::binary | ios::in);
@@ -249,6 +279,16 @@ bool ParallelManager::readExtResults() {
     count_t nodesOR, nodesAND;
     BINREAD(in, nodesOR);
     BINREAD(in, nodesAND);
+
+    m_space->nodesORext += nodesOR;
+    m_space->nodesANDext += nodesAND;
+
+    {
+    // for CSV output
+    stringstream ss;
+    ss << '\t' << nodesOR << '\t' << nodesAND;
+    stats.at(id) += ss.str();
+    }
 
 #ifndef NO_ASSIGNMENT
     int n;
@@ -302,6 +342,14 @@ bool ParallelManager::readExtResults() {
     m_prop.propagate(node,true);
 
   }
+
+  // rewrite CSV file
+  csv.open(CSV_STATS_FILE, ios_base::out | ios_base::trunc);
+  csv << csvheader << "\tOR\tAND" << endl;
+  for (vector<string>::iterator it=stats.begin(); it!=stats.end(); ++it) {
+    csv << *it << endl;
+  }
+  csv.close();
 
   return success;
 
@@ -394,6 +442,25 @@ string ParallelManager::encodeJob(SearchNode* node, size_t id) const {
   // Queue it
   job << "queue" << endl;
 
+  // write CSV output
+  int depth = ptnode->getDepth();
+  int height = ptnode->getSubHeight();
+  int width = ptnode->getSubWidth();
+
+  double lb = lowerBound(node);
+  double ub = node->getHeur();
+
+  ofstream csv(CSV_STATS_FILE,ios_base::out | ios_base::app);
+  csv << id
+      << '\t' << rootVar
+      << '\t' << depth
+      << '\t' << lb
+      << '\t' << ub
+      << '\t' << height
+      << '\t' << width;
+  csv << endl;
+  csv.close();
+
   return job.str();
 
 }
@@ -480,6 +547,7 @@ double ParallelManager::evaluate(SearchNode* node) const {
   double ub = node->getHeur();
 
   double d = (ub-lb) * pow(height,.5) * pow(width,.5);
+  DIAG(ostringstream ss; ss<< "eval " << *node << " : "<< ub <<' '<< lb <<' '<<height<<' '<<width<<' '<<d<< endl; myprint(ss.str()))
 
   return d;
 }
@@ -571,21 +639,18 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
   SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
   m_space->root = node;
 
-  // create dummy variable's AND node (domain size 1)
+  // create dummy variable's AND node (unary domain)
+  // and put global constant into node label
   SearchNode* next = new SearchNodeAND(m_space->root, 0, prob->getGlobalConstant());
-  // put global constant into dummy AND node label
   m_space->root->addChild(next);
 
-  // one more OR node for OPEN list
+  // one more dummy OR node for OPEN list
   node = next;
   next = new SearchNodeOR(node, ptroot->getVar()) ;
   node->addChild(next);
-#ifndef NO_HEURISTIC
-  heuristicOR(next);
-#endif
 
   // add to OPEN list // todo
-  m_open.push(make_pair(1.0, next));
+  m_open.push(make_pair(42.0, next));
 
 }
 
