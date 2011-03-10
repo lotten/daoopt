@@ -36,7 +36,7 @@
 #endif
 
 #ifndef PARALLEL_STATIC
-#define PARALLEL_STATIC
+//#define PARALLEL_STATIC
 #endif
 
 /*****************************************************************/
@@ -50,6 +50,18 @@
 
 //#define ANYTIME_BREADTH
 //#define ANYTIME_DEPTH
+
+/*****************************************************************/
+
+
+/*
+ * define one below to set AND subproblem ordering
+ */
+
+#define SUBPROB_WIDTH_INC
+//#define SUBPROB_WIDTH_DEC
+//#define SUBPROB_HEUR_INC
+//#define SUBPROB_HEUR_DEC
 
 /*****************************************************************/
 
@@ -92,6 +104,12 @@ typedef signed char val_t;
   #ifdef ANYTIME_DEPTH
     #undef ANYTIME_DEPTH
   #endif
+  #ifdef SUBPROB_HEUR_INC
+    #undef SUBPROB_HEUR_INC
+  #endif
+  #ifdef SUBPROB_HEUR_DEC
+    #undef SUBPROB_HEUR_DEC
+  #endif
 #endif
 
 /* disable parallelism if NOTHREADS is defined */
@@ -110,5 +128,13 @@ typedef signed char val_t;
 #undef ANYTIME_DEPTH
 #endif
 
+/* default to ordering AND subproblems by increasing width */
+//#if not (defined SUBPROB_HEUR_DEC || defined SUBPROB_HEUR_INC || defined SUBPROB_WIDTH_DEC || defined SUBPROB_WIDTH_INC)
+//#define SUBPROB_WIDTH_INC
+//#endif
+//#if defined SUBPROB_HEUR_INC || defined SUBPROB_HEUR_DEC
+//#define SUBPROB_WIDTH_INC
+//#undef SUBPROB_WIDTH_DEC
+//#endif
 
 #endif /* DEFS_H_ */

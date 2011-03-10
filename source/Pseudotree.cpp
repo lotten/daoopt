@@ -500,10 +500,14 @@ int Pseudotree::computeComplexities(int workers) {
 #endif
 
 /*
- * orders the sub pseudo trees of a node ("less" -> ascending)
+ * orders the sub pseudo trees of a node ("less" -> ascending by w*)
  */
 void PseudotreeNode::orderChildren() {
-  sort(m_children.begin(), m_children.end(), PseudotreeNode::compGreater ); // def: greater
+#if defined SUBPROB_WIDTH_INC
+  sort(m_children.begin(), m_children.end(), PseudotreeNode::compLess );
+#elif defined SUBPROB_WIDTH_DEC
+  sort(m_children.begin(), m_children.end(), PseudotreeNode::compGreater );
+#endif
 }
 
 

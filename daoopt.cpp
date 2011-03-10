@@ -28,15 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.8e"
-
-#if defined(ANYTIME_BREADTH)
-#define VERSIONMOD " /any-bfs"
-#elif defined(ANYTIME_DEPTH)
-#define VERSIONMOD " /any-dfs"
-#else
-#define VERSIONMOD " /plain"
-#endif
+#define VERSIONINFO "0.98.8f"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -49,28 +41,51 @@ int main(int argc, char** argv) {
   time(&time_start);
   double time_passed;
 
-  cout << "------------------------------------------------------" << endl
-       << "DAOOPT " << VERSIONINFO;
+  // compile version string
+  string version = "DAOOPT ";
+  version += VERSIONINFO;
+
 #ifdef PARALLEL_DYNAMIC
-  cout << " PARALLEL-DYNAMIC (";
+  version += " PARALLEL-DYNAMIC (";
 #elif defined PARALLEL_STATIC
-  cout << " PARALLEL-STATIC (";
+  version += " PARALLEL-STATIC (";
 #else
-  cout << " STANDALONE (";
+  version += " STANDALONE (";
 #endif
-  cout << sizeof(val_t)*8 << ")";
-#ifdef LIKELIHOOD
-  cout << " for likelihood";
-#else
+  version += boost::lexical_cast<std::string>(sizeof(val_t)*8);
+
 #ifdef NO_ASSIGNMENT
-  cout << " w/o assig.";
+  version += ") w/o assig.";
 #else
-  cout << " w. assig.";
+  version += ") w. assig.";
 #endif
-#endif /* LIKELIHOOD */
-  cout << VERSIONMOD << endl
+
+#if defined(ANYTIME_BREADTH)
+  version += " /rotate";
+#elif defined(ANYTIME_DEPTH)
+  version += " /dive";
+#else
+  version += " /plain";
+#endif
+
+#if defined SUBPROB_WIDTH_INC
+  version += " /width-inc";
+#elif defined SUBPROB_WIDTH_DEC
+  version += " /width-dec";
+#elif defined SUBPROB_HEUR_INC
+  version += " /heur-inc";
+#elif defined SUBPROB_HEUR_DEC
+  version += " /heur-dec";
+#endif
+
+#if defined LIKELIHOOD
+  version += " /likelihood";
+#endif
+
+  cout << "------------------------------------------------------------------" << endl
+       << version << endl
        << "  by Lars Otten, UC Irvine <lotten@ics.uci.edu>" << endl
-       << "------------------------------------------------------" << endl;
+       << "------------------------------------------------------------------" << endl;
 
   // Reprint command line
   for (int i=0; i<argc; ++i)

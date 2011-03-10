@@ -161,7 +161,7 @@ bool ParallelManager::submitToGrid() {
 
   // reset CSV file
   ofstream csv(CSV_STATS_FILE,ios_base::out | ios_base::trunc);
-  csv << "#id\troot\tlb\tub\theight\twidth" << endl;
+  csv << "#id\troot\tdepth\tvars\tlb\tub\theight\twidth" << endl;
   csv.close();
 
   // encode actual subproblems
@@ -446,6 +446,7 @@ string ParallelManager::encodeJob(SearchNode* node, size_t id) const {
   int depth = ptnode->getDepth();
   int height = ptnode->getSubHeight();
   int width = ptnode->getSubWidth();
+  size_t vars = ptnode->getSubprobSize();
 
   double lb = lowerBound(node);
   double ub = node->getHeur();
@@ -454,6 +455,7 @@ string ParallelManager::encodeJob(SearchNode* node, size_t id) const {
   csv << id
       << '\t' << rootVar
       << '\t' << depth
+      << '\t' << vars
       << '\t' << lb
       << '\t' << ub
       << '\t' << height

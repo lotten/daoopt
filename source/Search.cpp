@@ -242,9 +242,9 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
   if (depth>=0) m_nodeProfile[depth] +=1; // ignores dummy node
 
-  // create new OR children
-  for (vector<PseudotreeNode*>::const_iterator it=ptnode->getChildren().begin();
-       it!=ptnode->getChildren().end(); ++it)
+  // create new OR children (going in reverse due to reversal on stack)
+  for (vector<PseudotreeNode*>::const_reverse_iterator it=ptnode->getChildren().rbegin();
+       it!=ptnode->getChildren().rend(); ++it)
   {
     int vChild = (*it)->getVar();
     SearchNodeOR* c = new SearchNodeOR(n, vChild);
@@ -269,6 +269,14 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     PAR_ONLY( n->setSubLeaves(1) );
     return true; // no children
   }
+
+  // order subproblems by their heuristic (if applicable)
+  // (inverse due to stack reversal)
+#if defined SUBPROB_HEUR_INC
+  sort(chi.rbegin(), chi.rend(), SearchNode::heurLess);
+#elif defined SUBPROB_HEUR_DEC
+  sort(chi.begin(), chi.end(), SearchNode::heurLess);
+#endif
 
   return false; // default
 
@@ -326,12 +334,12 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     n->setLeaf();
     n->setValue(ELEM_ZERO);
     return true; // no children
-  } else {
-#ifndef NO_HEURISTIC
-    // sort new nodes by increasing heuristic value
-    sort(chi.begin(), chi.end(), SearchNode::heurLess);
-#endif
   }
+
+#ifndef NO_HEURISTIC
+  // sort new nodes by increasing heuristic value
+  sort(chi.begin(), chi.end(), SearchNode::heurLess);
+#endif
 
   return false; // default
 
