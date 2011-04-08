@@ -21,8 +21,17 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
 
+  vector<SearchNode*> chi;
+
   if (node->getType() == NODE_AND) { /*******************************************/
 
+    if (generateChildrenAND(node,chi))
+      return true; // no children
+
+    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+      m_stack.push( make_pair(*it,m_discCache) );
+
+#if false
     // we need to generate *all* OR successors
 
     ++m_space->nodesAND; // count node
@@ -73,9 +82,26 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
       return true;
     }
 
-
+#endif
   } else { // NODE_OR /*********************************************************/
 
+#if false
+    if (generateChildrenOR(node,chi))
+      return true;
+
+    vector<SearchNode*>::iterator it = chi.begin();
+    size_t offset = chi.size() - min(chi.size(),m_discCache+1);
+    while (offset--) { // skip nodes with high discrepancy
+      node->eraseChild(*it);
+      ++it;
+    }
+
+    size_t c = 0;
+    for (; it!=chi.end(); ++it, ++c) {
+      m_stack.push( make_pair(*it,c) );
+    }
+
+#else
     // generate only successors whose total discrepancy is not higher
     // than the global limit
 
@@ -87,7 +113,7 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
     vector<SearchNode*> newNodes;
     newNodes.reserve(m_problem->getDomainSize(var));
 
-    // use heuritic cache to order child domain values
+    // use heuristic cache to order child domain values
     priority_queue< pair<double,size_t>, vector<pair<double,size_t> >, PairComp > pqueue;
 
     for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
@@ -119,8 +145,9 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
       m_stack.push(make_pair(n, m_discCache-pqueue.size() ));
     }
 
-    node->clearHeurCache();
+//    node->clearHeurCache();
 
+#endif
   } // if-else over node type
 
   return false; // default false

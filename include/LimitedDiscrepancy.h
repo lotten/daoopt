@@ -14,6 +14,9 @@
  * that deviates from the heuristic preference at most k times */
 class LimitedDiscrepancy : virtual public Search {
 
+  // for access to resetSearch()
+  friend class ParallelManager;
+
 protected:
   size_t m_maxDisc; // max. discrepancy
   size_t m_discCache; // caches the discrepancy of the last "next node"

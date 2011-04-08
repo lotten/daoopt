@@ -5,7 +5,7 @@
  *      Author: lars
  */
 
-#undef DEBUG
+//#undef DEBUG
 
 #include "ParallelManager.h"
 
@@ -53,10 +53,13 @@ bool ParallelManager::run() {
     eval = m_open.top().first;
     node = m_open.top().second;
     m_open.pop();
-    DIAG(ostringstream ss; ss << "Top " << node <<"(" << *node << ") with eval " << eval << endl; myprint(ss.str());)
+    DIAG(oss ss; ss << "Top " << node <<"(" << *node << ") with eval " << eval << endl; myprint(ss.str());)
 
     syncAssignment(node);
+    deepenFrontier(node);
 
+    // functionality moved into deepenFrontier
+    /*
     if (doProcess(node)) {
       m_prop.propagate(node,true); continue;
     }
@@ -69,6 +72,7 @@ bool ParallelManager::run() {
     if (deepenFrontier(node)) {
       m_prop.propagate(node,true); continue;
     }
+    */
 
   }
 
@@ -506,30 +510,34 @@ bool ParallelManager::deepenFrontier(SearchNode* n) {
   assert(n && n->getType() == NODE_OR);
   vector<SearchNode*> chi, chi2;
 
-#ifdef DEBUG
-  ostringstream ss;
-#endif
-
+  // first generate intermediate AND nodes
   if (generateChildrenOR(n,chi))
     return true; // no children
 
+  // for each AND node, generate OR children
   for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
-    DIAG( ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; )
+    DIAG(oss ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str());)
     if (generateChildrenAND(*it,chi2)) {
       m_prop.propagate(*it, true);
       continue;
     }
-    DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) ss << "\t  " << *it << ": " << *(*it) << endl; )
+    DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
-      if (isEasy(*it))
-        m_local.push_back(*it);
-      else
-        m_open.push(make_pair(evaluate(*it),*it));
-    }
-    chi2.clear();
-  }
 
-  DIAG(myprint(ss.str()));
+      applyLDS(*it); // apply LDS. i.e. mini bucket backwards pass
+
+      if (doCaching(*it)) {
+        m_prop.propagate(*it,true); continue;
+      } else if (doPruning(*it)) {
+        m_prop.propagate(*it,true); continue;
+      } else if (isEasy(*it)) {
+        m_local.push_back(*it);
+      } else {
+        m_open.push(make_pair(evaluate(*it),*it));
+      }
+    }
+    chi2.clear(); // prepare for next AND node
+  }
 
   return false; // default false
 
@@ -549,7 +557,7 @@ double ParallelManager::evaluate(SearchNode* node) const {
   double ub = node->getHeur();
 
   double d = (ub-lb) * pow(height,.5) * pow(width,.5);
-  DIAG(ostringstream ss; ss<< "eval " << *node << " : "<< ub <<' '<< lb <<' '<<height<<' '<<width<<' '<<d<< endl; myprint(ss.str()))
+  DIAG(oss ss; ss<< "eval " << *node << " : "<< ub <<' '<< lb <<' '<<height<<' '<<width<<' '<<d<< endl; myprint(ss.str()))
 
   return d;
 }
@@ -617,6 +625,16 @@ SearchNode* ParallelManager::nextNode() {
 }
 
 
+void ParallelManager::applyLDS(SearchNode* node) {
+  m_ldsSearch->resetSearch(node);
+  SearchNode* n = m_ldsSearch->nextLeaf();
+  while (n) {
+    m_ldsProp->propagate(n,true,node);
+    n = m_ldsSearch->nextLeaf();
+  }
+}
+
+
 void ParallelManager::setInitialBound(double d) const {
   assert(m_space);
   m_space->root->setValue(d);
@@ -636,6 +654,11 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
   : Search(prob, pt, s, h), m_subprobCount(0), m_prop(prob, s)
 {
 
+#ifndef NO_CACHING
+  // Init context cache table
+  m_space->cache = new CacheTable(prob->getN());
+#endif
+
   // create first node (dummy variable)
   PseudotreeNode* ptroot = m_pseudotree->getRoot();
   SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
@@ -651,8 +674,14 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
   next = new SearchNodeOR(node, ptroot->getVar()) ;
   node->addChild(next);
 
-  // add to OPEN list // todo
+  // add to OPEN list // TODO
   m_open.push(make_pair(42.0, next));
+
+  // set up LDS
+  m_ldsSpace = new SearchSpace(m_pseudotree, m_space->options);
+  m_ldsSpace->root = m_space->root;
+  m_ldsSearch = new LimitedDiscrepancy(prob, pt, m_ldsSpace, h, 0);
+  m_ldsProp = new BoundPropagator(prob, m_ldsSpace);
 
 }
 

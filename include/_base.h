@@ -153,6 +153,9 @@ static boost::mutex mtx_io;
 #include <sstream>
 #include <algorithm>
 
+/* shorthand for convenience */
+typedef std::ostringstream oss;
+
 /* which hashtable to use? define only *one*  */
 #define HASH_BOOST
 //#define HASH_TR1

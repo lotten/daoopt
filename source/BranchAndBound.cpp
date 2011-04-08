@@ -337,6 +337,11 @@ void BranchAndBound::setInitialSolution(const vector<val_t>& tuple) const {
 BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) :
    Search(prob,pt,space,heur) {
 
+#ifndef NO_CACHING
+  // Init context cache table
+  m_space->cache = new CacheTable(prob->getN());
+#endif
+
   // create first node (dummy variable)
   PseudotreeNode* ptroot = m_pseudotree->getRoot();
   SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );

@@ -14,6 +14,7 @@
 
 #include "ProgramOptions.h"
 #include "Search.h"
+#include "LimitedDiscrepancy.h"
 #include "BoundPropagator.h"
 
 class ParallelManager : virtual public Search {
@@ -22,6 +23,11 @@ protected:
 
   /* counter for subproblem IDs */
   size_t m_subprobCount;
+
+  /* for LDS */
+  SearchSpace* m_ldsSpace;
+  LimitedDiscrepancy* m_ldsSearch;
+  BoundPropagator* m_ldsProp;
 
   /* queue of subproblems, i.e. OR nodes, ordered according to
    * evaluation function */
@@ -59,6 +65,8 @@ protected:
   bool isEasy(SearchNode*) const;
   /* synchs the global assignment with the given node */
   void syncAssignment(SearchNode*);
+  /* applies LDS to the subproblem, i.e. mini bucket forward pass */
+  void applyLDS(SearchNode*);
 
   /* submits jobs to the grid system (Condor) */
   bool submitToGrid();
@@ -84,6 +92,7 @@ public:
 
 public:
   ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h);
+  ~ParallelManager();
 
 };
 
@@ -98,6 +107,12 @@ inline void ParallelManager::resetSearch(SearchNode* p) {
   while (m_open.size())
       m_open.pop();
   m_open.push(make_pair(evaluate(p),p));
+}
+
+inline ParallelManager::~ParallelManager() {
+  if (m_ldsSpace) delete m_ldsSpace;
+  if (m_ldsSearch) delete m_ldsSearch;
+  if (m_ldsProp) delete m_ldsProp;
 }
 
 

@@ -9,6 +9,7 @@
 #define SEARCHNODE_H_
 
 #include "_base.h"
+#include "utils.h"
 
 class Problem;
 class PseudotreeNode;

@@ -17,12 +17,6 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 #endif
   {
 
-#ifndef NO_CACHING
-  // Init context cache table
-//  cout << "Initialising cache system." << endl;
-  m_space->cache = new CacheTable(prob->getN());
-#endif
-
   // initialize the array for counting nodes per level
   m_nodeProfile.resize(m_pseudotree->getHeight()+1, 0);
   // initialize the array for counting leaves per level
@@ -41,6 +35,7 @@ bool Search::doProcess(SearchNode* node) {
     int val = node->getVal();
     m_assignment[var] = val; // record assignment
 
+    /* not required anymore, 0-label nodes won't be generated in the first place
     // dead end (AND label = 0)?
     if (node->getLabel() == ELEM_ZERO) {
       node->setLeaf(); // mark as leaf
@@ -48,7 +43,7 @@ bool Search::doProcess(SearchNode* node) {
       m_leafProfile.at(depth) += 1; // count leaf node
       PAR_ONLY( node->setSubLeaves(1) );
       return true; // and abort
-    }
+    } */
   } else { // NODE_OR
     DIAG( ostringstream ss; ss << *node << "\n"; myprint(ss.str()) );
   }
@@ -131,12 +126,13 @@ bool Search::doPruning(SearchNode* node) {
     DIAG( myprint("\t !pruning \n") );
     node->setLeaf();
     node->setPruned();
-    node->setValue(ELEM_ZERO);
     if (node->getType() == NODE_AND) {
       // count 1 leaf AND node
       m_leafProfile.at(depth) += 1;
       PAR_ONLY( node->setSubLeaves(1) ) ;
     } else { // NODE_OR
+      if ( ISNAN(node->getValue()) ) // value could be set by LDS
+        node->setValue(ELEM_ZERO);
       // assume all AND children would have been created and pruned
       m_leafProfile.at(depth) += m_problem->getDomainSize(var);
       PAR_ONLY( node->addSubLeaves(m_problem->getDomainSize(var)) ) ;
@@ -249,7 +245,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     int vChild = (*it)->getVar();
     SearchNodeOR* c = new SearchNodeOR(n, vChild);
 #ifndef NO_HEURISTIC
-    // Compute and set heuristic estimate
+    // Compute and set heuristic estimate, includes child labels
     heuristicOR(c);
 #endif
     n->addChild(c);
@@ -313,7 +309,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     SearchNodeAND* c = new SearchNodeAND(n, i, d);
 #else
     // early pruning if heuristic is zero (since it's an upper bound)
-    if (heur[2*i+1] == ELEM_ZERO) {
+    if (heur[2*i] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
       m_leafProfile[depth] += 1;
       PAR_ONLY( n->addSubLeaves(1) );
       continue;
@@ -327,7 +323,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
   }
 
 #ifndef NO_HEURISTIC
-  n->clearHeurCache();
+//  n->clearHeurCache();
 #endif
 
   if (chi.empty()) {
@@ -392,7 +388,9 @@ void Search::addCacheContext(SearchNode* node, const set<int>& ctxt) const {
   }
 
   node->setCacheContext(sig);
+#ifdef PARALLEL_DYNAMIC
   node->setCacheInst( m_space->cache->getInstCounter(node->getVar()) );
+#endif
 
 }
 #endif /* NO_CACHING */

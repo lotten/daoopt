@@ -10,7 +10,7 @@
 #include "BoundPropagator.h"
 
 
-SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
+SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, SearchNode* upperLimit) {
 
   // these two pointers move upward in the search space, always one level
   // apart s.t. cur is the parent node of prev
@@ -21,8 +21,9 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
   pair<SearchNode*,SearchNode*> highestDelete(NULL,NULL);
 
   // 'prop' signals whether we are still propagating values in this call
+  bool prop = true;
   // 'del' signals whether we are still deleting nodes in this call
-  bool prop = true, del = true;
+  bool del = (upperLimit!=n) ? true : false;
 
 #ifdef PARALLEL_DYNAMIC
   // keeps track of the size of the deleted subspace and its number of leaf nodes
@@ -56,7 +57,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
         // store into value (thus includes cost of subSolved)
         cur->setValue(d);
 
-        if ( ISNAN(d) ) { // not all OR children solved yet, propagation stops here
+        if ( ISNAN(d) ) {// || d == ELEM_ZERO ) { // not all OR children solved yet, propagation stops here
           prop = false;
 #ifndef NO_ASSIGNMENT
           propagateTuple(n,cur); // save (partial) opt. subproblem solution at current AND node
@@ -184,6 +185,10 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
       // ===========================================================================
     }
 
+    // don't delete anything higher than upperLimit
+    if (upperLimit == cur)
+      del = false;
+
     // move pointers up in search space
     if (prop || del) {
       prev = cur;
@@ -204,18 +209,21 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution) {
     if (reportSolution) m_problem->updateSolution(prev->getValue(), make_pair(m_space->nodesOR, m_space->nodesAND), true);
 #endif
   }
-  if(highestDelete.first->getType() == NODE_AND) {
-    // Store value of OR node to be deleted into AND parent
-    highestDelete.first->addSubSolved(highestDelete.second->getValue());
-  }
+
+  if (highestDelete.first) {
+    if(highestDelete.first->getType() == NODE_AND) {
+      // Store value of OR node to be deleted into AND parent
+      highestDelete.first->addSubSolved(highestDelete.second->getValue());
+    }
 #ifdef PARALLEL_DYNAMIC
-  // store size of deleted subproblem in parent node
-  highestDelete.first->addSubCount(subCount);
-  highestDelete.first->addSubLeaves(subLeaves);
-  highestDelete.first->addSubLeafD(subLeafD);
+    // store size of deleted subproblem in parent node
+    highestDelete.first->addSubCount(subCount);
+    highestDelete.first->addSubLeaves(subLeaves);
+    highestDelete.first->addSubLeafD(subLeafD);
 #endif
-  // finally clean up, delete subproblem with unnecessary nodes from memory
-  highestDelete.first->eraseChild(highestDelete.second);
+    // finally clean up, delete subproblem with unnecessary nodes from memory
+    highestDelete.first->eraseChild(highestDelete.second);
+  }
 
   DIAG(myprint("! Prop done.\n"));
 
