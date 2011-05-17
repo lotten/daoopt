@@ -309,6 +309,7 @@ public:
 
 /*//////////////////////////////*/
 
+#if false
 /*
  * the following is based on code and explanations from
  * http://www.cygnus-software.com/papers/comparingfloats/Comparing%20floating%20point%20numbers.htm
@@ -367,6 +368,7 @@ inline bool fpLEq(double A, double B, int64_t maxDist=2) {
   return true;
 }
 
+#endif
 /*//////////////////////////////////////////////////////////////*/
 
 /* binary read and write of value X to/from stream S */

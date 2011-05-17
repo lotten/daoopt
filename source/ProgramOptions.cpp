@@ -39,7 +39,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("local-size,u", po::value<int>()->default_value(-1), "minimum subproblem size (* 10^6)")
       ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^6) for local initialization")
       ("noauto", "don't determine cutoff automatically")
-      ("procs,p", po::value<int>()->default_value(5), "max. number of concurrent subproblem processes")
+      ("procs,p", po::value<int>()->default_value(-1), "max. number of concurrent subproblem processes")
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")

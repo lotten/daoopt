@@ -65,8 +65,9 @@ protected:
   bool isEasy(SearchNode*) const;
   /* synchs the global assignment with the given node */
   void syncAssignment(SearchNode*);
-  /* applies LDS to the subproblem, i.e. mini bucket forward pass */
-  void applyLDS(SearchNode*);
+  /* applies LDS to the subproblem, i.e. mini bucket forward pass;
+   * returns true if subproblem was solved fully */
+  bool applyLDS(SearchNode*);
 
   /* submits jobs to the grid system (Condor) */
   bool submitToGrid();

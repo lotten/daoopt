@@ -5,7 +5,7 @@
  *      Author: lars
  */
 
-//#undef DEBUG
+#undef DEBUG
 
 #include "ParallelManager.h"
 
@@ -48,31 +48,27 @@ bool ParallelManager::run() {
 #endif
 
   // split subproblems
-  while (m_open.size() && (int) m_open.size() < m_space->options->threads) {
+  while (m_open.size()
+      && (m_space->options->threads == NONE
+          || (int) m_open.size() < m_space->options->threads)) {
 
     eval = m_open.top().first;
     node = m_open.top().second;
     m_open.pop();
     DIAG(oss ss; ss << "Top " << node <<"(" << *node << ") with eval " << eval << endl; myprint(ss.str());)
 
+    if (m_space->options->cutoff_depth != NONE) {
+      PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
+      int d = ptnode->getDepth();
+      if (d == m_space->options->cutoff_depth) {
+        node->setExtern();
+        m_external.push_back(node);
+        continue;
+      }
+    }
+
     syncAssignment(node);
     deepenFrontier(node);
-
-    // functionality moved into deepenFrontier
-    /*
-    if (doProcess(node)) {
-      m_prop.propagate(node,true); continue;
-    }
-    if (doCaching(node)) {
-      m_prop.propagate(node,true); continue;
-    }
-    if (doPruning(node)) {
-      m_prop.propagate(node,true); continue;
-    }
-    if (deepenFrontier(node)) {
-      m_prop.propagate(node,true); continue;
-    }
-    */
 
   }
 
@@ -118,6 +114,10 @@ bool ParallelManager::run() {
 //    for (count_t i=0; i<m_subprobCount; ++i)
 //      m_prop.propagate(m_external.at(i), true);
   }
+
+  // include LDS node count into overall
+//  m_space->nodesAND += m_ldsSpace->nodesAND;
+//  m_space->nodesOR += m_ldsSpace->nodesOR;
 
   return true; // default: success
 
@@ -524,7 +524,10 @@ bool ParallelManager::deepenFrontier(SearchNode* n) {
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
 
-      applyLDS(*it); // apply LDS. i.e. mini bucket backwards pass
+      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
+        m_ldsProp->propagate(*it,true);
+        continue; // skip to next
+      }
 
       if (doCaching(*it)) {
         m_prop.propagate(*it,true); continue;
@@ -625,13 +628,25 @@ SearchNode* ParallelManager::nextNode() {
 }
 
 
-void ParallelManager::applyLDS(SearchNode* node) {
+bool ParallelManager::applyLDS(SearchNode* node) {
+
+  assert(node);
+
+  bool complete = false;
+  PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
+  if (ptnode->getSubWidth() <= m_space->options->ibound) {
+    complete = true; // subproblem solved fully
+  }
+
   m_ldsSearch->resetSearch(node);
   SearchNode* n = m_ldsSearch->nextLeaf();
   while (n) {
     m_ldsProp->propagate(n,true,node);
     n = m_ldsSearch->nextLeaf();
   }
+
+  return complete;
+
 }
 
 
