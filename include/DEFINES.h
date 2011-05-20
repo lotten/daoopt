@@ -13,7 +13,7 @@
  * will speed up computation time
  */
 
-#define NO_ASSIGNMENT
+//#define NO_ASSIGNMENT
 
 /*****************************************************************/
 
@@ -58,8 +58,8 @@
  * define one below to set AND subproblem ordering
  */
 
-#define SUBPROB_WIDTH_INC
-//#define SUBPROB_WIDTH_DEC
+//#define SUBPROB_WIDTH_INC
+#define SUBPROB_WIDTH_DEC
 //#define SUBPROB_HEUR_INC
 //#define SUBPROB_HEUR_DEC
 

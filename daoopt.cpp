@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.9b"
+#define VERSIONINFO "0.98.9c"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -280,19 +280,34 @@ int main(int argc, char** argv) {
     opt.ibound = ibound; // Write back into options object
   }
 
-  // Build the MBE *after* restricting the subproblem
+  /* Build the MBE *after* restricting the subproblem */
   size_t sz = 0;
   if (opt.nosearch) {
     cout << "Simulating mini bucket heuristic..." << endl;
     sz = mbe.build(& search.getAssignment(), false); // false = just compute memory estimate
   }
   else {
-    cout << "Computing mini bucket heuristic..." << endl;
     time(&time_pre);
-    sz = mbe.build(& search.getAssignment(), true); // true =  actually compute heuristic
-    time(&time_end);
-    time_passed = difftime(time_end, time_pre);
-    cout << "\tMini bucket finished in " << time_passed << " seconds" << endl;
+    bool mbFromFile = false;
+    if (!opt.in_minibucketFile.empty()) {
+      mbFromFile = mbe.readFromFile(opt.in_minibucketFile);
+      sz = mbe.getSize();
+    }
+    if (mbFromFile) {
+      cout << "Read mini bucket with i-bound " << mbe.getIbound() << " from file " << opt.in_minibucketFile << endl;
+
+    } else {
+      cout << "Computing mini bucket heuristic..." << endl;
+      sz = mbe.build(& search.getAssignment(), true); // true =  actually compute heuristic
+      time(&time_end);
+      time_passed = difftime(time_end, time_pre);
+      cout << "\tMini bucket finished in " << time_passed << " seconds" << endl;
+    }
+    if (!mbFromFile && !opt.in_minibucketFile.empty()) {
+      cout << "\tWriting mini bucket to file " << opt.in_minibucketFile << " ..." << flush;
+      mbe.writeToFile(opt.in_minibucketFile);
+      cout << " done" << endl;
+    }
   }
   cout << '\t' << (sz / (1024*1024.0)) * sizeof(double) << " MBytes" << endl;
 #endif /* NO_HEURISTIC */

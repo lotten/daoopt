@@ -216,3 +216,207 @@ int MiniBucketElim::limitIbound(int ibound, size_t memlimit, const vector<val_t>
 }
 
 
+size_t MiniBucketElim::getSize() const {
+  size_t S = 0;
+  for (vector<list<Function*> >::const_iterator it=m_augmented.begin(); it!= m_augmented.end(); ++it) {
+    for (list<Function*>::const_iterator itF=it->begin(); itF!=it->end(); ++itF)
+      S += (*itF)->getTableSize();
+  }
+  return S;
+}
+
+
+/*
+ * mini bucket file format (all data in binary):
+ * - size_t: no. of variables
+ * - int: i-bound
+ * - double: global upper bound
+ * for every variable:
+ *   - size_t: number of functions in bucket structure
+ *   for every such function:
+ *     - int: function ID
+ *     - size_t: scope size
+ *     for every scope variable:
+ *       - int: variable index
+ *     - size_t: table size
+ *     for every table entry:
+ *       - double: CPT entry
+ * for every variable:
+ *   - size_t: number of intermediate function pointers
+ *   for every function pointer:
+ *     - size_t: function index (implicit order from above)
+ */
+
+bool MiniBucketElim::writeToFile(string fn) const {
+
+  ogzstream out(fn.c_str());
+  if ( ! out ) {
+    cerr << "Error writing mini buckets to file " << fn << endl;
+    return false;
+  }
+
+  // used later
+  int x = NONE;
+  size_t y = NONE;
+
+  // number of variables
+  size_t sz = m_augmented.size();
+  out.write((char*)&( sz ), sizeof( sz ));
+
+  // i-bound
+  out.write((char*)&( m_ibound ), sizeof( m_ibound ));
+
+  // global UB
+  out.write((char*)&( m_globalUB ), sizeof( m_globalUB ));
+
+  map<const Function*,size_t> funcMap;
+
+  // over m_augmented
+  for (size_t i=0; i<sz; ++i) {
+    size_t sz2 = m_augmented[i].size();
+    out.write((char*)&( sz2 ), sizeof( sz2 ));
+
+    list<Function*>::const_iterator itF = m_augmented[i].begin();
+    for (size_t j=0; j<sz2; ++j, ++itF) {
+      const Function* f = *itF;
+      funcMap.insert(make_pair(f,funcMap.size()));
+
+      // function ID
+      int id = f->getId();
+      out.write((char*)&( id ), sizeof( id ));
+
+
+      // scope
+      size_t sz3 = f->getScope().size();
+      out.write((char*)&( sz3 ), sizeof( sz3 ));
+ // scope size
+      for (set<int>::const_iterator it=f->getScope().begin(); it!=f->getScope().end(); ++it) {
+        x = *it;
+        out.write((char*)&( x ), sizeof( x ));
+ // vars from scope
+      }
+
+      // table size
+      sz3 = f->getTableSize();
+      out.write((char*)&( sz3 ), sizeof( sz3 ));
+
+      // table
+      out.write((char*) ( f->getTable() ), sizeof( double ) * sz3);
+
+    }
+
+
+  }
+
+  // over m_intermediate
+  for (size_t i=0; i<sz; ++i) {
+    size_t sz2 = m_intermediate[i].size();
+    out.write((char*)&( sz2 ), sizeof( sz2 ));
+
+    list<Function*>::const_iterator itF = m_intermediate[i].begin();
+    for (size_t j=0; j<sz2; ++j, ++itF) {
+      y = funcMap.find(*itF)->second;
+      out.write((char*) &( y ), sizeof(y));
+    }
+
+  }
+
+  out.close();
+
+  return true;
+
+}
+
+
+bool MiniBucketElim::readFromFile(string fn) {
+
+  ifstream inTemp(fn.c_str());
+  inTemp.close();
+
+  if (inTemp.fail()) { // file not existent yet
+    return false;
+  }
+
+  igzstream in(fn.c_str());
+
+  this->reset();
+
+  // used later
+  int x = NONE;
+  size_t y = NONE;
+  vector<Function*> allFuncs;
+
+  // no. of variables
+  size_t sz;
+  in.read((char*) &( sz ), sizeof( sz ));
+
+  if (sz != (size_t) m_problem->getN()) {
+    cerr << "Number of variables in mini bucket file doesn't match" << endl;
+    return false;
+  }
+
+  m_augmented.resize(sz);
+  m_intermediate.resize(sz);
+
+  // i-bound
+  int ibound;
+  in.read((char*) &(ibound), sizeof(ibound));
+  m_ibound = ibound;
+
+  // global UB
+  double ub;
+  in.read((char*) &(ub), sizeof( ub ));
+  m_globalUB = ub;
+
+  // over variables for m_augmented
+  for (size_t i=0; i<sz; ++i) {
+    size_t sz2;
+    in.read((char*) &(sz2), sizeof(sz2));
+
+    // over functions
+    for (size_t j=0; j<sz2; ++j) {
+
+      int id;
+      in.read((char*) &( id ), sizeof(id));
+
+      // scope
+      size_t sz3;
+      in.read((char*) &(sz3), sizeof(sz3));
+      set<int> scope;
+      for (size_t k=0; k<sz3; ++k) {
+        in.read((char*) &( x ), sizeof(x));
+        scope.insert(x);
+      }
+
+      // table size and table
+      in.read((char*) &( sz3 ), sizeof(sz3));
+      double* T = new double[sz3];
+      in.read((char*) ( T ), sizeof(double)*sz3);
+
+      // create function and store it
+      Function* f = new FunctionBayes(id,m_problem,scope,T,sz3);
+      m_augmented[i].push_back(f);
+      allFuncs.push_back(f);
+
+    }
+  }
+
+  for (size_t i=0; i<sz; ++i) {
+    // no. of function pointers
+    size_t sz2;
+    in.read((char*) &(sz2), sizeof(sz2));
+
+    for (size_t j=0; j<sz2; ++j) {
+      // function index
+      in.read((char*) &(y), sizeof(y));
+      m_intermediate[i].push_back(allFuncs.at(y));
+    }
+  }
+
+  in.close();
+
+  return true;
+
+}
+
+

@@ -24,6 +24,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("evid-file,e", po::value<string>(), "path to optional evidence file")
       ("ordering,o", po::value<string>(), "read elimination ordering from this file (first to last)")
       ("adaptive", "enable adaptive ordering scheme")
+      ("minibucket", po::value<string>(), "path to read/store mini bucket heuristic")
       ("subproblem,s", po::value<string>(), "limit search to subproblem specified in file")
       ("sol-file,c", po::value<string>(), "path to output optimal solution to")
       ("ibound,i", po::value<int>()->default_value(10), "i-bound for mini bucket heuristics")
@@ -89,6 +90,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 
     if (vm.count("sol-file"))
       opt.out_solutionFile = vm["sol-file"].as<string>();
+
+    if (vm.count("minibucket"))
+      opt.in_minibucketFile = vm["minibucket"].as<string>();
 
     if (vm.count("ibound"))
       opt.ibound = vm["ibound"].as<int>();

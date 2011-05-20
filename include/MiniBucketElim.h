@@ -32,6 +32,7 @@ protected:
   vector<list<Function*> > m_augmented;
   // Precompute and store, for each variable v, the relevant intermediate functions that are
   // generated in a pseudotree descendant and passed to an ancestor of v
+  // (points to the same function objects as m_augmented)
   vector<list<Function*> > m_intermediate;
 
 protected:
@@ -65,6 +66,12 @@ public:
   // gets the i-bound
   int getIbound() const { return m_ibound; }
 
+  // gets sum of tables sizes
+  size_t getSize() const;
+
+  bool writeToFile(string fn) const;
+  bool readFromFile(string fn);
+
 public:
   MiniBucketElim(Problem* p, Pseudotree* pt, int ib);
   ~MiniBucketElim();
@@ -91,7 +98,10 @@ inline MiniBucketElim::~MiniBucketElim() {
 
 inline bool scopeIsLarger(Function* p, Function* q) {
   assert(p && q);
-  return (p->getArity() > q->getArity());
+  if (p->getArity() == q->getArity())
+    return (p->getId() > q->getId());
+  else
+    return (p->getArity() > q->getArity());
 }
 
 #endif /* MINIBUCKETELIM_H_ */
