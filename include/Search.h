@@ -87,7 +87,7 @@ public:
   /* restricts search to a subproblem as specified in file with path 's'
    * parses the file and then calls the next function.
    * returns true on success, false otherwise */
-  bool restrictSubproblem(const string& s);
+  bool restrictSubproblem(string s);
 
   /* restricts search to a subproblem rooted at 'rootVar'. Context instantiation
    * is extracted from 'assig', ancestral partial solution tree from 'pst' vector.
@@ -151,7 +151,7 @@ protected:
   /* returns the current lower bound on the subproblem solution rooted at
    * n, taking into account solutions to parent problems (or the dummy partial
    * solution tree, in case of conditioned subproblems) */
-  double lowerBound(SearchNode*) const;
+  double lowerBound(const SearchNode*) const;
 
   /* the next two functions add context information to a search node. The difference
    * between the Cache and the Subprob version is that Cache might only be the partial

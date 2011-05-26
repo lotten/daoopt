@@ -16,6 +16,7 @@
 #include "Search.h"
 #include "LimitedDiscrepancy.h"
 #include "BoundPropagator.h"
+#include "utils.h"
 
 class ParallelManager : virtual public Search {
 
@@ -60,15 +61,17 @@ protected:
   /* moves the frontier one step deeper by splitting the given node */
   bool deepenFrontier(SearchNode*);
   /* evaluates a node (wrt. order in the queue) */
-  double evaluate(SearchNode*) const;
+  double evaluate(const SearchNode*) const;
   /* filters out easy subproblems */
-  bool isEasy(SearchNode*) const;
+  bool isEasy(const SearchNode*) const;
   /* synchs the global assignment with the given node */
-  void syncAssignment(SearchNode*);
+  void syncAssignment(const SearchNode*);
   /* applies LDS to the subproblem, i.e. mini bucket forward pass;
    * returns true if subproblem was solved fully */
   bool applyLDS(SearchNode*);
 
+  /* compiles the name of a temporary file */
+  string filename(const char* pre, const char* ext, int count = NONE) const;
   /* submits jobs to the grid system (Condor) */
   bool submitToGrid();
   /* waits for all external jobs to finish */
@@ -76,9 +79,8 @@ protected:
   /* parses the results from external subproblems */
   bool readExtResults() ;
 
-  /* creates the encoding of a subproblem for the condor submission,
-   * arguments are subproblem root and job id */
-  string encodeJob(SearchNode*,size_t) const;
+  /* creates the encoding of subproblems for the condor submission */
+  string encodeJobs(const vector<SearchNode*>&);
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
 

@@ -52,6 +52,8 @@ ostream& operator <<(ostream& os, const set<uint>& s);
 
 ostream& operator <<(ostream& os, const vector<double>& s);
 
+string str_replace(string& s, const string& x, const string& y);
+
 /*
  * increments the tuple value, up to each entry's limit. Returns false
  * iff no more tuples can be generated

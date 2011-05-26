@@ -20,23 +20,34 @@
 #define CONDOR_WAIT "condor_wait"
 #define CONDOR_RM "condor_rm"
 /* some string definition for filenames */
-#define JOBFILE "subproblem.sub"
 #define PREFIX_SOL "temp_sol."
 #define PREFIX_EST "temp_est."
 #define PREFIX_SUB "temp_sub."
 #define PREFIX_LOG "temp_log."
-#define PREFIX_STDOUT "temp_std."
-#define PREFIX_STDERR "temp_err."
+#define PREFIX_STATS "temp_stats."
 
-#define REQUIREMENTS_FILE "requirements.txt"
-#define CSV_STATS_FILE "temp_stats.csv"
+#define PREFIX_JOBS "temp_jobs."
+#define PREFIX_SUBPROB "temp_subproblems.gz"
+
+#define TEMPLATE_FILE "daoopt-template.condor"
 
 /* custom attributes for generated condor jobs */
 #define CONDOR_ATTR_PROBLEM "daoopt_problem"
 #define CONDOR_ATTR_THREADID "daoopt_threadid"
 
-
-
+/* default job submission template */
+const string default_job_template =
+    "universe = vanilla \n\
+    notification = never \n\
+    should_transfer_files = yes \n\
+    when_to_transfer_output = always \n\
+    executable = daoopt.$$(Arch) \n\
+    output = temp_std.%PROBLEM%.%TAG%.$(Process).txt \n\
+    error = temp_err.%PROBLEM%.%TAG%.$(Process).txt \n\
+    log = temp_log.%PROBLEM%.%TAG%.txt \n\
+    +daoopt_problem = daoopt_%PROBLEM%_%TAG% \n\
+    requirements = ( Arch == \"X86_64\" || Arch == \"INTEL\" ) \n\
+    ";
 bool ParallelManager::run() {
 
   SearchNode* node;
@@ -128,6 +139,7 @@ bool ParallelManager::submitToGrid() {
 
   const vector<SearchNode*>& nodes = m_external;
 
+  /*
   // try to read custom requirements from file
   string reqStr = "true"; // default
   ifstream req(REQUIREMENTS_FILE);
@@ -140,35 +152,39 @@ bool ParallelManager::submitToGrid() {
     }
   }
   req.close();
+  */
 
   // Build the condor job description
   ostringstream jobstr;
-  jobstr
-  // Generic options
-  << "universe = vanilla" << endl
-  << "notification = never" << endl
-  << "should_transfer_files = yes" << endl
-  << "requirements = ( Arch == \"X86_64\" || Arch == \"INTEL\" ) && (" << reqStr << ")" << endl
-  << "when_to_transfer_output = always" << endl
-  << "executable = daoopt.$$(Arch)" << endl
-  << "copy_to_spool = false" << endl;
 
-  // custom attributes
-  jobstr
-  << '+' << CONDOR_ATTR_PROBLEM << " = \"" << m_space->options->problemName << "\"" << endl;
-
-  // Logging options
-  jobstr << endl
-  << "output = " << PREFIX_STDOUT << "$(Process).txt" << endl
-  << "error = " << PREFIX_STDERR << "$(Process).txt" << endl
-  << "log = " << PREFIX_LOG << "txt" << endl << endl; // one global log
+  // Try to read template file, otherwise use default
+  ifstream templ(TEMPLATE_FILE);
+  if (templ) {
+    string s;
+    while (!templ.eof()) {
+      getline(templ, s);
+      s = str_replace(s,"%PROBLEM%",m_space->options->problemName);
+      s = str_replace(s,"%TAG%",m_space->options->runTag);
+      jobstr << s << endl;
+    }
+  } else {
+    string s = default_job_template;
+    s = str_replace(s,"%PROBLEM%",m_space->options->problemName);
+    s = str_replace(s,"%TAG%",m_space->options->runTag);
+    jobstr << s;
+  }
+  templ.close();
 
   // reset CSV file
-  ofstream csv(CSV_STATS_FILE,ios_base::out | ios_base::trunc);
+  string csvfile = filename(PREFIX_STATS,".csv");
+  ofstream csv(csvfile.c_str(),ios_base::out | ios_base::trunc);
   csv << "#id\troot\tdepth\tvars\tlb\tub\theight\twidth" << endl;
   csv.close();
 
   // encode actual subproblems
+  string alljobs = encodeJobs(nodes);
+  jobstr << alljobs;
+  /*
   for (vector<SearchNode*>::const_iterator it=nodes.begin(); it!=nodes.end(); ++it) {
     syncAssignment(*it);
     string job = encodeJob(*it,m_subprobCount);
@@ -176,10 +192,12 @@ bool ParallelManager::submitToGrid() {
     jobstr << job;
     m_subprobCount += 1;
   }
+  */
 
 
   // write subproblem file
-  ofstream file(JOBFILE);
+  string jobfile = filename(PREFIX_JOBS,".condor");
+  ofstream file(jobfile.c_str());
   if (!file) {
     myerror("Error writing Condor job file.\n");
     return false;
@@ -189,7 +207,7 @@ bool ParallelManager::submitToGrid() {
 
   // Perform actual submission
   ostringstream submitCmd;
-  submitCmd << CONDOR_SUBMIT << ' ' << JOBFILE;
+  submitCmd << CONDOR_SUBMIT << ' ' << jobfile;
   submitCmd << " > /dev/null";
 
   int noTries = 0;
@@ -226,13 +244,15 @@ bool ParallelManager::submitToGrid() {
 
 bool ParallelManager::waitForGrid() const {
 
+  string logfile = filename(PREFIX_LOG,".txt");
+
   ostringstream waitCmd;
-  waitCmd << CONDOR_WAIT << ' ' << PREFIX_LOG << "txt";
+  waitCmd << CONDOR_WAIT << ' ' << logfile;
   waitCmd << " > /dev/null";
 
   // wait for the job to finish
   if ( system(waitCmd.str().c_str()) ) {
-    cerr << "Error invoking condor_wait." << endl;
+    cerr << "Error invoking "<< CONDOR_WAIT << endl;
     return false; // error!
   }
 
@@ -248,7 +268,8 @@ bool ParallelManager::readExtResults() {
   // read current stats CSV
   string line,csvheader;
   vector<string> stats;
-  fstream csv(CSV_STATS_FILE, ios_base::in);
+  string csvfile = filename(PREFIX_STATS,".csv");
+  fstream csv(csvfile.c_str(), ios_base::in);
   getline(csv,csvheader);
   for (size_t id=0; id<m_subprobCount; ++id) {
     getline(csv,line);
@@ -261,10 +282,9 @@ bool ParallelManager::readExtResults() {
     SearchNode* node = m_external.at(id);
 
     // Read solution from file
-    ostringstream solutionFile;
-    solutionFile << PREFIX_SOL << id << ".gz";
+    string solutionFile = filename(PREFIX_SOL,".gz",id);
     {
-      ifstream inTemp(solutionFile.str().c_str());
+      ifstream inTemp(solutionFile.c_str());
       inTemp.close();
       if (inTemp.fail()) {
         ostringstream ss;
@@ -274,7 +294,7 @@ bool ParallelManager::readExtResults() {
         continue; // skip rest of loop
       }
     }
-    igzstream in(solutionFile.str().c_str(), ios::binary | ios::in);
+    igzstream in(solutionFile.c_str(), ios::binary | ios::in);
 
     double optCost;
     BINREAD(in, optCost); // read opt. cost
@@ -348,7 +368,7 @@ bool ParallelManager::readExtResults() {
   }
 
   // rewrite CSV file
-  csv.open(CSV_STATS_FILE, ios_base::out | ios_base::trunc);
+  csv.open(csvfile.c_str(), ios_base::out | ios_base::trunc);
   csv << csvheader << "\tOR\tAND" << endl;
   for (vector<string>::iterator it=stats.begin(); it!=stats.end(); ++it) {
     csv << *it << endl;
@@ -360,119 +380,141 @@ bool ParallelManager::readExtResults() {
 }
 
 
-string ParallelManager::encodeJob(SearchNode* node, size_t id) const {
+string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
 
-  assert(node);
+  // open CSV file for stats
+  string csvfile = filename(PREFIX_STATS,".csv");
+  ofstream csv(csvfile.c_str(),ios_base::out | ios_base::app);
 
-  int rootVar = node->getVar();
-  PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
+  // Will hold the condor job description for the submission file
+  ostringstream job;
 
-  // create subproblem file
-  ostringstream subprobFile;
-
-  subprobFile << PREFIX_SUB << id << ".gz";
-  ogzstream con(subprobFile.str().c_str(), ios::out | ios::binary );
-  if(!con) {
+  string subprobsFile = filename(PREFIX_SUB,".gz");
+  ogzstream subprobs(subprobsFile.c_str(), ios::out | ios::binary);
+  if (!subprobs) {
     ostringstream ss;
-    ss << "Problem writing subproblem file " << id << " - skipping"<< endl;
+    ss << "Problem writing subproblem file"<< endl;
     myerror(ss.str());
     return "";
   }
 
-  // subproblem root variable
-  BINWRITE( con, rootVar );
-  // subproblem context size
-  const set<int>& ctxt = ptnode->getFullContext();
-  int sz = ctxt.size();
-  BINWRITE( con, sz );
 
-  // write context instantiation
-  for (set<int>::const_iterator it=ctxt.begin(); it!=ctxt.end(); ++it) {
-    int z = (int) m_assignment.at(*it);
-    BINWRITE( con, z);
-  }
+  // no. of subproblems to file (abuse of id variable)
+  size_t id=nodes.size();
+  BINWRITE(subprobs,id);
 
-  // write the PST
-  // first, number of entries = depth of root node
-  // write negative number to signal bottom-up traversal
-  // (positive number means top-down, to be compatible with old versions)
-  vector<double> pst;
-  node->getPST(pst);
-  int pstSize = ((int) pst.size()) / -2;
-  BINWRITE( con, pstSize); // write negative PST size
+  id = m_subprobCount = 0;
+  int z = NONE;
 
-  for(vector<double>::iterator it=pst.begin();it!=pst.end();++it) {
-    BINWRITE( con, *it);
-  }
+  for (vector<SearchNode*>::const_iterator it=nodes.begin(); it!=nodes.end(); ++it, ++id) {
 
-  con.close(); // done with subproblem file
+    const SearchNode* node = (*it);
+    assert(node);
+    syncAssignment(node);
 
-  // Where the solution will be read from
-  ostringstream solutionFile;
-  solutionFile << PREFIX_SOL << id << ".gz";
+    // write current subproblem id
+    BINWRITE(subprobs, id);
 
-  // Build the condor job description
-  ostringstream job;
+    int rootVar = node->getVar();
+    PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
 
-  // Custom job attributes
-  job
-  << '+' << CONDOR_ATTR_THREADID << " = " << id << endl;
+    /* subproblem root variable */
+    BINWRITE( subprobs, rootVar );
+    /* subproblem context size */
+    const set<int>& ctxt = ptnode->getFullContext();
+    int sz = ctxt.size();
+    BINWRITE( subprobs, sz );
 
-  // Job specifics
-  job
-  // Make sure input files get transferred
-  << "transfer_input_files = " << m_space->options->in_problemFile
-  << ", " << m_space->options->in_orderingFile
-  << ", " << subprobFile.str();
-  if (!m_space->options->in_evidenceFile.empty())
-    job << ", " << m_space->options->in_evidenceFile;
-  job << endl;
+    /* write context instantiation */
+    for (set<int>::const_iterator it=ctxt.begin(); it!=ctxt.end(); ++it) {
+      z = (int) m_assignment.at(*it);
+      BINWRITE( subprobs, z);
+    }
 
-  // Build the argument list for the worker invocation
-  ostringstream command;
-  command << " -f " << m_space->options->in_problemFile;
-  if (!m_space->options->in_evidenceFile.empty())
-    command << " -e " << m_space->options->in_evidenceFile;
-  command << " -o " << m_space->options->in_orderingFile;
-  command << " -s " << subprobFile.str();
-  command << " -i " << m_space->options->ibound;
-  command << " -j " << m_space->options->cbound_worker;
-  command << " -c " << solutionFile.str();
-  command << " -t 0" ;
+    /* write the PST:
+     * first, number of entries = depth of root node
+     * write negative number to signal bottom-up traversal
+     * (positive number means top-down, to be compatible with old versions)
+     */
+    vector<double> pst;
+    node->getPST(pst);
+    int pstSize = ((int) pst.size()) / -2;
+    BINWRITE( subprobs, pstSize); // write negative PST size
 
-  // Add command line arguments to condor job
-  job << "arguments = " << command.str() << endl;
+    for(vector<double>::iterator it=pst.begin();it!=pst.end();++it) {
+      BINWRITE( subprobs, *it);
+    }
 
-  // Queue it
-  job << "queue" << endl;
+    // Where the solution will be read from
+    string solutionFile = filename(PREFIX_SOL,".gz",id);
 
-  // write CSV output
-  int depth = ptnode->getDepth();
-  int height = ptnode->getSubHeight();
-  int width = ptnode->getSubWidth();
-  size_t vars = ptnode->getSubprobSize();
+    // Custom job attributes
+    job
+    << '+' << CONDOR_ATTR_THREADID << " = " << id << endl;
 
-  double lb = lowerBound(node);
-  double ub = node->getHeur();
+    // Job specifics
+    job
+    // Make sure input files get transferred
+    << "transfer_input_files = " << m_space->options->in_problemFile
+    << ", " << m_space->options->in_orderingFile
+    << ", " << subprobsFile;
+    if (!m_space->options->in_evidenceFile.empty())
+      job << ", " << m_space->options->in_evidenceFile;
+    job << endl;
 
-  ofstream csv(CSV_STATS_FILE,ios_base::out | ios_base::app);
-  csv << id
-      << '\t' << rootVar
-      << '\t' << depth
-      << '\t' << vars
-      << '\t' << lb
-      << '\t' << ub
-      << '\t' << height
-      << '\t' << width;
-  csv << endl;
+    // Build the argument list for the worker invocation
+    ostringstream command;
+    command << " -f " << m_space->options->in_problemFile;
+    if (!m_space->options->in_evidenceFile.empty())
+      command << " -e " << m_space->options->in_evidenceFile;
+    command << " -o " << m_space->options->in_orderingFile;
+    command << " -s " << subprobsFile << ":" << id;
+    command << " -i " << m_space->options->ibound;
+    command << " -j " << m_space->options->cbound_worker;
+    command << " -c " << solutionFile;
+    command << " -t 0" ;
+
+    // Add command line arguments to condor job
+    job << "arguments = " << command.str() << endl;
+
+    // Queue it
+    job << "queue" << endl;
+
+    // write CSV output
+    int depth = ptnode->getDepth();
+    int height = ptnode->getSubHeight();
+    int width = ptnode->getSubWidth();
+    size_t vars = ptnode->getSubprobSize();
+
+    double lb = lowerBound(node);
+    double ub = node->getHeur();
+
+    csv << id
+        << '\t' << rootVar
+        << '\t' << depth
+        << '\t' << vars
+        << '\t' << lb
+        << '\t' << ub
+        << '\t' << height
+        << '\t' << width;
+    csv << endl;
+
+  } // for over nodes
+
+  // update subproblem count
+  m_subprobCount = id;
+
+  // close subproblem file
+  subprobs.close();
+
+  // close CSV file
   csv.close();
-
   return job.str();
 
 }
 
 
-void ParallelManager::syncAssignment(SearchNode* node) {
+void ParallelManager::syncAssignment(const SearchNode* node) {
 
   // only accept OR nodes
   assert(node && node->getType()==NODE_OR);
@@ -486,7 +528,7 @@ void ParallelManager::syncAssignment(SearchNode* node) {
 }
 
 
-bool ParallelManager::isEasy(SearchNode* node) const {
+bool ParallelManager::isEasy(const SearchNode* node) const {
   assert(node);
 
   int var = node->getVar();
@@ -547,22 +589,26 @@ bool ParallelManager::deepenFrontier(SearchNode* n) {
 }
 
 
-double ParallelManager::evaluate(SearchNode* node) const {
+double ParallelManager::evaluate(const SearchNode* node) const {
   assert(node && node->getType() == NODE_OR);
 
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-//  int depth = ptnode->getDepth();
-  int height = ptnode->getSubHeight();
-  int width = ptnode->getSubWidth();
+  int d = ptnode->getDepth();
+  int h = ptnode->getSubHeight();
+  int w = ptnode->getSubWidth();
+  int n = ptnode->getSubprobSize();
 
-  double lb = lowerBound(node);
-  double ub = node->getHeur();
+  double L = lowerBound(node);
+  double U = node->getHeur();
 
-  double d = (ub-lb) * pow(height,.5) * pow(width,.5);
-  DIAG(oss ss; ss<< "eval " << *node << " : "<< ub <<' '<< lb <<' '<<height<<' '<<width<<' '<<d<< endl; myprint(ss.str()))
+  //double z = (ub-lb) * pow(height,.5) * pow(width,.5);                                             
+  double z = 2*(U-L) + h + 0.5 * log10(n);
 
-  return d;
+  DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()))
+
+  return z;
+
 }
 
 
@@ -663,6 +709,21 @@ void ParallelManager::setInitialSolution(const vector<val_t>& tuple) const {
 }
 #endif
 
+
+string ParallelManager::filename(const char* pre, const char* ext, int count) const {
+  ostringstream ss;
+  ss << pre;
+  ss << m_space->options->problemName;
+  ss << ".";
+  ss << m_space->options->runTag;
+  if (count!=NONE) {
+    ss << ".";
+    ss << count;
+  }
+  ss << ext;
+
+  return ss.str();
+}
 
 
 ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h)

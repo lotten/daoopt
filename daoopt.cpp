@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.9c"
+#define VERSIONINFO "0.98.9d"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -94,6 +94,12 @@ int main(int argc, char** argv) {
 
   ProgramOptions opt = parseCommandLine(argc,argv);
 
+#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+  if (opt.runTag == "") {
+    opt.runTag = "notag";
+  }
+#endif
+
   /////////////////////
 
   cout
@@ -104,6 +110,7 @@ int main(int argc, char** argv) {
   << "+ Cutoff depth:\t" << opt.cutoff_depth << endl
   << "+ Cutoff size:\t" << opt.cutoff_size << endl
   << "+ Max. workers:\t" << opt.threads << endl
+  << "+ Run tag:\t" << opt.runTag << endl;
 #endif
   ;
   /////////////////////
@@ -186,9 +193,12 @@ int main(int argc, char** argv) {
   }
   cout << endl << "Ran " << i << " iterations, lowest width/height found: " << w << '/' << pt.getHeight() << '\n';
 
+
+
   // Save order to file?
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
-  opt.in_orderingFile = string("temp_elim-") + p.getName() + string(".gz");
+  opt.in_orderingFile = string("temp_elim.") + opt.problemName
+      + string(".") + opt.runTag + string(".gz");
   p.saveOrdering(opt.in_orderingFile,elim);
   cout << "Saved ordering to file " << opt.in_orderingFile << endl;
 //  if (!orderFromFile || opt.order_iterations) {

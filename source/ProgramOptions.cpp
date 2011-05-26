@@ -42,6 +42,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("noauto", "don't determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(-1), "max. number of concurrent subproblem processes")
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
+      ("tag", po::value<string>(), "tag of the parallel run (to differentiate filenames etc.)")
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
@@ -156,13 +157,14 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     else
       opt.nosearch = false;
 
-#ifdef ANYTIME_BREADTH
     if (vm.count("stacklimit"))
       opt.stackLimit = vm["stacklimit"].as<int>();
-#endif
 
     if (vm.count("seed"))
       opt.seed = vm["seed"].as<int>();
+
+    if (vm.count("tag"))
+      opt.runTag = vm["tag"].as<string>();
 
     if (vm.count("reduce"))
       opt.out_reducedFile = vm["reduce"].as<string>();

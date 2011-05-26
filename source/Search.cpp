@@ -410,7 +410,7 @@ void Search::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
 #endif /* PARALLEL_DYNAMIC */
 
 
-double Search::lowerBound(SearchNode* node) const {
+double Search::lowerBound(const SearchNode* node) const {
 
   // assume OR node
   assert(node->getType() == NODE_OR);
@@ -570,10 +570,18 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
 
 
 
-bool Search::restrictSubproblem(const string& file) {
+bool Search::restrictSubproblem(string file) {
   assert(!file.empty());
 
-  {
+  size_t id = NONE;
+  size_t i = file.rfind(":");
+  if (i != string::npos) {
+    string t = file.substr(i+1);
+    id = atoi(t.c_str());
+    file = file.substr(0,i);
+  }
+
+  { // Check if file access works
     ifstream inTemp(file.c_str());
     inTemp.close();
 
@@ -583,11 +591,33 @@ bool Search::restrictSubproblem(const string& file) {
     }
   }
 
-//  string line;
   igzstream fs(file.c_str(), ios::in | ios::binary);
 
   int rootVar = UNKNOWN;
-//  int noVars = UNKNOWN;
+  int x = UNKNOWN;
+  val_t y = UNKNOWN;
+
+  if (id!= (size_t) NONE) {
+    size_t count = NONE;
+    size_t z = NONE;
+    BINREAD(fs, count);
+    BINREAD(fs, z);
+    while (id != z) {
+      BINREAD(fs, rootVar);
+      BINREAD(fs, x); // context size
+      BINSKIP(fs,int,x); // skip context assignment
+      BINREAD(fs, x); // PST size
+      x = (x<0)? -2*x : 2*x;
+      BINSKIP(fs,double,x);
+
+      if (fs.eof()) {
+        cerr << "ERROR reading subproblem, id not found" << endl;
+        return false;
+      }
+
+      BINREAD(fs,z); // next id
+    }
+  }
 
   //////////////////////////////////////
   // FIRST: read context of subproblem
@@ -601,7 +631,6 @@ bool Search::restrictSubproblem(const string& file) {
 
   cout << "Restricting to subproblem with root node " << rootVar << endl;
 
-  int x = UNKNOWN;
   // context size
   BINREAD(fs, x);
   const set<int>& context = m_pseudotree->getNode(rootVar)->getFullContext();
@@ -612,7 +641,6 @@ bool Search::restrictSubproblem(const string& file) {
 
   // Read context assignment into temporary vector
   vector<val_t> assignment(m_problem->getN(), UNKNOWN);
-  val_t y = UNKNOWN;
   int z = UNKNOWN;
   cout << "Subproblem context:";
   for (set<int>::const_iterator it = context.begin(); it!=context.end(); ++it) {

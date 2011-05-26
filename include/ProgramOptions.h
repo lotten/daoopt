@@ -42,6 +42,8 @@ public:
 
   std::string executableName; // name of the executable
   std::string problemName; // name of the problem
+  std::string runTag; // string tag of this particular run
+
   std::string in_problemFile; // problem file path
   std::string in_evidenceFile; // evidence file path
   std::string in_orderingFile; // ordering file path

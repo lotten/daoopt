@@ -111,6 +111,15 @@ ostream& operator <<(ostream& os, const vector<double>& s) {
   return os;
 }
 
+string str_replace(string& s, const string& x, const string& y) {
+  string res = s;
+  size_t i=res.find(x);
+  while ( i != string::npos) {
+    res = res.replace(i, x.size(), y);
+    i = s.find(x, i+y.size());
+  }
+  return res;
+}
 
 #ifdef PARALLEL_DYNAMIC
  #ifdef USE_GMP

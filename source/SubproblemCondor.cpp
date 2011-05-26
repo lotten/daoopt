@@ -33,7 +33,7 @@
 #define CONDOR_WAIT "condor_wait"
 #define CONDOR_RM "condor_rm"
 /* some string definition for filenames */
-#define JOBFILE "subproblem.sub"
+#define JOB_FILE "subproblem.sub"
 #define PREFIX_SOL "temp_sol."
 #define PREFIX_EST "temp_est."
 #define PREFIX_SUB "temp_sub."
@@ -353,7 +353,7 @@ void CondorSubmissionEngine::operator ()() {
 
 void CondorSubmissionEngine::submitToCondor(const ostringstream& jobstr) const {
 
-  ofstream jobfile(JOBFILE);
+  ofstream jobfile(JOB_FILE);
   if (!jobfile) {
     myerror("Error writing condor job file.\n");
     return;
@@ -362,7 +362,7 @@ void CondorSubmissionEngine::submitToCondor(const ostringstream& jobstr) const {
   jobfile.close();
 
   ostringstream submitCmd;
-  submitCmd << CONDOR_SUBMIT << ' ' << JOBFILE;
+  submitCmd << CONDOR_SUBMIT << ' ' << JOB_FILE;
 #ifdef SILENT_MODE
   submitCmd << " > /dev/null";
 #endif

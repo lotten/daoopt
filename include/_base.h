@@ -375,9 +375,11 @@ inline bool fpLEq(double A, double B, int64_t maxDist=2) {
 #ifdef BINARY_DATAFILES
 #define BINWRITE(S,X) ( S ).write((char*)&( X ), sizeof( X ))
 #define BINREAD(S,X) ( S ).read((char*)&( X ), sizeof( X ))
+#define BINSKIP(S,T,N) ( S ).ignore( sizeof( T ) * ( N ) )
 #else
 #define BINWRITE(S,X) ( S ) << ( X ) << '\t'
 #define BINREAD(S,X)  ( S ) >> ( X )
+#define BINSKIP(S,T,N) {T x; for (size_t _i=N, _i, --_i) (S)>>(x); }
 #endif
 
 
