@@ -286,7 +286,12 @@ using namespace std;
 #define NODE_AND 1
 #define NODE_OR 2
 
-
+const int SUBPROB_WIDTH_INC = 0;
+const int SUBPROB_WIDTH_DEC = 1;
+const int SUBPROB_HEUR_INC = 2;
+const int SUBPROB_HEUR_DEC = 3;
+const string subprob_order[4]
+  = {"width-inc","width-dec","heur-inc","heur-dec"};
 
 /*//////////////////////////////////////////////////////////////*/
 

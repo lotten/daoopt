@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.9d"
+#define VERSIONINFO "0.98.9e"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -68,15 +68,16 @@ int main(int argc, char** argv) {
   version += " /plain";
 #endif
 
-#if defined SUBPROB_WIDTH_INC
-  version += " /width-inc";
-#elif defined SUBPROB_WIDTH_DEC
-  version += " /width-dec";
-#elif defined SUBPROB_HEUR_INC
-  version += " /heur-inc";
-#elif defined SUBPROB_HEUR_DEC
-  version += " /heur-dec";
-#endif
+  /*
+  if (opt.subprobOrder == SUBPROB_WIDTH_INC)
+    version += " /width-inc";
+  else if (opt.subprobOrder == SUBPROB_WIDTH_DEC)
+    version += " /width-dec";
+  else if (opt.subprobOrder == SUBPROB_HEUR_INC)
+    version += " /heur-inc";
+  else if (opt.subprobOrder == SUBPROB_HEUR_DEC)
+    version += " /heur-dec";
+  */
 
 #if defined LIKELIHOOD
   version += " /likelihood";
@@ -87,12 +88,13 @@ int main(int argc, char** argv) {
        << "  by Lars Otten, UC Irvine <lotten@ics.uci.edu>" << endl
        << "------------------------------------------------------------------" << endl;
 
+  // parse command line options
+  ProgramOptions opt = parseCommandLine(argc,argv);
+
   // Reprint command line
   for (int i=0; i<argc; ++i)
     cout << argv[i] << ' ';
   cout << endl;
-
-  ProgramOptions opt = parseCommandLine(argc,argv);
 
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   if (opt.runTag == "") {
@@ -106,6 +108,7 @@ int main(int argc, char** argv) {
   << "+ i-bound:\t" << opt.ibound << endl
   << "+ j-bound:\t" << opt.cbound << endl
   << "+ Memory limit:\t" << opt.memlimit << endl
+  << "+ Suborder:\t" << opt.subprobOrder <<" ("<< subprob_order[opt.subprobOrder] <<")"<< endl
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   << "+ Cutoff depth:\t" << opt.cutoff_depth << endl
   << "+ Cutoff size:\t" << opt.cutoff_size << endl
@@ -125,11 +128,19 @@ int main(int argc, char** argv) {
   p.removeEvidence();
   cout << "Removed evidence, now " << p.getN() << " variables and " << p.getC() << " functions." << endl;
 
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+  // Re-output problem file for parallel processing
+  opt.out_reducedFile = string("temp_prob.") + opt.problemName
+      + string(".") + opt.runTag + string(".gz");
+  p.writeUAI(opt.out_reducedFile);
+  cout << "Saved problem to file " << opt.out_reducedFile << endl;
+#else
   // Output reduced network?
   if (!opt.out_reducedFile.empty()) {
     cout << "Writing reduced network to file " << opt.out_reducedFile << endl;
     p.writeUAI(opt.out_reducedFile);
   }
+#endif
 
   // Some statistics
   cout << "Max. domain size:\t" << (int) p.getK() << endl;
@@ -158,7 +169,7 @@ int main(int argc, char** argv) {
   }
 
   // Init. pseudo tree
-  Pseudotree pt(&p);
+  Pseudotree pt(&p, opt.subprobOrder);
 
   if (orderFromFile) { // Reading from file succeeded (i.e. file exists)
     pt.build(g,elim,opt.cbound);
@@ -181,7 +192,7 @@ int main(int argc, char** argv) {
       cout << " " << i << ':' << w <<'/' << pt.getHeight() << flush;
       if (opt.autoIter) { remaining = max(remaining,j+1); j=0; }
     } else if (new_w == w) {
-      Pseudotree ptCand(&p);
+      Pseudotree ptCand(&p, opt.subprobOrder);
       ptCand.build(g,elimCand,opt.cbound);
       if (ptCand.getHeight() < pt.getHeight()) {
         elim = elimCand;

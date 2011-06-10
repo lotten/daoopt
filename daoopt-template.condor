@@ -1,0 +1,24 @@
+# Condor job template for DAOOPT subproblem submission.
+# Job descriptions will be attached at the end
+# The following substitutions will be made automatically:
+#  %PROBLEM% -> input problem name
+#  %TAG% -> tag of the particular run
+
+universe = vanilla
+notification = never
+should_transfer_files = yes
+when_to_transfer_output = always
+copy_to_spool = false
+
+executable = daoopt.$$(Arch)
+
+output = temp_out.%PROBLEM%.%TAG%.$(Process).txt
+error  = temp_err.%PROBLEM%.%TAG%.$(Process).txt
+log    = temp_log.%PROBLEM%.%TAG%.txt
+
++daoopt_problem = daoopt_%PROBLEM%_%TAG%
+
+requirements = ( Arch == "X86_64" || Arch == "INTEL" )
+
+# Job descriptions will be added below
+

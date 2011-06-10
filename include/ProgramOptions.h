@@ -37,6 +37,7 @@ public:
   int lds;  // run initial LDS with this limit (-1: enabled)
   int seed; // the seed for the random number generator
   int stackLimit; // how many nodes to expand per subproblem stack before rotating
+  int subprobOrder; // subproblem ordering, integers defined in _base.h
 
   double initialBound; // initial lower bound
 
@@ -65,6 +66,7 @@ inline ProgramOptions::ProgramOptions() :
 		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
-		      lds(NONE), seed(NONE), stackLimit(0), initialBound(ELEM_NAN) {}
+		      lds(NONE), seed(NONE), stackLimit(0), subprobOrder(NONE),
+		      initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

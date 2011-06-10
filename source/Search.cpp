@@ -268,11 +268,10 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
   // order subproblems by their heuristic (if applicable)
   // (inverse due to stack reversal)
-#if defined SUBPROB_HEUR_INC
-  sort(chi.rbegin(), chi.rend(), SearchNode::heurLess);
-#elif defined SUBPROB_HEUR_DEC
-  sort(chi.begin(), chi.end(), SearchNode::heurLess);
-#endif
+  if (m_space->options->subprobOrder == SUBPROB_HEUR_INC)
+    sort(chi.rbegin(), chi.rend(), SearchNode::heurLess);
+  else if (m_space->options->subprobOrder == SUBPROB_HEUR_DEC)
+    sort(chi.begin(), chi.end(), SearchNode::heurLess);
 
   return false; // default
 

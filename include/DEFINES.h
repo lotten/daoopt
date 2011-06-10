@@ -53,18 +53,6 @@
 
 /*****************************************************************/
 
-
-/*
- * define one below to set AND subproblem ordering
- */
-
-//#define SUBPROB_WIDTH_INC
-#define SUBPROB_WIDTH_DEC
-//#define SUBPROB_HEUR_INC
-//#define SUBPROB_HEUR_DEC
-
-/*****************************************************************/
-
 /*****************************************************************
  * define NO_HEURISTIC to disable Mini Buckets and thus pruning
  */
@@ -127,14 +115,5 @@ typedef signed char val_t;
 #ifdef ANYTIME_BREADTH
 #undef ANYTIME_DEPTH
 #endif
-
-/* default to ordering AND subproblems by increasing width */
-//#if not (defined SUBPROB_HEUR_DEC || defined SUBPROB_HEUR_INC || defined SUBPROB_WIDTH_DEC || defined SUBPROB_WIDTH_INC)
-//#define SUBPROB_WIDTH_INC
-//#endif
-//#if defined SUBPROB_HEUR_INC || defined SUBPROB_HEUR_DEC
-//#define SUBPROB_WIDTH_INC
-//#undef SUBPROB_WIDTH_DEC
-//#endif
 
 #endif /* DEFS_H_ */

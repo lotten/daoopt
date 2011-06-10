@@ -244,10 +244,6 @@ void Pseudotree::buildChain(Graph G, const vector<int>& elim, const int cachelim
   // initiate subproblem width computation (recursive)
   m_root->updateSubWidth();
 
-  // reorder each list of child nodes by complexity (width/height)
-//  for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it)
-//    (*it)->orderChildren();
-
   // initiate subproblem variables computation (recursive)
   m_root->updateSubprobVars();
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
@@ -341,7 +337,7 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 
   // reorder each list of child nodes by complexity (width/height)
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it)
-    (*it)->orderChildren();
+    (*it)->orderChildren(m_subOrder);
 
   // initiate subproblem variables computation (recursive)
   m_root->updateSubprobVars();
@@ -366,6 +362,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
 
   m_problem = pt.m_problem;
   m_size = pt.m_size;
+  m_subOrder = pt.m_subOrder;
 
   m_nodes.reserve(m_size+1);
   m_nodes.resize(m_size+1, NULL);
@@ -412,7 +409,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
 
   // reorder each list of child nodes by complexity (width/height)
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it) {
-    (*it)->orderChildren();
+    (*it)->orderChildren(m_subOrder);
   }
 
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
@@ -502,12 +499,12 @@ int Pseudotree::computeComplexities(int workers) {
 /*
  * orders the sub pseudo trees of a node ("less" -> ascending by w*)
  */
-void PseudotreeNode::orderChildren() {
-#if defined SUBPROB_WIDTH_INC
-  sort(m_children.begin(), m_children.end(), PseudotreeNode::compLess );
-#elif defined SUBPROB_WIDTH_DEC
-  sort(m_children.begin(), m_children.end(), PseudotreeNode::compGreater );
-#endif
+void PseudotreeNode::orderChildren(int subOrder) {
+  if (subOrder == SUBPROB_WIDTH_INC) {
+    sort(m_children.begin(), m_children.end(), PseudotreeNode::compLess );
+  } else if (subOrder == SUBPROB_WIDTH_DEC) {
+    sort(m_children.begin(), m_children.end(), PseudotreeNode::compGreater );
+  }
 }
 
 

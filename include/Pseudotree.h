@@ -26,6 +26,8 @@ class Pseudotree {
 
 protected:
 
+  int m_subOrder;
+
   int m_height;
   int m_heightConditioned;
   int m_width;
@@ -107,7 +109,7 @@ protected:
   void reset();
 
 public:
-  Pseudotree(Problem* p);
+  Pseudotree(Problem* p, int subOrder);
   Pseudotree(const Pseudotree& pt); // copy constructor
   ~Pseudotree();
 };
@@ -169,7 +171,7 @@ public:
   void addChild(PseudotreeNode* p) { m_children.push_back(p); }
   void setChild(PseudotreeNode* p) { m_children.clear(); m_children.push_back(p); }
   const vector<PseudotreeNode*>& getChildren() const { return m_children; }
-  void orderChildren();
+  void orderChildren(int subOrder);
 
   static bool compGreater(PseudotreeNode* a, PseudotreeNode* b);
   static bool compLess(PseudotreeNode* a, PseudotreeNode* b);
@@ -269,7 +271,8 @@ inline void Pseudotree::reset() {
   m_size = m_problem->getN();
 }
 
-inline Pseudotree::Pseudotree(Problem* p) :
+inline Pseudotree::Pseudotree(Problem* p, int subOrder) :
+    m_subOrder(subOrder),
     m_height(UNKNOWN), m_heightConditioned(UNKNOWN),
     m_width(UNKNOWN), m_widthConditioned(UNKNOWN),
     m_components(0),

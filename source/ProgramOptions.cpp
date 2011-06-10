@@ -26,6 +26,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("adaptive", "enable adaptive ordering scheme")
       ("minibucket", po::value<string>(), "path to read/store mini bucket heuristic")
       ("subproblem,s", po::value<string>(), "limit search to subproblem specified in file")
+      ("suborder,r",po::value<int>()->default_value(0), "subproblem order (0:width-inc 1:width-dec 2:heur-inc 3:heur-dec)")
       ("sol-file,c", po::value<string>(), "path to output optimal solution to")
       ("ibound,i", po::value<int>()->default_value(10), "i-bound for mini bucket heuristics")
       ("cbound,j", po::value<int>()->default_value(1000), "context size bound for caching")
@@ -51,10 +52,12 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 #ifdef ANYTIME_BREADTH
       ("stacklimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
 #endif
-      ("seed", po::value<int>(), "seed for random number generator (uses time() otherwise)")
+      ("seed", po::value<int>(), "seed for random number generator, time() otherwise")
       ("or", "use OR search (build pseudo tree as chain)")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
-      ("reduce,r", po::value<string>(), "outputs the reduced network to this file (removes evidence and unary variables)")
+#if not (defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC)
+      ("reduce", po::value<string>(), "outputs the reduced network to this file (removes evidence and unary variables)")
+#endif
       ("help,h", "produces this help message")
       ;
 
@@ -94,6 +97,14 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 
     if (vm.count("minibucket"))
       opt.in_minibucketFile = vm["minibucket"].as<string>();
+
+    if (vm.count("suborder")) {
+      opt.subprobOrder = vm["suborder"].as<int>();
+      if (opt.subprobOrder < 0 || opt.subprobOrder > 3) {
+        cout << endl << desc << endl;
+        exit(0);
+      }
+    }
 
     if (vm.count("ibound"))
       opt.ibound = vm["ibound"].as<int>();

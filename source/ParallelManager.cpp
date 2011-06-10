@@ -398,14 +398,14 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
     return "";
   }
 
-
-  // no. of subproblems to file (abuse of id variable)
+  // no. of subproblems to file (id variable used as temp)
   size_t id=nodes.size();
   BINWRITE(subprobs,id);
 
   id = m_subprobCount = 0;
   int z = NONE;
 
+  // write subproblem file and csv statistics
   for (vector<SearchNode*>::const_iterator it=nodes.begin(); it!=nodes.end(); ++it, ++id) {
 
     const SearchNode* node = (*it);
@@ -445,41 +445,6 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
       BINWRITE( subprobs, *it);
     }
 
-    // Where the solution will be read from
-    string solutionFile = filename(PREFIX_SOL,".gz",id);
-
-    // Custom job attributes
-    job
-    << '+' << CONDOR_ATTR_THREADID << " = " << id << endl;
-
-    // Job specifics
-    job
-    // Make sure input files get transferred
-    << "transfer_input_files = " << m_space->options->in_problemFile
-    << ", " << m_space->options->in_orderingFile
-    << ", " << subprobsFile;
-    if (!m_space->options->in_evidenceFile.empty())
-      job << ", " << m_space->options->in_evidenceFile;
-    job << endl;
-
-    // Build the argument list for the worker invocation
-    ostringstream command;
-    command << " -f " << m_space->options->in_problemFile;
-    if (!m_space->options->in_evidenceFile.empty())
-      command << " -e " << m_space->options->in_evidenceFile;
-    command << " -o " << m_space->options->in_orderingFile;
-    command << " -s " << subprobsFile << ":" << id;
-    command << " -i " << m_space->options->ibound;
-    command << " -j " << m_space->options->cbound_worker;
-    command << " -c " << solutionFile;
-    command << " -t 0" ;
-
-    // Add command line arguments to condor job
-    job << "arguments = " << command.str() << endl;
-
-    // Queue it
-    job << "queue" << endl;
-
     // write CSV output
     int depth = ptnode->getDepth();
     int height = ptnode->getSubHeight();
@@ -499,13 +464,42 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
         << '\t' << width;
     csv << endl;
 
-  } // for over nodes
+  } // for-loop over nodes
 
   // update subproblem count
   m_subprobCount = id;
 
   // close subproblem file
   subprobs.close();
+
+  // job string for submission file
+  job // special condor attribute
+    << '+' << CONDOR_ATTR_THREADID << " = $(Process)" << endl
+    // Make sure input files get transferred
+    << "transfer_input_files = " << m_space->options->out_reducedFile
+    << ", " << m_space->options->in_orderingFile
+    << ", " << subprobsFile;
+  if (!m_space->options->in_evidenceFile.empty())
+    job << ", " << m_space->options->in_evidenceFile;
+  job << endl;
+
+  string solutionFile = filename(PREFIX_SOL,".$(Process).gz");
+
+  job // command line arguments
+    << "arguments = "
+    << " -f " << m_space->options->out_reducedFile;
+  if (!m_space->options->in_evidenceFile.empty())
+    job << " -e " << m_space->options->in_evidenceFile;
+  job
+    << " -o " << m_space->options->in_orderingFile
+    << " -s " << subprobsFile << ":$(Process)"
+    << " -i " << m_space->options->ibound
+    << " -j " << m_space->options->cbound_worker
+    << " -c " << solutionFile
+    << " -r " << m_space->options->subprobOrder
+    << " -t 0" << endl;
+
+  job << "queue " << m_subprobCount << endl;
 
   // close CSV file
   csv.close();
@@ -604,6 +598,14 @@ double ParallelManager::evaluate(const SearchNode* node) const {
 
   //double z = (ub-lb) * pow(height,.5) * pow(width,.5);                                             
   double z = 2*(U-L) + h + 0.5 * log10(n);
+
+  // for pdb1e5k
+//  double z = -19.922 - 5.489*(U-L) + 2.548*d + 0.148*(U-L)*h - 0.204*U;
+  // for pdb1tfe
+//  double z = 0.866 + 6.539*(U-L) - 0.141*(U-L)*h - 0.193*L - 0.176*h;
+  // for pdb1j98
+//  double z = 7.679*w + 0.014*n + 0.329*(U-L) - 0.009*(U-L)*h - 2.329*d
+//    - 2.005*h - 0.348*L - 28.602*log10(n);
 
   DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()))
 

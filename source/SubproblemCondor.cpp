@@ -523,6 +523,7 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
   command << " -i " << m_spaceMaster->options->ibound;
   command << " -j " << m_spaceMaster->options->cbound_worker;
   command << " -c " << solutionFile.str();
+  command << " -r " << m_spaceMaster->options->subprobOrder;
   command << " -t 0";
   //command << " > /dev/null";
 
