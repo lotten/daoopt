@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.98.9e"
+#define VERSIONINFO "0.99.0"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -207,21 +207,15 @@ int main(int argc, char** argv) {
 
 
   // Save order to file?
+  if (!opt.in_orderingFile.empty() && !orderFromFile) {
+    p.saveOrdering(opt.in_orderingFile,elim);
+    cout << "Saved ordering to file " << opt.in_orderingFile << endl;
+  }
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   opt.in_orderingFile = string("temp_elim.") + opt.problemName
       + string(".") + opt.runTag + string(".gz");
   p.saveOrdering(opt.in_orderingFile,elim);
   cout << "Saved ordering to file " << opt.in_orderingFile << endl;
-//  if (!orderFromFile || opt.order_iterations) {
-//    if (opt.in_orderingFile.empty() || opt.order_iterations)
-//    opt.in_orderingFile = string("temp_elim-") + p.getName() + string(".gz");
-//  p.saveOrdering(opt.in_orderingFile,elim);
-//  }
-#else
-  if (!opt.in_orderingFile.empty() && !orderFromFile) {
-    p.saveOrdering(opt.in_orderingFile,elim);
-    cout << "Saved ordering to file " << opt.in_orderingFile << endl;
-  }
 #endif
 
   // OR search?
@@ -413,15 +407,13 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  bool success = true;
+
   if (!solved) {
   cout << "--- Starting search ---" << endl;
 
 #ifdef PARALLEL_DYNAMIC
 
-  /*
-  ParallelManager manager(&search,&prop,space);
-  manager.run();
-  */
   bool solved = search.init();
 
   if (!solved) { // TODO check whether local AOBB is better?
@@ -471,7 +463,26 @@ int main(int argc, char** argv) {
   }
 #else
 
-  bool success = search.run();
+  /* ParallelManager for static scheme */
+
+  if (!opt.par_postOnly) { // full or pre-only mode
+    /* find frontier from scratch */
+    success = success && search.findFrontier();
+    /* generate files for subproblems */
+    success = success && search.writeJobs();
+  } else { // post-only mode
+    /* restore frontier from file */
+    success = success && search.restoreFrontier();
+  }
+  if (!opt.par_preOnly && !opt.par_postOnly) { // full mode
+    /* run Condor and wait for results */
+    success = success && search.runCondor();
+  }
+  if (!opt.par_preOnly) { // full or post-only mode
+    /* reads external results */
+    success = success && search.readExtResults();
+  }
+
   if (!success) {
     myprint("!!! Search failed.\n !!!");
   }
@@ -499,25 +510,14 @@ int main(int argc, char** argv) {
   cout << "Time elapsed:  " << time_passed << " seconds" << endl;
   time_passed = difftime(time_pre,time_start);
   cout << "Preprocessing: " << time_passed << " seconds" << endl;
+  cout << "-------------------------------\n";
+
+#ifdef PARALLEL_STATIC
+//  if (!opt.par_preOnly) { // parallel static: not output if preproc. only
+#endif
 
   double mpeCost = search.getCurOptValue();//space->getSolutionCost();
-
-  // account for global constant (but not if solving subproblem)
-  if (opt.in_subproblemFile.empty()) {
-//    mpeCost OP_TIMESEQ p.getGlobalConstant();
-  }
-
-  cout << "-------------------------------\n"
-    << SCALE_LOG(mpeCost) << " (" << SCALE_NORM(mpeCost) << ')' << endl;
-
-  /*
-  vector<val_t> mpeTuple = bab.getCurOptTuple();
-  for (size_t i=0; i<mpeTuple.size(); ++i) {
-    cout << ' ' << (int) mpeTuple[i];
-  }
-  cout << endl;
-  */
-
+  cout << SCALE_LOG(mpeCost) << " (" << SCALE_NORM(mpeCost) << ')' << endl;
 
   // Output node and leaf profiles per depth
   const vector<count_t>& prof = search.getNodeProfile();
@@ -536,6 +536,10 @@ int main(int argc, char** argv) {
   p.outputAndSaveSolution(opt.out_solutionFile, noNodes,
       search.getNodeProfile(),search.getLeafProfile(),!opt.in_subproblemFile.empty() );
 
+#ifdef PARALLEL_STATIC
+//  }
+#endif
+
   cout << endl;
 
 #ifdef MEMDEBUG
@@ -544,5 +548,9 @@ int main(int argc, char** argv) {
 
   delete space;
 
-  return EXIT_SUCCESS;
+  if (success)
+    return EXIT_SUCCESS;
+  else
+    return EXIT_FAILURE;
+
 }

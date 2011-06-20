@@ -439,7 +439,8 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     out.open(file.c_str(), ios::out | ios::trunc | ios::binary);
     if (!out) {
       cerr << "Error writing optimal solution to file " << file << endl;
-      exit(1);
+      writeFile = false;
+      out.close();
     }
   }
 

@@ -159,10 +159,11 @@ protected:
 #ifndef NO_CACHING
   void addCacheContext(SearchNode*, const set<int>&) const;
 #endif
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   /* see comment above */
   void addSubprobContext(SearchNode*, const set<int>&) const;
-
+#endif
+#ifdef PARALLEL_DYNAMIC
   /* adds PST information for advanced pruning in (external) subproblem */
   void addPSTlist(SearchNode* node) const;
 #endif

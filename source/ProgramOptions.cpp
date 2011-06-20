@@ -45,6 +45,10 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
       ("tag", po::value<string>(), "tag of the parallel run (to differentiate filenames etc.)")
 #endif
+#ifdef PARALLEL_STATIC
+      ("pre", "perform preprocessing and generate subproblems only")
+      ("post", "read previously solved subproblems and compile solution")
+#endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
       ("lds,a",po::value<int>()->default_value(-1), "run initial LDS search with given limit (-1: disabled)")
@@ -176,6 +180,11 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 
     if (vm.count("tag"))
       opt.runTag = vm["tag"].as<string>();
+
+    if (vm.count("pre"))
+      opt.par_preOnly = true;
+    else if (vm.count("post"))
+      opt.par_postOnly = true;
 
     if (vm.count("reduce"))
       opt.out_reducedFile = vm["reduce"].as<string>();

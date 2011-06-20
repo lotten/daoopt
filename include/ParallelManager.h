@@ -30,10 +30,6 @@ protected:
   LimitedDiscrepancy* m_ldsSearch;
   BoundPropagator* m_ldsProp;
 
-  /* queue of subproblems, i.e. OR nodes, ordered according to
-   * evaluation function */
-  priority_queue<pair<double, SearchNode*> > m_open;
-
   /* stack for local solving */
   stack<SearchNode*> m_stack;
 
@@ -59,7 +55,7 @@ public:
 
 protected:
   /* moves the frontier one step deeper by splitting the given node */
-  bool deepenFrontier(SearchNode*);
+  bool deepenFrontier(SearchNode*, vector<SearchNode*>& out);
   /* evaluates a node (wrt. order in the queue) */
   double evaluate(const SearchNode*) const;
   /* filters out easy subproblems */
@@ -73,21 +69,27 @@ protected:
   /* compiles the name of a temporary file */
   string filename(const char* pre, const char* ext, int count = NONE) const;
   /* submits jobs to the grid system (Condor) */
-  bool submitToGrid();
+  bool submitToGrid() const;
   /* waits for all external jobs to finish */
   bool waitForGrid() const;
-  /* parses the results from external subproblems */
-  bool readExtResults() ;
 
   /* creates the encoding of subproblems for the condor submission */
-  string encodeJobs(const vector<SearchNode*>&);
+  string encodeJobs(const vector<SearchNode*>&) const;
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
 
 
 public:
-  /* runs the parallelization, returns true iff successful */
-  bool run();
+  /* computes the parallel frontier and , returns true iff successful */
+  bool findFrontier();
+  /* writes subproblem information to disk */
+  bool writeJobs() const;
+  /* initiates parallel subproblem computation through Condor */
+  bool runCondor() const;
+  /* parses the results from external subproblems */
+  bool readExtResults();
+  /* recreates the frontier given a previously written subproblem file */
+  bool restoreFrontier();
 
 #ifndef NO_ASSIGNMENT
   void setInitialSolution(const vector<val_t>&) const;
@@ -103,13 +105,14 @@ public:
 /* Inline definitions */
 
 inline bool ParallelManager::isDone() const {
-  return m_open.empty();
+  assert(false); // should never be called
+  return false;
 }
 
-inline void ParallelManager::resetSearch(SearchNode* p) {
-  while (m_open.size())
-      m_open.pop();
-  m_open.push(make_pair(evaluate(p),p));
+inline void ParallelManager::resetSearch(SearchNode* n) {
+  m_external.clear();
+  m_local.clear();
+  m_external.push_back(n);
 }
 
 inline ParallelManager::~ParallelManager() {

@@ -89,7 +89,8 @@ public:
 
   virtual void setInitialBound(double d) = 0;
   virtual double getInitialBound() const = 0;
-
+#endif
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   virtual void setSubprobContext(const context_t&) = 0;
   virtual const context_t& getSubprobContext() const = 0;
 #endif
@@ -166,7 +167,8 @@ public:
 #ifdef PARALLEL_DYNAMIC
   void setInitialBound(double d) { assert(false); }
   double getInitialBound() const { assert(false); }
-
+#endif
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setSubprobContext(const context_t& t) { assert(false); }
   const context_t& getSubprobContext() const { assert(false); return emptyCtxt; }
 #endif
@@ -192,7 +194,7 @@ protected:
   double* m_heurCache;   // Stores the precomputed heuristic values of the AND children
   context_t m_cacheContext; // Stores the context (for caching)
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   context_t m_subprobContext; // Stores the context values to this subproblem
 #endif
 
@@ -227,7 +229,7 @@ public:
   double getInitialBound() const { return m_initialBound; }
 #endif
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setSubprobContext(const context_t& c) { m_subprobContext = c; }
   const context_t& getSubprobContext() const { return m_subprobContext; }
 #endif

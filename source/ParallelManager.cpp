@@ -27,7 +27,6 @@
 #define PREFIX_STATS "temp_stats."
 
 #define PREFIX_JOBS "temp_jobs."
-#define PREFIX_SUBPROB "temp_subproblems.gz"
 
 #define TEMPLATE_FILE "daoopt-template.condor"
 
@@ -48,15 +47,156 @@ const string default_job_template =
     +daoopt_problem = daoopt_%PROBLEM%_%TAG% \n\
     requirements = ( Arch == \"X86_64\" || Arch == \"INTEL\" ) \n\
     ";
-bool ParallelManager::run() {
 
-  SearchNode* node;
-  double eval;
+
+bool ParallelManager::restoreFrontier() {
+
+  assert (!m_external.empty());
+
+  // for output
+  ostringstream ss;
+
+  // records subproblems by (rootVar,context) and their id
+  typedef hash_map<pair<int,context_t>, size_t > frontierCache;
+  frontierCache subprobs;
+
+  // filename for subproblem (=frontier)
+  string subprobFile = filename(PREFIX_SUB,".gz");
+
+  {
+    ifstream inTemp(subprobFile.c_str());
+    inTemp.close();
+    if (inTemp.fail()) {
+      ss.clear();
+      ss << "Problem reading subprocess list from "<< subprobFile << '.' << endl;
+      myerror(ss.str());
+      return false;
+    }
+  }
+  igzstream in(subprobFile.c_str(), ios::binary | ios::in);
+
+  int rootVar = UNKNOWN;
+  int x = UNKNOWN;
+  int y = UNKNOWN;
+  size_t count = NONE;
+  size_t z = NONE;
+
+  BINREAD(in, count); // total no. of subproblems
+
+  for (size_t id=0; id<count; ++id) {
+
+    BINREAD(in, z); // id
+    BINREAD(in, rootVar); // root var
+    BINREAD(in, x); // context size
+    context_t context;
+    for (int i=0;i<x;++i) {
+      BINREAD(in,y); // read context value as int
+      context.push_back((val_t) y); // cast to val_t
+    }
+    BINREAD(in, x); // PST size
+    x = (x<0)? -2*x : 2*x;
+    BINSKIP(in,double,x); // skip PST
+
+    // store in local subproblem table
+    subprobs.insert(make_pair( make_pair(rootVar,context) , id));
+
+  }
+
+  ss.clear();
+  ss << "Recovered " << subprobs.size() << " subproblems from file " << subprobFile << endl;
+  myprint(ss.str());
+
+  m_subprobCount = count;
+  m_nextThreadId = count;
+
+  //////////////////////////////////////////////////////////////////////
+  // part 2: now expand search space until stored frontier nodes found
+  SearchNode* node = m_external.back();
+  m_external.pop_back();
+
+  PseudotreeNode* ptnode = NULL;
+
+  ptnode = m_pseudotree->getNode(node->getVar());
 
 #ifndef NO_HEURISTIC
   // precompute heuristic of initial dummy OR node (couldn't be done earlier)
-  heuristicOR(m_open.top().second);
+  heuristicOR(node);
 #endif
+
+  stack<SearchNode*> dfs;
+  dfs.push(node);
+
+  // intermediate vector for expanding nodes into
+  vector<SearchNode*> newNodes;
+  count = 0;
+
+  // prepare m_external vector for frontier nodes
+  m_external.clear();
+  m_external.resize(subprobs.size(),NULL);
+
+
+  while (!dfs.empty() ) { // && count != subprobs.size() ) { // TODO?
+
+    node = dfs.top();
+    dfs.pop();
+
+    syncAssignment(node);
+    x = node->getVar();
+    ptnode = m_pseudotree->getNode(x);
+    addSubprobContext(node,ptnode->getFullContext());
+
+    // check against subproblems from saved list
+    frontierCache::iterator lkup = subprobs.find(make_pair(x,node->getSubprobContext()));
+    if (lkup != subprobs.end()) {
+      m_external[lkup->second] = node;
+//      cout << "External " << lkup->second << " = " << node << endl;
+      count += 1;
+      continue;
+    }
+
+    deepenFrontier(node,newNodes);
+    for (vector<SearchNode*>::iterator it=newNodes.begin(); it!=newNodes.end(); ++it)
+      dfs.push(*it);
+    newNodes.clear();
+
+  } // end while
+
+  if (count != subprobs.size()) {
+    ss.clear();
+    ss << "Warning: only " << count << " frontier nodes." << endl;
+    myprint(ss.str());
+  }
+  if (!dfs.empty()) {
+    ss.clear();
+    ss << "Warning: Stack still has " << dfs.size() << " nodes." << endl;
+    myprint(ss.str());
+  }
+
+  return true;
+
+}
+
+
+bool ParallelManager::findFrontier() {
+
+  assert(!m_external.empty());
+
+  SearchNode* node = m_external.back();
+  m_external.pop_back();
+  double eval = 42.0;
+
+  /* queue of subproblems, i.e. OR nodes, ordered according to
+   * evaluation function */
+  priority_queue<pair<double, SearchNode*> > m_open;
+  m_open.push(make_pair(eval,node));
+
+#ifndef NO_HEURISTIC
+  // precompute heuristic of initial dummy OR node (couldn't be done earlier)
+  heuristicOR(node);
+#endif
+
+  // intermediate container for expanding nodes into
+  vector<SearchNode*> newNodes;
 
   // split subproblems
   while (m_open.size()
@@ -68,6 +208,7 @@ bool ParallelManager::run() {
     m_open.pop();
     DIAG(oss ss; ss << "Top " << node <<"(" << *node << ") with eval " << eval << endl; myprint(ss.str());)
 
+    // check for fixed-depth cutoff
     if (m_space->options->cutoff_depth != NONE) {
       PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
       int d = ptnode->getDepth();
@@ -79,7 +220,10 @@ bool ParallelManager::run() {
     }
 
     syncAssignment(node);
-    deepenFrontier(node);
+    deepenFrontier(node,newNodes);
+    for (vector<SearchNode*>::iterator it=newNodes.begin(); it!=newNodes.end(); ++it)
+      m_open.push(make_pair(evaluate(*it),*it) );
+    newNodes.clear();
 
   }
 
@@ -92,67 +236,48 @@ bool ParallelManager::run() {
     m_open.pop();
   }
 
+  m_subprobCount = m_external.size();
+
   ostringstream ss;
-  ss << "Generated " << m_external.size() << " external subproblems, " << m_local.size() << " local" << endl;
+  ss << "Generated " << m_subprobCount << " external subproblems, " << m_local.size() << " local" << endl;
   myprint(ss.str());
-
-#ifdef DEBUG
-  sleep(5);
-#endif
-
-  // generates files for grid jobs and submits
-  if (m_external.size()) {
-    if (!submitToGrid())
-      return false;
-  }
 
   for (vector<SearchNode*>::iterator it = m_local.begin(); it!=m_local.end(); ++it) {
     solveLocal(*it);
   }
   myprint("Local jobs (if any) done.\n");
 
+  return true;
+
+}
+
+
+bool ParallelManager::runCondor() const {
+
+  // generates files for grid jobs and submits
+  if (m_external.size()) {
+    myprint("Submitting to Condor...\n");
+    if (!submitToGrid())
+      return false;
+  }
+
   if (m_subprobCount) {
+    myprint("Waiting for Condor...\n");
     // wait for grid jobs to finish
     if (!waitForGrid())
       return false;
-    myprint("External jobs done.\n");
-
-    // read results for external nodes
-    if (!readExtResults())
-      return false;
-    myprint("Parsed external results.\n");
-
-//    for (count_t i=0; i<m_subprobCount; ++i)
-//      m_prop.propagate(m_external.at(i), true);
+//    myprint("External jobs done.\n");
+    myprint("Condor jobs done.\n");
   }
-
-  // include LDS node count into overall
-//  m_space->nodesAND += m_ldsSpace->nodesAND;
-//  m_space->nodesOR += m_ldsSpace->nodesOR;
 
   return true; // default: success
 
 }
 
 
-bool ParallelManager::submitToGrid() {
+bool ParallelManager::writeJobs() const {
 
-  const vector<SearchNode*>& nodes = m_external;
-
-  /*
-  // try to read custom requirements from file
-  string reqStr = "true"; // default
-  ifstream req(REQUIREMENTS_FILE);
-  if (req) {
-    reqStr = ""; string s;
-    while (!req.eof()) {
-      getline(req,s);
-      if (s.size() && s.at(0) != '#') // filter comment lines
-        reqStr += s;
-    }
-  }
-  req.close();
-  */
+//  const vector<SearchNode*>& nodes = m_external;
 
   // Build the condor job description
   ostringstream jobstr;
@@ -182,18 +307,8 @@ bool ParallelManager::submitToGrid() {
   csv.close();
 
   // encode actual subproblems
-  string alljobs = encodeJobs(nodes);
+  string alljobs = encodeJobs(m_external);
   jobstr << alljobs;
-  /*
-  for (vector<SearchNode*>::const_iterator it=nodes.begin(); it!=nodes.end(); ++it) {
-    syncAssignment(*it);
-    string job = encodeJob(*it,m_subprobCount);
-    if (job == "") return false;
-    jobstr << job;
-    m_subprobCount += 1;
-  }
-  */
-
 
   // write subproblem file
   string jobfile = filename(PREFIX_JOBS,".condor");
@@ -204,6 +319,14 @@ bool ParallelManager::submitToGrid() {
   }
   file << jobstr.str();
   file.close();
+
+  return true;
+}
+
+
+bool ParallelManager::submitToGrid() const {
+
+  string jobfile = filename(PREFIX_JOBS,".condor");
 
   // Perform actual submission
   ostringstream submitCmd;
@@ -237,8 +360,7 @@ bool ParallelManager::submitToGrid() {
 
   } // while (!success)
 
-  return true;
-
+  return true; // default: success
 }
 
 
@@ -262,6 +384,8 @@ bool ParallelManager::waitForGrid() const {
 
 
 bool ParallelManager::readExtResults() {
+
+  myprint("Parsing external results.\n");
 
   bool success = true;
 
@@ -288,7 +412,7 @@ bool ParallelManager::readExtResults() {
       inTemp.close();
       if (inTemp.fail()) {
         ostringstream ss;
-        ss << "Problem reading subprocess solution for job " << id << '.' << endl;
+        ss << "Problem reading subproblem solution " << id << " from file " << solutionFile << endl;
         myerror(ss.str());
         success = false;
         continue; // skip rest of loop
@@ -380,7 +504,7 @@ bool ParallelManager::readExtResults() {
 }
 
 
-string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
+string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
 
   // open CSV file for stats
   string csvfile = filename(PREFIX_STATS,".csv");
@@ -402,15 +526,24 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
   size_t id=nodes.size();
   BINWRITE(subprobs,id);
 
-  id = m_subprobCount = 0;
+  id = 0;
   int z = NONE;
+  vector<val_t> assign(m_assignment.size(),NONE);
 
   // write subproblem file and csv statistics
   for (vector<SearchNode*>::const_iterator it=nodes.begin(); it!=nodes.end(); ++it, ++id) {
 
     const SearchNode* node = (*it);
-    assert(node);
-    syncAssignment(node);
+    assert(node && node->getType()==NODE_OR);
+
+    { // extract node context assignment
+      const SearchNode* n2 = node;
+      while (n2->getParent()) {
+        n2 = n2->getParent(); // AND node
+        assign.at(n2->getVar()) = n2->getVal();
+        n2 = n2->getParent(); // OR node
+      }
+    }
 
     // write current subproblem id
     BINWRITE(subprobs, id);
@@ -427,7 +560,7 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
 
     /* write context instantiation */
     for (set<int>::const_iterator it=ctxt.begin(); it!=ctxt.end(); ++it) {
-      z = (int) m_assignment.at(*it);
+      z = (int) assign.at(*it);
       BINWRITE( subprobs, z);
     }
 
@@ -465,9 +598,6 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) {
     csv << endl;
 
   } // for-loop over nodes
-
-  // update subproblem count
-  m_subprobCount = id;
 
   // close subproblem file
   subprobs.close();
@@ -540,8 +670,13 @@ bool ParallelManager::isEasy(const SearchNode* node) const {
 
 
 /* expands a node -- assumes OR node! Will generate descendant OR nodes
- * (via intermediate AND nodes) and put them on the OPEN list */
-bool ParallelManager::deepenFrontier(SearchNode* n) {
+ * (via intermediate AND nodes) and put them in the referenced vector */
+bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
+
+  if (!out.empty()) {
+    cerr << "Warning: deepenFrontier() discarding nodes?" << endl;
+    out.clear();
+  }
 
   assert(n && n->getType() == NODE_OR);
   vector<SearchNode*> chi, chi2;
@@ -572,7 +707,7 @@ bool ParallelManager::deepenFrontier(SearchNode* n) {
       } else if (isEasy(*it)) {
         m_local.push_back(*it);
       } else {
-        m_open.push(make_pair(evaluate(*it),*it));
+        out.push_back(*it);
       }
     }
     chi2.clear(); // prepare for next AND node
@@ -708,6 +843,7 @@ void ParallelManager::setInitialBound(double d) const {
 void ParallelManager::setInitialSolution(const vector<val_t>& tuple) const {
   assert(m_space);
   m_space->root->setOptAssig(tuple);
+  m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), false);
 }
 #endif
 
@@ -729,7 +865,9 @@ string ParallelManager::filename(const char* pre, const char* ext, int count) co
 
 
 ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h)
-  : Search(prob, pt, s, h), m_subprobCount(0), m_prop(prob, s)
+  : Search(prob, pt, s, h), m_subprobCount(0),
+    m_ldsSpace(NULL), m_ldsSearch(NULL), m_ldsProp(NULL),
+    m_prop(prob, s)
 {
 
 #ifndef NO_CACHING
@@ -753,7 +891,7 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
   node->addChild(next);
 
   // add to OPEN list // TODO
-  m_open.push(make_pair(42.0, next));
+  m_external.push_back(next);
 
   // set up LDS
   m_ldsSpace = new SearchSpace(m_pseudotree, m_space->options);

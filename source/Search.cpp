@@ -396,7 +396,7 @@ void Search::addCacheContext(SearchNode* node, const set<int>& ctxt) const {
 
 
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 void Search::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
 
   context_t sig;
@@ -458,6 +458,12 @@ bool Search::loadInitialBound(string file) {
     this->setInitialBound(bound);
 
 #ifndef NO_ASSIGNMENT
+
+    // no. of and and or nodes (not relevant here) // TODO breaks old versions
+    size_t noOr, noAnd;
+    BINREAD(infile, noOr);
+    BINREAD(infile, noAnd);
+
     // read optimal assignment from file
     int noVars;
     BINREAD(infile, noVars);
