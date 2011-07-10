@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.99.0"
+#define VERSIONINFO "0.99.1"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG

@@ -603,8 +603,8 @@ bool Search::restrictSubproblem(string file) {
   val_t y = UNKNOWN;
 
   if (id!= (size_t) NONE) {
-    size_t count = NONE;
-    size_t z = NONE;
+    count_t count = NONE;
+    count_t z = NONE;
     BINREAD(fs, count);
     BINREAD(fs, z);
     while (id != z) {

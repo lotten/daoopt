@@ -444,11 +444,11 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     }
   }
 
-  int assigSize = UNKNOWN;
+  int32_t assigSize = UNKNOWN;
   if (subprobOnly)
-    assigSize = (int) m_curSolution.size() - 1; // -1 for dummy var
+    assigSize = (int32_t) m_curSolution.size() - 1; // -1 for dummy var
   else
-    assigSize = m_nOrg;
+    assigSize = (int32_t) m_nOrg;
 
   cout << "s " << SCALE_LOG(m_curCost);
 #ifndef NO_ASSIGNMENT
@@ -467,9 +467,9 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     BINWRITE(out,assigSize); // no. of variables in opt. assignment
   }
 
-  int v = UNKNOWN;
-  for (int i=0; i<assigSize; ++i) {
-    v = (int) m_curSolution.at(i);
+  int32_t v = UNKNOWN;
+  for (int32_t i=0; i<assigSize; ++i) {
+    v = (int32_t) m_curSolution.at(i);
     cout << ' ' << v;
     if (writeFile) BINWRITE(out, v);
   }
@@ -478,7 +478,7 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
 
   // output node profiles in case of subproblem processing
   if (subprobOnly) {
-    int size = (int) leafProf.size();
+    int32_t size = (int32_t) leafProf.size();
     BINWRITE(out, size);
     // leaf nodes first
     for (vector<count_t>::const_iterator it=leafProf.begin(); it!=leafProf.end(); ++it) {

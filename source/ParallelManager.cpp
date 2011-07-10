@@ -13,7 +13,7 @@
 
 /* parameters that can be modified */
 #define MAX_SUBMISSION_TRIES 6
-#define SUBMISSION_FAIL_DELAY_BASE 2
+#define SUBMISSION_FAIL_DELAY_BASE 2.0
 
 /* static definitions (no need to modify) */
 #define CONDOR_SUBMIT "condor_submit"
@@ -78,8 +78,8 @@ bool ParallelManager::restoreFrontier() {
   int rootVar = UNKNOWN;
   int x = UNKNOWN;
   int y = UNKNOWN;
-  size_t count = NONE;
-  size_t z = NONE;
+  count_t count = NONE;
+  count_t z = NONE;
 
   BINREAD(in, count); // total no. of subproblems
 
@@ -439,12 +439,12 @@ bool ParallelManager::readExtResults() {
     }
 
 #ifndef NO_ASSIGNMENT
-    int n;
+    int32_t n;
     BINREAD(in, n); // read length of opt. tuple
 
     vector<val_t> tup(n,UNKNOWN);
 
-    int v; // assignment saved as int, regardless of internal type
+    int32_t v; // assignment saved as int, regardless of internal type
     for (int i=0; i<n; ++i) {
       BINREAD(in, v); // read opt. assignments
       tup[i] = (val_t) v;
@@ -452,7 +452,7 @@ bool ParallelManager::readExtResults() {
 #endif
 
     // read node profiles
-    int size;
+    int32_t size;
     count_t c;
     BINREAD(in, size);
     vector<count_t> leafP, nodeP;
@@ -523,7 +523,7 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
   }
 
   // no. of subproblems to file (id variable used as temp)
-  size_t id=nodes.size();
+  count_t id=nodes.size();
   BINWRITE(subprobs,id);
 
   id = 0;
