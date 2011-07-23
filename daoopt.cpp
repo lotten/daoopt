@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.99.1"
+#define VERSIONINFO "0.99.2"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -160,6 +160,16 @@ int main(int argc, char** argv) {
   else
     rand::seed(time(0));
 
+#ifdef PARALLEL_STATIC
+  // for static parallelization post-processing mode, look for
+  // ordering from preprocessing step
+  if (opt.par_postOnly) {
+    opt.in_orderingFile = string("temp_elim.") + opt.problemName
+        + string(".") + opt.runTag + string(".gz");
+    opt.order_iterations = 0;
+  }
+#endif
+
   // Find variable ordering
   vector<int> elim;
   int w = INT_MAX;
@@ -212,10 +222,15 @@ int main(int argc, char** argv) {
     cout << "Saved ordering to file " << opt.in_orderingFile << endl;
   }
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
-  opt.in_orderingFile = string("temp_elim.") + opt.problemName
-      + string(".") + opt.runTag + string(".gz");
-  p.saveOrdering(opt.in_orderingFile,elim);
-  cout << "Saved ordering to file " << opt.in_orderingFile << endl;
+#if defined PARALLEL_STATIC
+  if (!opt.par_postOnly) // no need to write ordering in post processing
+#endif
+  {
+    opt.in_orderingFile = string("temp_elim.") + opt.problemName
+        + string(".") + opt.runTag + string(".gz");
+    p.saveOrdering(opt.in_orderingFile,elim);
+    cout << "Saved ordering to file " << opt.in_orderingFile << endl;
+  }
 #endif
 
   // OR search?
@@ -470,6 +485,7 @@ int main(int argc, char** argv) {
     success = success && search.findFrontier();
     /* generate files for subproblems */
     success = success && search.writeJobs();
+    if (search.getThreadCount()==0) solved = true;
   } else { // post-only mode
     /* restore frontier from file */
     success = success && search.restoreFrontier();
@@ -504,6 +520,13 @@ int main(int argc, char** argv) {
 #endif
 
   } // end if (!solved)
+#ifdef PARALLEL_STATIC
+  if (opt.par_preOnly && solved) {
+    ofstream slvd("SOLVED");
+    slvd << "SOLVED" << endl;
+    slvd.close();
+  }
+#endif
 
   time(&time_end);
   time_passed = difftime(time_end,time_start);
@@ -513,7 +536,7 @@ int main(int argc, char** argv) {
   cout << "-------------------------------\n";
 
 #ifdef PARALLEL_STATIC
-//  if (!opt.par_preOnly) { // parallel static: not output if preproc. only
+  if (!opt.par_preOnly || solved) { // parallel static: only output if solved
 #endif
 
   double mpeCost = search.getCurOptValue();//space->getSolutionCost();
@@ -537,7 +560,7 @@ int main(int argc, char** argv) {
       search.getNodeProfile(),search.getLeafProfile(),!opt.in_subproblemFile.empty() );
 
 #ifdef PARALLEL_STATIC
-//  }
+  }
 #endif
 
   cout << endl;
