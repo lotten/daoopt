@@ -63,6 +63,10 @@ public:
   const vector<Function*>& getFunctions() const { return m_functions; }
   const vector<val_t>& getDomains() const { return m_domains; }
 
+  // replaces the current set of functions with an equivalent one
+  // (pseudo tree compatibility is implicitly assumed)
+  void replaceFunctions(const vector<Function*>& newFunctions);
+
 public:
 
   /* parses a UAI format input file */

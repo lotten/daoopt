@@ -99,12 +99,11 @@ public:
    * returns true on success, false on error */
   bool loadInitialBound(string);
 
-  /* sets the initial lower bound */
-  virtual void setInitialBound(double) const = 0;
-
+  void setInitialSolution(double
 #ifndef NO_ASSIGNMENT
-  virtual void setInitialSolution(const vector<val_t>&) const = 0;
+    , const vector<val_t>&
 #endif
+  ) const;
 
 #ifdef PARALLEL_DYNAMIC
   /* returns the cached lower/upper bounds on the first node at each depth */

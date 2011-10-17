@@ -36,12 +36,14 @@ protected:
 
   bool isMaster() const { return false; }
 
+  /*
 public:
-  void setInitialBound(double d) const;
-
+  void setInitialSolution(double
 #ifndef NO_ASSIGNMENT
-  void setInitialSolution(const vector<val_t>&) const;
+    ,const vector<val_t>&
 #endif
+  ) const;
+  */
 
 public:
   LimitedDiscrepancy(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur, size_t disc);

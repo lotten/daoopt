@@ -612,6 +612,17 @@ void Problem::writeUAI(const string& prob) const {
 
 }
 
+
+void Problem::replaceFunctions(const vector<Function*>& newFunctions) {
+  // delete current functions
+  for (vector<Function*>::iterator it = m_functions.begin(); it!= m_functions.end(); ++it) {
+    if (*it) delete (*it);
+  }
+  // store new functions
+  m_functions = newFunctions;
+}
+
+
 #ifndef NO_ASSIGNMENT
 bool Problem::isEliminated(int i) const {
   map<int,int>::const_iterator itRen = m_old2new.find(i);

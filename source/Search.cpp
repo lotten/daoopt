@@ -455,12 +455,11 @@ bool Search::loadInitialBound(string file) {
   if (infile) {
     double bound;
     BINREAD(infile, bound);
-    this->setInitialBound(bound);
 
 #ifndef NO_ASSIGNMENT
 
     // no. of and and or nodes (not relevant here) // TODO breaks old versions
-    size_t noOr, noAnd;
+    count_t noOr, noAnd;
     BINREAD(infile, noOr);
     BINREAD(infile, noAnd);
 
@@ -496,11 +495,15 @@ bool Search::loadInitialBound(string file) {
       cerr << "ERROR reading SLS solution, reduced problem size doesn't match" << endl;
       return false;
     }
-
-    // store into search space
-    this->setInitialSolution(reduced);
-
 #endif
+
+    // store solution/bound into search space
+#ifdef NO_ASSIGNMENT
+    this->setInitialSolution(bound);
+#else
+    this->setInitialSolution(bound, reduced);
+#endif
+
   }
   infile.close();
   return true;
@@ -573,6 +576,21 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
 
 }
 
+
+void Search::setInitialSolution(double d
+#ifndef NO_ASSIGNMENT
+    ,const vector<val_t>& tuple
+#endif
+  ) const {
+  assert(m_space);
+  m_space->root->setValue(d);
+#ifdef NO_ASSIGNMENT
+  m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
+#else
+  m_space->root->setOptAssig(tuple);
+  m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
+#endif
+}
 
 
 bool Search::restrictSubproblem(string file) {

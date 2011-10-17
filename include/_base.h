@@ -252,6 +252,8 @@ typedef uint64_t count_t;
 
 /* Boost random number library */
 #include <boost/random/linear_congruential.hpp>
+/* Boost lexical cast (for version string) */
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 

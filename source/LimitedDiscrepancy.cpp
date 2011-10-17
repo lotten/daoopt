@@ -154,18 +154,6 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
 
 } // LimitedDiscrepancy::doExpand
 
-void LimitedDiscrepancy::setInitialBound(double d) const {
-  assert(m_space);
-  m_space->root->setValue(d);
-}
-
-#ifndef NO_ASSIGNMENT
-void LimitedDiscrepancy::setInitialSolution(const vector<val_t>& tuple) const {
-  assert(m_space);
-  m_space->root->setOptAssig(tuple);
-}
-#endif
-
 
 LimitedDiscrepancy::LimitedDiscrepancy(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur, size_t disc)
   : Search(prob,pt,space,heur), m_maxDisc(disc)

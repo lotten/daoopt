@@ -50,8 +50,14 @@ protected:
   SearchNode* nextNode();
   bool isMaster() const { return true; }
 
+  /*
 public:
-  void setInitialBound(double d) const;
+  void setInitialSolution(double
+#ifndef NO_ASSIGNMENT
+   ,const vector<val_t>&
+#endif
+  ) const;
+  */
 
 protected:
   /* moves the frontier one step deeper by splitting the given node */
@@ -90,10 +96,6 @@ public:
   bool readExtResults();
   /* recreates the frontier given a previously written subproblem file */
   bool restoreFrontier();
-
-#ifndef NO_ASSIGNMENT
-  void setInitialSolution(const vector<val_t>&) const;
-#endif
 
 public:
   ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h);

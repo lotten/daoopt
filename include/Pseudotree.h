@@ -190,6 +190,7 @@ public:
 
   void addFunction(Function* f) { m_functions.push_back(f); }
   void setFunctions(const list<Function*>& l) { m_functions = l; }
+  void resetFunctions() { m_functions.clear(); }
   const list<Function*>& getFunctions() const { return m_functions; }
 
   int getVar() const { return m_var; }

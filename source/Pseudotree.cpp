@@ -47,6 +47,10 @@ int Pseudotree::restrictSubproblem(int i) {
 }
 
 void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
+  // reset existing function mapping (if any)
+  for (vector<PseudotreeNode*>::iterator it=m_nodes.begin(); it!=m_nodes.end(); ++it)
+    (*it)->resetFunctions();
+  // generate new function mapping
   for (vector<Function*>::const_iterator itF=fns.begin(); itF!=fns.end(); ++itF) {
     const set<int>& scope = (*itF)->getScope();
     vector<int>::const_iterator it = m_elimOrder.begin();

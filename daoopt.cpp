@@ -28,7 +28,7 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
-#define VERSIONINFO "0.99.2"
+#define VERSIONINFO "0.99.3b"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
 
   // Find variable ordering
   vector<int> elim;
-  int w = INT_MAX;
+  int w = numeric_limits<int>::max();
   bool orderFromFile = false;
   if (!opt.in_orderingFile.empty()) {
     orderFromFile = p.parseOrdering(opt.in_orderingFile, elim);
@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
 //  pt.build(g,elim,opt.cbound); // will add dummy variable
   p.addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   pt.addFunctionInfo(p.getFunctions());
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC //or defined PARALLEL_STATIC
   int cutoff = pt.computeComplexities(opt.threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
 //  if (opt.autoCutoff) {
@@ -342,6 +342,9 @@ int main(int argc, char** argv) {
   cout << '\t' << (sz / (1024*1024.0)) * sizeof(double) << " MBytes" << endl;
 #endif /* NO_HEURISTIC */
 
+  // heuristic might have changed problem functions, pseudotree needs remapping
+  pt.addFunctionInfo(p.getFunctions());
+
 #ifdef MEMDEBUG
   malloc_stats();
 #endif
@@ -355,7 +358,11 @@ int main(int argc, char** argv) {
       }
     } else if (!ISNAN ( opt.initialBound )) {
       cout <<  "Setting external lower bound " << opt.initialBound << endl;
-      search.setInitialBound( opt.initialBound );
+#ifdef NO_ASSIGNMENT
+      search.setInitialSolution( opt.initialBound );
+#else
+      cout << "Error: Compiled with tuple support, value-based bound not possible." << endl;
+#endif
     }
   }
 
@@ -390,10 +397,11 @@ int main(int argc, char** argv) {
     cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
     if (lds.getCurOptValue() > search.curLowerBound()) {
       cout <<"LDS: updating initial lower bound" << endl;
-      search.setInitialBound(lds.getCurOptValue());
+      search.setInitialSolution(lds.getCurOptValue()
 #ifndef NO_ASSIGNMENT
-      search.setInitialSolution(lds.getCurOptTuple());
+      , lds.getCurOptTuple()
 #endif
+      );
     }
     delete spaceLDS;
   }
@@ -488,7 +496,8 @@ int main(int argc, char** argv) {
     if (search.getThreadCount()==0) solved = true;
   } else { // post-only mode
     /* restore frontier from file */
-    success = success && search.restoreFrontier();
+    success = success && search.findFrontier(); // TODO
+    //success = success && search.restoreFrontier();
   }
   if (!opt.par_preOnly && !opt.par_postOnly) { // full mode
     /* run Condor and wait for results */

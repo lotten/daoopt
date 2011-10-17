@@ -48,6 +48,17 @@ const string default_job_template =
     requirements = ( Arch == \"X86_64\" || Arch == \"INTEL\" ) \n\
     ";
 
+typedef pair<double, SearchNode*> PQEntry;
+
+struct PQEntryComp {
+  bool operator() (const PQEntry& lhs, const PQEntry& rhs) const {
+    if (lhs.first < rhs.first)
+      return true;
+    if (lhs.second->getHeur() < rhs.second->getHeur())
+      return true;
+    return false;
+  }
+};
 
 bool ParallelManager::restoreFrontier() {
 
@@ -185,9 +196,9 @@ bool ParallelManager::findFrontier() {
   m_external.pop_back();
   double eval = 42.0;
 
-  /* queue of subproblems, i.e. OR nodes, ordered according to
-   * evaluation function */
-  priority_queue<pair<double, SearchNode*> > m_open;
+  // queue of subproblems, i.e. OR nodes, ordered according to
+  // evaluation function
+  priority_queue<PQEntry, vector<PQEntry>, PQEntryComp> m_open;
   m_open.push(make_pair(eval,node));
 
 #ifndef NO_HEURISTIC
@@ -694,12 +705,12 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     }
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
-
+      /*
       if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
         m_ldsProp->propagate(*it,true);
         continue; // skip to next
       }
-
+      */
       if (doCaching(*it)) {
         m_prop.propagate(*it,true); continue;
       } else if (doPruning(*it)) {
@@ -832,21 +843,22 @@ bool ParallelManager::applyLDS(SearchNode* node) {
 
 }
 
-
-void ParallelManager::setInitialBound(double d) const {
+/*
+void ParallelManager::setInitialSolution(double d
+#ifndef NO_ASSIGNMENT
+    ,const vector<val_t>& tuple
+#endif
+  ) const {
   assert(m_space);
   m_space->root->setValue(d);
-}
-
-
-#ifndef NO_ASSIGNMENT
-void ParallelManager::setInitialSolution(const vector<val_t>& tuple) const {
-  assert(m_space);
+#ifdef NO_ASSIGNMENT
+  m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
+#else
   m_space->root->setOptAssig(tuple);
-  m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), false);
-}
+  m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
 #endif
-
+}
+*/
 
 string ParallelManager::filename(const char* pre, const char* ext, int count) const {
   ostringstream ss;

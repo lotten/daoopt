@@ -66,11 +66,13 @@ public:
   void setStackLimit(size_t s) { m_stackLimit = s; }
 #endif
 
-  void setInitialBound(double d) const;
-
+  /*
+  void setInitialSolution(double
 #ifndef NO_ASSIGNMENT
-  void setInitialSolution(const vector<val_t>&) const;
+    , const vector<val_t>&
 #endif
+  ) const;
+  */
 
 public:
   BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) ;

@@ -289,21 +289,22 @@ bool BranchAndBound::doExpand(SearchNode* node) {
 } // BranchAndBound::doExpand
 #endif
 
-
-void BranchAndBound::setInitialBound(double d) const {
+/*
+void BranchAndBound::setInitialSolution(double d
+#ifndef NO_ASSIGNMENT
+    ,const vector<val_t>& tuple
+#endif
+  ) const {
   assert(m_space);
   m_space->root->setValue(d);
-}
-
-
-#ifndef NO_ASSIGNMENT
-void BranchAndBound::setInitialSolution(const vector<val_t>& tuple) const {
-  assert(m_space);
+#ifdef NO_ASSIGNMENT
+  m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
+#else
   m_space->root->setOptAssig(tuple);
   m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
-}
 #endif
-
+}
+*/
 
 BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) :
    Search(prob,pt,space,heur) {
