@@ -122,12 +122,9 @@ static boost::mutex mtx_io;
 #define ELEM_NAN std::numeric_limits<double>::quiet_NaN()
 #define ISNAN(x) ( x!=x )
 
-//#include <assert.h>
 #include <cassert>
-//#include <time.h>
-#include <ctime>
-//#include <math.h>
 #include <cmath>
+#include <ctime>
 
 /* for signal handling */
 #include <csignal>
@@ -152,6 +149,9 @@ static boost::mutex mtx_io;
 #include <limits>
 #include <sstream>
 #include <algorithm>
+
+#include <boost/scoped_ptr.hpp>
+using boost::scoped_ptr;
 
 /* shorthand for convenience */
 typedef std::ostringstream oss;

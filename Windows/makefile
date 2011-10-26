@@ -12,6 +12,7 @@ RM := rm -rf
 -include source/subdir.mk
 -include lib/subdir.mk
 -include lib/boost.src/program_options/src/subdir.mk
+-include include/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -46,7 +47,7 @@ all: daooptW-win32.exe
 daooptW-win32.exe: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	ccache i586-mingw32msvc-g++  -o"daooptW-win32.exe" $(OBJS) $(USER_OBJS) $(LIBS)
+	ccache i586-mingw32msvc-g++  -o "daooptW-win32.exe" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

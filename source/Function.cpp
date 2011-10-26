@@ -55,8 +55,8 @@ double Function::getValuePtr(const vector<val_t*>& tuple) const {
     idx += *(tuple[i]) * m_offsets[i];
 #else
   size_t idx = 0, offset=1;
-  set<int>::reverse_iterator rit=m_scope.rbegin()
-  vector<int*>::const_reverse_iterator ritTup = tuple.rbegin();
+  set<int>::reverse_iterator rit=m_scope.rbegin();
+  vector<val_t*>::const_reverse_iterator ritTup = tuple.rbegin();
   for (; rit!=m_scope.rend(); ++rit,++ritTup) {
     idx += *(*ritTup) * offset;
     offset *= m_problem->getDomainSize(*rit);

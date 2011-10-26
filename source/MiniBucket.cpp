@@ -39,9 +39,9 @@ bool MiniBucket::allowsFunction(Function* f) {
   }
 
   // accept if no scope increase or new scope not greater than ibound
-  //return s==m_jointScope.size() || s <= m_ibound+1;
+  return (s == (int) m_jointScope.size()) || (s <= m_ibound+1);
   // new scope would be greater then ibound?
-  return s <= m_ibound+1;
+  //return s <= m_ibound+1;
 
 }
 

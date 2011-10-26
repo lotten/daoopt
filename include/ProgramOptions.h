@@ -55,12 +55,13 @@ public:
   std::string in_boundFile; // file with initial lower bound (from SLS, e.g.)
   std::string out_solutionFile; // file path to write solution to
   std::string out_reducedFile; // file to save reduced network to
+  std::string out_pstFile; // file to output pseudo tree description to (for plotting)
 
 public:
   ProgramOptions();
 };
 
-ProgramOptions parseCommandLine(int argc, char** argv);
+ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),

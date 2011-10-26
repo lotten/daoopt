@@ -17,6 +17,7 @@ class BoundPropagator {
 
 protected:
 
+  bool m_doCaching;
   Problem*     m_problem;
   SearchSpace* m_space;
 
@@ -60,7 +61,8 @@ protected:
   virtual bool isMaster() const { return false; }
 
 public:
-  BoundPropagator(Problem* p, SearchSpace* s) : m_problem(p), m_space(s) { /* empty */ }
+  BoundPropagator(Problem* p, SearchSpace* s, bool doCaching = true)
+    : m_doCaching(doCaching), m_problem(p), m_space(s) { /* empty */ }
   virtual ~BoundPropagator() {}
 };
 

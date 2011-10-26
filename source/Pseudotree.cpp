@@ -759,3 +759,24 @@ void Pseudotree::insertNewNode(const int i, const set<int>& N, list<PseudotreeNo
 
 }
 
+
+void Pseudotree::outputToFileNode(const PseudotreeNode* node, ostringstream& oss) const {
+  oss << "(" << node->getVar();
+  for (vector<PseudotreeNode*>::const_iterator it = node->getChildren().begin();
+       it != node->getChildren().end(); ++it)
+    outputToFileNode(*it, oss);
+  oss << ")";
+}
+
+
+void Pseudotree::outputToFile(string of_name) const {
+  assert(m_root);
+  ostringstream oss;
+  outputToFileNode(m_root, oss);  // recursive, call on root node
+
+  ofstream of;
+  of.open(of_name.c_str(), ios_base::out);
+  of << oss.str() << endl;
+  of.close();
+}
+

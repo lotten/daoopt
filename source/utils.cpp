@@ -7,20 +7,20 @@
 
 #include "utils.h"
 
-extern time_t time_start;
+extern time_t _time_start;  // from Main.cpp
 
 void myprint(std::string s) {
   time_t now; time(&now);
-  double T = difftime(now,time_start);
+  double T = difftime(now, _time_start);
   {
     GETLOCK(mtx_io, lk);
-    std::cout << '[' << T << "] " << s << std::flush;
+    std::cout << '[' << (int)T << "] " << s << std::flush;
   }
 }
 
 void myerror(std::string s) {
   time_t now; time(&now);
-  double T = difftime(now,time_start);
+  double T = difftime(now, _time_start);
   {
     GETLOCK(mtx_io, lk);
     std::cerr << '[' << T << "] " << s << std::flush;
@@ -116,7 +116,7 @@ string str_replace(string& s, const string& x, const string& y) {
   size_t i=res.find(x);
   while ( i != string::npos) {
     res = res.replace(i, x.size(), y);
-    i = s.find(x, i+y.size());
+    i = res.find(x, i+y.size());
   }
   return res;
 }

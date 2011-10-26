@@ -172,7 +172,6 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
   }
 
   return memSize;
-
 }
 
 
@@ -195,24 +194,28 @@ void MiniBucketElim::findDfsOrder(vector<int>& order) const {
 }
 
 
-int MiniBucketElim::limitIbound(int ibound, size_t memlimit, const vector<val_t> * assignment) {
+size_t MiniBucketElim::limitSize(size_t memlimit, ProgramOptions* options, const vector<val_t> * assignment) {
 
   // convert to bits
   memlimit *= 1024 *1024 / sizeof(double);
 
+  int ibound = options->ibound;
+
   cout << "Adjusting mini bucket i-bound..." << endl;
   this->setIbound(ibound);
   size_t mem = this->build(assignment, false);
-  cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) ) << " MBytes" << endl;
+  cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) )
+       << " MBytes" << endl;
 
   while (mem > memlimit && ibound > 1) {
     this->setIbound(--ibound);
     mem = this->build(assignment, false);
-    cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) ) << " MBytes" << endl;
+    cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) )
+         << " MBytes" << endl;
   }
 
-  return ibound;
-
+  options->ibound = ibound;
+  return mem;
 }
 
 
@@ -332,7 +335,6 @@ bool MiniBucketElim::readFromFile(string fn) {
 
   ifstream inTemp(fn.c_str());
   inTemp.close();
-
   if (inTemp.fail()) { // file not existent yet
     return false;
   }
@@ -375,7 +377,6 @@ bool MiniBucketElim::readFromFile(string fn) {
 
     // over functions
     for (size_t j=0; j<sz2; ++j) {
-
       int id;
       in.read((char*) &( id ), sizeof(id));
 
@@ -397,7 +398,6 @@ bool MiniBucketElim::readFromFile(string fn) {
       Function* f = new FunctionBayes(id,m_problem,scope,T,sz3);
       m_augmented[i].push_back(f);
       allFuncs.push_back(f);
-
     }
   }
 
@@ -414,9 +414,8 @@ bool MiniBucketElim::readFromFile(string fn) {
   }
 
   in.close();
-
+  cout << "Read mini bucket with i-bound " << ibound << " from file " << fn << endl;
   return true;
-
 }
 
 

@@ -180,7 +180,7 @@ public:
 
 public:
   SearchNodeAND(SearchNode* p, val_t val, double label = ELEM_ONE);
-  ~SearchNodeAND() { /* empty */ }
+  virtual ~SearchNodeAND() { /* empty */ }
 };
 
 
@@ -241,7 +241,7 @@ public:
 
 public:
   SearchNodeOR(SearchNode* parent, int var);
-  ~SearchNodeOR();
+  virtual ~SearchNodeOR();
 };
 
 

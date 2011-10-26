@@ -158,19 +158,14 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
 LimitedDiscrepancy::LimitedDiscrepancy(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur, size_t disc)
   : Search(prob,pt,space,heur), m_maxDisc(disc)
 {
-  // create first node (dummy variable)
-  PseudotreeNode* ptroot = m_pseudotree->getRoot();
-  SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
-  m_space->root = node;
-  // create dummy variable's AND node (domain size 1)
-  SearchNode* next = new SearchNodeAND(m_space->root, 0, prob->getGlobalConstant());
-  // put global constant into dummy AND node label
-  m_space->root->addChild(next);
 
-  m_stack.push(make_pair(next,m_maxDisc));
+  SearchNode* first = this->initSearch();
+  if (first) {
+    m_stack.push(make_pair(first, m_maxDisc));
+  }
 
   // need to replace cache table with bogus one
-  delete m_space->cache;
-  m_space->cache = new UnCacheTable();
+  if (!m_space->cache)
+    m_space->cache = new UnCacheTable();
 
 }

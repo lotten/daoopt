@@ -17,7 +17,7 @@ CPP_DEPS += \
 %.o: ../%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	ccache i586-mingw32msvc-g++ -DWINDOWS -DNOTHREADS -I../include -I../lib -I/home/lars/workspace/boost_1_39_0 -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	ccache i586-mingw32msvc-g++ -DWINDOWS -DNOTHREADS -I../include -I../lib -I/home/lars/workspace/boost_1_39_0 -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

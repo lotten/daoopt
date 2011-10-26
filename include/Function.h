@@ -118,14 +118,13 @@ protected:
 class FunctionBayes : public Function {
 
 public:
-
   Function* substitute(const map<int,val_t>& assignment) const;
   Function* clone() const;
   inline int getType() const { return TYPE_BAYES; }
 
 public:
   FunctionBayes(const int& id, Problem* p, const set<int>& scope, double* T, const size_t& size);
-
+  virtual ~FunctionBayes() {}
 };
 
 # ifdef false

@@ -311,26 +311,24 @@ BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space
 
 #ifndef NO_CACHING
   // Init context cache table
-  m_space->cache = new CacheTable(prob->getN());
+  if (!m_space->cache)
+    m_space->cache = new CacheTable(prob->getN());
 #endif
-
-  // create first node (dummy variable)
-  PseudotreeNode* ptroot = m_pseudotree->getRoot();
-  SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
-  m_space->root = node;
-  // create dummy variable's AND node (domain size 1)
-  SearchNode* next = new SearchNodeAND(m_space->root, 0, prob->getGlobalConstant());
-  // put global constant into dummy AND node label
-  m_space->root->addChild(next);
 
 #ifdef ANYTIME_BREADTH
-  m_rootStack = new MyStack(NULL);
-  m_rootStack->push(next);
-  m_stacks.push(m_rootStack);
-  m_stackCount = 0;
-#else
-  m_stack.push(next);
+  m_stackLimit = m_space->options->stackLimit;  // TODO
 #endif
 
+  SearchNode* first = this->initSearch();
+  if (first) {
+#ifdef ANYTIME_BREADTH
+    m_rootStack = new MyStack(NULL);
+    m_rootStack->push(first);
+    m_stacks.push(m_rootStack);
+    m_stackCount = 0;
+#else
+    m_stack.push(first);
+#endif
+  }
 }
 

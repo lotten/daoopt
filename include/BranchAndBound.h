@@ -76,6 +76,7 @@ public:
 
 public:
   BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) ;
+  virtual ~BranchAndBound() {}
 };
 
 

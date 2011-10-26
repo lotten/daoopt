@@ -26,9 +26,9 @@ protected:
   size_t m_subprobCount;
 
   /* for LDS */
-  SearchSpace* m_ldsSpace;
-  LimitedDiscrepancy* m_ldsSearch;
-  BoundPropagator* m_ldsProp;
+  SearchSpace* m_ldsSpace;  // plain pointer to avoid destructor call
+  scoped_ptr<LimitedDiscrepancy> m_ldsSearch;
+  scoped_ptr<BoundPropagator> m_ldsProp;
 
   /* stack for local solving */
   stack<SearchNode*> m_stack;
@@ -50,14 +50,14 @@ protected:
   SearchNode* nextNode();
   bool isMaster() const { return true; }
 
-  /*
+/*
 public:
   void setInitialSolution(double
 #ifndef NO_ASSIGNMENT
    ,const vector<val_t>&
 #endif
   ) const;
-  */
+*/
 
 protected:
   /* moves the frontier one step deeper by splitting the given node */
@@ -99,7 +99,7 @@ public:
 
 public:
   ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h);
-  ~ParallelManager();
+  virtual ~ParallelManager() {}
 
 };
 
@@ -116,13 +116,6 @@ inline void ParallelManager::resetSearch(SearchNode* n) {
   m_local.clear();
   m_external.push_back(n);
 }
-
-inline ParallelManager::~ParallelManager() {
-  if (m_ldsSpace) delete m_ldsSpace;
-  if (m_ldsSearch) delete m_ldsSearch;
-  if (m_ldsProp) delete m_ldsProp;
-}
-
 
 #endif /* PARALLEL_STATIC */
 

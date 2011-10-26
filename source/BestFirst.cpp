@@ -286,16 +286,11 @@ void BestFirst::synchAssignment(SearchNode* cur) {
 BestFirst::BestFirst(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) :
   Search(prob,pt,space,heur) {
 
- // create first node (dummy variable)
- PseudotreeNode* ptroot = m_pseudotree->getRoot();
- SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
- m_space->root = node;
- // create dummy variable's AND node (domain size 1)
- SearchNode* next = new SearchNodeAND(m_space->root, 0);
- m_space->root->addChild(next);
+  cerr << "Best-first implementation incomplete!" << endl;
+  assert(false);
 
- m_queue.push(next);
-
+  SearchNode* first = this->initSearch();
+  m_queue.push(first);
 }
 
 

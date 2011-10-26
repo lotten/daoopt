@@ -100,6 +100,14 @@ public:
    * of var i in the overall pseudo tree */
   int restrictSubproblem(int i);
 
+private:
+  /* recursive helper function for outputToFile(...) below */
+  void outputToFileNode(const PseudotreeNode*, ostringstream&) const;
+public:
+  /* outputs the pseudo tree structure to a file in ASCII format, to
+   * be used as input to a plotting script, for instance */
+  void outputToFile(string basename) const;
+
 protected:
   /* creates a new node in the PT for variable i, with context N. Also makes sure
    * existing roots are checked and connected appropriately. */

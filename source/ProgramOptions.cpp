@@ -9,12 +9,12 @@
 
 using namespace std;
 
-ProgramOptions parseCommandLine(int ac, char** av) {
+ProgramOptions* parseCommandLine(int ac, char** av) {
 
-  ProgramOptions opt;
+  ProgramOptions* opt = new ProgramOptions;
 
   // executable name
-  opt.executableName = av[0];
+  opt->executableName = av[0];
 
   try{
 
@@ -60,8 +60,9 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       ("or", "use OR search (build pseudo tree as chain)")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
 #if not (defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC)
-      ("reduce", po::value<string>(), "outputs the reduced network to this file (removes evidence and unary variables)")
+      ("reduce", po::value<string>(), "path to output the reduced network to (removes evidence and unary variables)")
 #endif
+      ("pst-file", po::value<string>(), "path to output the pseudo tree to, for plotting")
       ("help,h", "produces this help message")
       ;
 
@@ -77,117 +78,120 @@ ProgramOptions parseCommandLine(int ac, char** av) {
     if (!vm.count("input-file")) {
       cout << "No or invalid arguments given, "
 	   << "call with '" << av[0] << " --help' for full list."  << endl;
-      exit(0);
+      return NULL;
     }
 
-    opt.in_problemFile = vm["input-file"].as<string>();
+    opt->in_problemFile = vm["input-file"].as<string>();
 
     if (vm.count("evid-file"))
-      opt.in_evidenceFile = vm["evid-file"].as<string>();
+      opt->in_evidenceFile = vm["evid-file"].as<string>();
 
     if (vm.count("ordering"))
-      opt.in_orderingFile = vm["ordering"].as<string>();
+      opt->in_orderingFile = vm["ordering"].as<string>();
 
     if (vm.count("adaptive"))
-      opt.autoIter = true;
+      opt->autoIter = true;
     else
-      opt.autoIter = false;
+      opt->autoIter = false;
 
     if (vm.count("subproblem"))
-      opt.in_subproblemFile = vm["subproblem"].as<string>();
+      opt->in_subproblemFile = vm["subproblem"].as<string>();
 
     if (vm.count("sol-file"))
-      opt.out_solutionFile = vm["sol-file"].as<string>();
+      opt->out_solutionFile = vm["sol-file"].as<string>();
 
     if (vm.count("minibucket"))
-      opt.in_minibucketFile = vm["minibucket"].as<string>();
+      opt->in_minibucketFile = vm["minibucket"].as<string>();
 
     if (vm.count("suborder")) {
-      opt.subprobOrder = vm["suborder"].as<int>();
-      if (opt.subprobOrder < 0 || opt.subprobOrder > 3) {
+      opt->subprobOrder = vm["suborder"].as<int>();
+      if (opt->subprobOrder < 0 || opt->subprobOrder > 3) {
         cout << endl << desc << endl;
         exit(0);
       }
     }
 
     if (vm.count("ibound"))
-      opt.ibound = vm["ibound"].as<int>();
+      opt->ibound = vm["ibound"].as<int>();
 
     if (vm.count("cbound")) {
-      opt.cbound = vm["cbound"].as<int>();
-      opt.cbound_worker = vm["cbound"].as<int>();
+      opt->cbound = vm["cbound"].as<int>();
+      opt->cbound_worker = vm["cbound"].as<int>();
     }
 
     if (vm.count("cbound-worker"))
-      opt.cbound_worker = vm["cbound-worker"].as<int>();
+      opt->cbound_worker = vm["cbound-worker"].as<int>();
 
     if (vm.count("iterations"))
-      opt.order_iterations = vm["iterations"].as<int>();
+      opt->order_iterations = vm["iterations"].as<int>();
 
     if (vm.count("cutoff-depth"))
-      opt.cutoff_depth = vm["cutoff-depth"].as<int>();
+      opt->cutoff_depth = vm["cutoff-depth"].as<int>();
 
     if (vm.count("cutoff-width"))
-      opt.cutoff_width = vm["cutoff-width"].as<int>();
+      opt->cutoff_width = vm["cutoff-width"].as<int>();
 
     if (vm.count("cutoff-size"))
-      opt.cutoff_size = vm["cutoff-size"].as<int>();
+      opt->cutoff_size = vm["cutoff-size"].as<int>();
 
     if (vm.count("local-size"))
-      opt.local_size = vm["local-size"].as<int>();
+      opt->local_size = vm["local-size"].as<int>();
 
     if (vm.count("init-nodes"))
-      opt.nodes_init = vm["init-nodes"].as<int>();
+      opt->nodes_init = vm["init-nodes"].as<int>();
 
     if (vm.count("noauto"))
-      opt.autoCutoff = false;
+      opt->autoCutoff = false;
     else
-      opt.autoCutoff = true;
+      opt->autoCutoff = true;
 
     if (vm.count("procs"))
-      opt.threads = vm["procs"].as<int>();
+      opt->threads = vm["procs"].as<int>();
 
     if (vm.count("max-sub"))
-      opt.maxSubprob = vm["max-sub"].as<int>();
+      opt->maxSubprob = vm["max-sub"].as<int>();
 
     if (vm.count("bound-file"))
-      opt.in_boundFile = vm["bound-file"].as<string>();
+      opt->in_boundFile = vm["bound-file"].as<string>();
 
     if (vm.count("initial-bound"))
-      opt.initialBound = vm["initial-bound"].as<double>();
+      opt->initialBound = vm["initial-bound"].as<double>();
 
     if (vm.count("lds"))
-      opt.lds = vm["lds"].as<int>();
+      opt->lds = vm["lds"].as<int>();
 
     if (vm.count("memlimit"))
-      opt.memlimit = vm["memlimit"].as<int>();
+      opt->memlimit = vm["memlimit"].as<int>();
 
     if (vm.count("or"))
-      opt.orSearch = true;
+      opt->orSearch = true;
     else
-      opt.orSearch = false;
+      opt->orSearch = false;
 
     if(vm.count("nosearch"))
-      opt.nosearch = true;
+      opt->nosearch = true;
     else
-      opt.nosearch = false;
+      opt->nosearch = false;
 
     if (vm.count("stacklimit"))
-      opt.stackLimit = vm["stacklimit"].as<int>();
+      opt->stackLimit = vm["stacklimit"].as<int>();
 
     if (vm.count("seed"))
-      opt.seed = vm["seed"].as<int>();
+      opt->seed = vm["seed"].as<int>();
 
     if (vm.count("tag"))
-      opt.runTag = vm["tag"].as<string>();
+      opt->runTag = vm["tag"].as<string>();
 
     if (vm.count("pre"))
-      opt.par_preOnly = true;
+      opt->par_preOnly = true;
     else if (vm.count("post"))
-      opt.par_postOnly = true;
+      opt->par_postOnly = true;
 
     if (vm.count("reduce"))
-      opt.out_reducedFile = vm["reduce"].as<string>();
+      opt->out_reducedFile = vm["reduce"].as<string>();
+
+    if (vm.count("pst-file"))
+      opt->out_pstFile = vm["pst-file"].as<string>();
 
     if (vm.count("subproblem") && !vm.count("ordering")) {
       cerr << "Error: Specifying a subproblem requires reading a fixed ordering from file." << endl;
@@ -196,7 +200,7 @@ ProgramOptions parseCommandLine(int ac, char** av) {
 
     {
       //Extract the problem name
-      string& fname = opt.in_problemFile;
+      string& fname = opt->in_problemFile;
       size_t len, start, pos1, pos2;
 #if defined(WIN32)
       pos1 = fname.find_last_of("\\");
@@ -206,12 +210,12 @@ ProgramOptions parseCommandLine(int ac, char** av) {
       pos2 = fname.find_last_of(".");
       if (pos1 == string::npos) { len = pos2; start = 0; }
       else { len = (pos2-pos1-1); start = pos1+1; }
-      opt.problemName = fname.substr(start, len);
+      opt->problemName = fname.substr(start, len);
     }
 
   } catch (exception& e) {
     cerr << "error: " << e.what() << endl;
-    exit(1);
+    return NULL;
   } catch (...) {
     cerr << "Exception of unknown type!" << endl;
     exit(1);

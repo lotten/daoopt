@@ -12,6 +12,7 @@
 #include "SearchNode.h"
 #include "Heuristic.h"
 #include "Problem.h"
+#include "ProgramOptions.h"
 #include "Pseudotree.h"
 #include "utils.h"
 
@@ -112,6 +113,9 @@ public:
 
 protected:
 
+  /* initializes the search space, returns the first node to process */
+  SearchNode* initSearch();
+
   /* resets the queue/stack/etc. to the given node */
   virtual void resetSearch(SearchNode*) = 0;
 
@@ -170,7 +174,7 @@ protected:
 protected:
   virtual bool isMaster() const = 0;
   Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) ;
-
+public:
   virtual ~Search() {}
 
 };

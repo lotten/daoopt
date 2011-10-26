@@ -75,8 +75,10 @@ inline SearchSpace::SearchSpace(Pseudotree* pt, ProgramOptions* opt) :
 { /* intentionally empty at this point */ }
 
 inline SearchSpace::~SearchSpace() {
-  if (root) delete root;
-  if (cache) delete cache;
+  if (root)
+    delete root;
+  if (cache)
+    delete cache;
 }
 
 /* returns the relevant root node in both conditioned and unconditioned cases */

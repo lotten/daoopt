@@ -72,7 +72,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
 
 #ifndef NO_CACHING
           // prev is OR node, try to cache
-          if ( prev->isCachable() && !prev->isNotOpt() ) {
+          if (m_doCaching && prev->isCachable() && !prev->isNotOpt() ) {
             try {
 #ifndef NO_ASSIGNMENT
               m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue(), prev->getOptAssig() );

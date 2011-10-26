@@ -15,8 +15,7 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 #ifdef PARALLEL_DYNAMIC
   , m_nextSubprob(NULL)
 #endif
-  {
-
+{
   // initialize the array for counting nodes per level
   m_nodeProfile.resize(m_pseudotree->getHeight()+1, 0);
   // initialize the array for counting leaves per level
@@ -24,6 +23,24 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 
   // initialize the local assignment vector for BaB
   m_assignment.resize(m_problem->getN(),NONE);
+}
+
+
+SearchNode* Search::initSearch() {
+  // Add initial set of dummy nodes.
+  if (!m_space->root) {
+    // create root OR node (dummy variable)
+    PseudotreeNode* ptroot = m_pseudotree->getRoot();
+    SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar());
+    m_space->root = node;
+
+    // create dummy AND node (domain size 1) with global constant as label
+    SearchNode* next = new SearchNodeAND(node, 0, m_problem->getGlobalConstant());
+    m_space->root->addChild(next);
+
+    return next;
+  }
+  return NULL;
 }
 
 
@@ -67,9 +84,7 @@ bool Search::doCaching(SearchNode* node) {
 
   } else { // OR node, try actual caching
 
-#ifdef PARALLEL_STATIC
     if (!ptnode->getParent()) return false;
-#endif
 
     if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
       // add cache context information
@@ -498,12 +513,11 @@ bool Search::loadInitialBound(string file) {
 #endif
 
     // store solution/bound into search space
-#ifdef NO_ASSIGNMENT
-    this->setInitialSolution(bound);
-#else
-    this->setInitialSolution(bound, reduced);
+    this->setInitialSolution(bound
+#ifndef NO_ASSIGNMENT
+        , reduced
 #endif
-
+    );
   }
   infile.close();
   return true;

@@ -11,6 +11,7 @@
 #include "Heuristic.h"
 #include "Function.h"
 #include "Problem.h"
+#include "ProgramOptions.h"
 #include "Pseudotree.h"
 #include "utils.h"
 
@@ -47,9 +48,9 @@ protected:
 
 public:
 
-  // checks if the given i-bound would exceed the memlimit, in that
-  // case compute highest possible i-bound that 'fits'
-  int limitIbound(int ibound, size_t memlimit, const vector<val_t> * assignment);
+  // checks if the given i-bound would exceed the memlimit and lowers
+  // it accordingly.
+  size_t limitSize(size_t memlimit, ProgramOptions* options, const vector<val_t> * assignment);
 
   // builds the heuristic, limited to the relevant subproblem, if applicable.
   // if computeTables=false, only returns size estimate (no tables computed)
@@ -72,17 +73,20 @@ public:
   bool writeToFile(string fn) const;
   bool readFromFile(string fn);
 
+  bool isAccurate();
+
 public:
   MiniBucketElim(Problem* p, Pseudotree* pt, int ib);
-  ~MiniBucketElim();
+  virtual ~MiniBucketElim();
 
 };
 
-
-
-
 /* Inline definitions */
 
+inline bool MiniBucketElim::isAccurate() {
+  assert(m_pseudotree);
+  return (m_pseudotree->getWidthCond() <= m_ibound);
+}
 
 inline MiniBucketElim::MiniBucketElim(Problem* p, Pseudotree* pt, int ib) :
   m_ibound(ib), m_globalUB(ELEM_ONE), m_problem(p), m_pseudotree(pt)

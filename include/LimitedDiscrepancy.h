@@ -47,6 +47,7 @@ public:
 
 public:
   LimitedDiscrepancy(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur, size_t disc);
+  virtual ~LimitedDiscrepancy() {}
 
   // to compare pair<double,size_t>
   struct PairComp {
@@ -79,7 +80,7 @@ inline void LimitedDiscrepancy::resetSearch(SearchNode* n) {
   assert(n);
   while (m_stack.size())
     m_stack.pop();
-  m_stack.push(make_pair(n,0));
+  m_stack.push(make_pair(n,m_maxDisc));
 }
 
 #endif /* LIMITEDDISCREPANCY_H_ */

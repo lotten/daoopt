@@ -35,18 +35,18 @@
 #define CONDOR_ATTR_THREADID "daoopt_threadid"
 
 /* default job submission template */
-const string default_job_template =
-    "universe = vanilla \n\
+const string default_job_template = "\
+    universe = vanilla \n\
     notification = never \n\
     should_transfer_files = yes \n\
     when_to_transfer_output = always \n\
     executable = daoopt.$$(Arch) \n\
-    output = temp_std.%PROBLEM%.%TAG%.$(Process).txt \n\
+    output = temp_out.%PROBLEM%.%TAG%.$(Process).txt \n\
     error = temp_err.%PROBLEM%.%TAG%.$(Process).txt \n\
     log = temp_log.%PROBLEM%.%TAG%.txt \n\
     +daoopt_problem = daoopt_%PROBLEM%_%TAG% \n\
     requirements = ( Arch == \"X86_64\" || Arch == \"INTEL\" ) \n\
-    ";
+    \n";
 
 typedef pair<double, SearchNode*> PQEntry;
 
@@ -54,8 +54,8 @@ struct PQEntryComp {
   bool operator() (const PQEntry& lhs, const PQEntry& rhs) const {
     if (lhs.first < rhs.first)
       return true;
-    if (lhs.second->getHeur() < rhs.second->getHeur())
-      return true;
+//    if (lhs.second->getHeur() < rhs.second->getHeur())
+//      return true;
     return false;
   }
 };
@@ -693,8 +693,10 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
   vector<SearchNode*> chi, chi2;
 
   // first generate intermediate AND nodes
-  if (generateChildrenOR(n,chi))
+  if (generateChildrenOR(n,chi)) {
+    m_prop.propagate(n, true);
     return true; // no children
+  }
 
   // for each AND node, generate OR children
   for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
@@ -705,12 +707,12 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     }
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
-      /*
+
       if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
         m_ldsProp->propagate(*it,true);
         continue; // skip to next
       }
-      */
+
       if (doCaching(*it)) {
         m_prop.propagate(*it,true); continue;
       } else if (doPruning(*it)) {
@@ -881,35 +883,25 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
     m_ldsSpace(NULL), m_ldsSearch(NULL), m_ldsProp(NULL),
     m_prop(prob, s)
 {
-
 #ifndef NO_CACHING
   // Init context cache table
-  m_space->cache = new CacheTable(prob->getN());
+  if (!m_space->cache)
+    m_space->cache = new CacheTable(prob->getN());
 #endif
 
-  // create first node (dummy variable)
-  PseudotreeNode* ptroot = m_pseudotree->getRoot();
-  SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar() );
-  m_space->root = node;
+  SearchNode* first = this->initSearch();
+  assert(first);
 
-  // create dummy variable's AND node (unary domain)
-  // and put global constant into node label
-  SearchNode* next = new SearchNodeAND(m_space->root, 0, prob->getGlobalConstant());
-  m_space->root->addChild(next);
-
-  // one more dummy OR node for OPEN list
-  node = next;
-  next = new SearchNodeOR(node, ptroot->getVar()) ;
-  node->addChild(next);
-
-  // add to OPEN list // TODO
+  // one more dummy OR node for OPEN list (top of stack needs to be OR node)
+  SearchNode* next = new SearchNodeOR(first, first->getVar()) ;
+  first->addChild(next);
   m_external.push_back(next);
 
   // set up LDS
-  m_ldsSpace = new SearchSpace(m_pseudotree, m_space->options);
-  m_ldsSpace->root = m_space->root;
-  m_ldsSearch = new LimitedDiscrepancy(prob, pt, m_ldsSpace, h, 0);
-  m_ldsProp = new BoundPropagator(prob, m_ldsSpace);
+//  m_ldsSpace = new SearchSpace(m_pseudotree, m_space->options);
+//  m_ldsSpace->root = m_space->root;
+  m_ldsSearch.reset(new LimitedDiscrepancy(prob, pt, m_space, h, 0));
+  m_ldsProp.reset(new BoundPropagator(prob, m_space, false));
 
 }
 

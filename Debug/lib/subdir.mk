@@ -57,14 +57,14 @@ CPP_DEPS += \
 lib/%.o: ../lib/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
-	ccache gcc -DDEBUG -DLINUX -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	ccache gcc -DDEBUG -DLINUX -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
 lib/%.o: ../lib/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	ccache g++ -DDEBUG -DLINUX -I../include -I../lib -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	ccache g++ -DDEBUG -DLINUX -I../include -I../lib -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

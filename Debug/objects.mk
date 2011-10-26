@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lpthread -lgmpxx -lgmp
+LIBS := -lpthread
 
