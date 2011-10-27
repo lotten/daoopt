@@ -20,10 +20,11 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
   BranchAndBound bab(m_problem, &pt, &sp, m_heuristic);
 
-  bab.setInitialBound( lowerBound(m_space->root) );
+  bab.setInitialSolution( lowerBound(m_space->root)
 #ifndef NO_ASSIGNMENT
-  bab.setInitialSolution(m_space->root->getOptAssig());
+  , m_space->root->getOptAssig()
 #endif
+  );
 
   BoundPropagator prop(m_problem,&sp);
 
@@ -74,10 +75,11 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
   m_spaceMaster->stats->init(maxSubRootDepth, maxSubRootHeight, maxSubCount, maxSubLeaves, maxSubLeafD, lbound, ubound);
 
   if (! bab.nextLeaf()) {
-    this->setInitialBound(bab.getCurOptValue());
+    this->setInitialSolution(bab.getCurOptValue()
 #ifndef NO_ASSIGNMENT
-    this->setInitialSolution(bab.getCurOptTuple());
+    , bab.getCurOptTuple()
 #endif
+    );
     return true; // solved within time limit
   }
 

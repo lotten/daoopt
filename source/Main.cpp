@@ -7,7 +7,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.4"
+#define VERSIONINFO "0.99.4b"
 
 time_t _time_start, _time_pre;
 
@@ -369,10 +369,51 @@ bool Main::finishPreproc() {
 }
 
 
-#ifdef PARALLEL_STATIC
+#ifdef PARALLEL_DYNAMIC
 /* dynamic master mode for distributed execution */
 bool Main::runSearchDynamic() {
 
+  if (!m_solved) {
+    // The propagation engine
+    BoundPropagatorMaster prop(m_problem.get(), m_space.get());
+
+    // take care of signal handling
+    sigset_t new_signal_mask;//, old_signal_mask;
+    sigfillset( & new_signal_mask );
+    pthread_sigmask(SIG_BLOCK, &new_signal_mask, NULL); // block all signals
+
+    try {
+    CondorSubmissionEngine cse(m_space.get());
+
+    boost::thread thread_prop(boost::ref(prop));
+    boost::thread thread_bab(boost::ref( *m_search ));
+    boost::thread thread_cse(boost::ref(cse));
+
+    // start signal handler
+    SigHandler sigH(&thread_bab, &thread_prop, &thread_cse);
+    boost::thread thread_sh(boost::ref(sigH));
+
+    thread_bab.join();
+    thread_prop.join();
+    thread_cse.interrupt();
+    thread_cse.join();
+    cout << endl;
+    } catch (...) {
+      myerror("Caught signal during master execution, aborting.\n");
+      return false;
+    }
+
+    // unblock signals
+    pthread_sigmask(SIG_UNBLOCK, &new_signal_mask, NULL);
+
+  } else {  // !m_solved
+    BoundPropagator prop(m_problem.get(), m_space.get());
+    SearchNode* n = m_search->nextLeaf();
+    while (n) {
+      prop.propagate(n, true);
+      n = m_search->nextLeaf();
+    }
+  }
   return true;
 }
 #endif
