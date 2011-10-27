@@ -8,11 +8,11 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include subdir.mk
 -include source/subdir.mk
--include lib/subdir.mk
 -include lib/boost.src/program_options/src/subdir.mk
+-include lib/subdir.mk
 -include include/subdir.mk
+-include subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -47,7 +47,7 @@ all: daooptS
 daooptS: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	ccache g++  -o"daooptS" $(OBJS) $(USER_OBJS) $(LIBS)
+	ccache g++  -o "daooptS" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

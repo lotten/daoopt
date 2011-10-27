@@ -32,11 +32,11 @@
  */
 
 #ifndef PARALLEL_DYNAMIC
-#define PARALLEL_DYNAMIC
+//#define PARALLEL_DYNAMIC
 #endif
 
 #ifndef PARALLEL_STATIC
-//#define PARALLEL_STATIC
+#define PARALLEL_STATIC
 #endif
 
 /*****************************************************************/
