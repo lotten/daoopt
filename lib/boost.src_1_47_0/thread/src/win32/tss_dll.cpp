@@ -3,11 +3,11 @@
 // Boost Software License, Version 1.0. (See accompanying file
 // LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#include "boost/thread/detail/config.hpp"
+#include <boost/thread/detail/config.hpp>
 
 #if defined(BOOST_HAS_WINTHREADS) && defined(BOOST_THREAD_BUILD_DLL)
 
-    #include "boost/thread/detail/tss_hooks.hpp"
+    #include <boost/thread/detail/tss_hooks.hpp>
 
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>

@@ -5,15 +5,15 @@
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying 
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#include "boost/thread/detail/config.hpp"
+#include <boost/thread/detail/config.hpp>
 
-#include "boost/thread/thread.hpp"
-#include "boost/thread/xtime.hpp"
-#include "boost/thread/condition.hpp"
-#include "boost/thread/locks.hpp"
-#include "boost/thread/once.hpp"
-#include "boost/thread/tss.hpp"
-#include "boost/throw_exception.hpp"
+#include <boost/thread/thread.hpp>
+#include <boost/thread/xtime.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/once.hpp>
+#include <boost/thread/tss.hpp>
+#include <boost/throw_exception.hpp>
 #ifdef __linux__
 #include <sys/sysinfo.h>
 #elif defined(__APPLE__) || defined(__FreeBSD__)
@@ -50,7 +50,7 @@ namespace boost
 
             extern "C"
             {
-                void tls_destructor(void* data)
+                static void tls_destructor(void* data)
                 {
                     boost::detail::thread_data_base* thread_info=static_cast<boost::detail::thread_data_base*>(data);
                     if(thread_info)
@@ -111,7 +111,7 @@ namespace boost
     {
         extern "C"
         {
-            void* thread_proxy(void* param)
+            static void* thread_proxy(void* param)
             {
                 boost::detail::thread_data_ptr thread_info = static_cast<boost::detail::thread_data_base*>(param)->self;
                 thread_info->self.reset();
@@ -411,6 +411,7 @@ namespace boost
             local_thread_info->interrupt_requested=true;
             if(local_thread_info->current_cond)
             {
+                boost::pthread::pthread_mutex_scoped_lock internal_lock(local_thread_info->cond_mutex);
                 BOOST_VERIFY(!pthread_cond_broadcast(local_thread_info->current_cond));
             }
         }

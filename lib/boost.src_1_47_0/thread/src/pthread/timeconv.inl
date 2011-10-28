@@ -7,7 +7,7 @@
 
 // boostinspect:nounnamed
 
-#include "boost/assert.hpp"
+#include <boost/assert.hpp>
 
 namespace {
 const int MILLISECONDS_PER_SECOND = 1000;
