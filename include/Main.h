@@ -27,6 +27,7 @@
     #include "ParallelManager.h"
   #endif
   #include "BranchAndBound.h"
+  #include "BranchAndBoundRotate.h"
   #include "BoundPropagator.h"
 #endif
 

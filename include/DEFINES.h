@@ -42,13 +42,11 @@
 /*****************************************************************/
 
 /*
- * define one of the below to enable better anytime behavior of AOBB,
- * possibly at the expense of some efficiency and memory;
- * ANYTIME_BREADTH uses separate stacks for independent subproblems
- * ANYTIME_DEPTH   performs one initial dive for a subproblem solution
+ * define ANYTIME_DEPTH to enable "subproblem dive" with plain AOBB: performs
+ * dive guided by mini bucket for every new (sub)subproblem, will ideally
+ * yield better anytime performance.
  */
 
-//#define ANYTIME_BREADTH
 //#define ANYTIME_DEPTH
 
 /*****************************************************************/
@@ -86,17 +84,8 @@ typedef signed char val_t;
   #ifndef NOTHREADS
     #define NOTHREADS
   #endif
-  #ifdef ANYTIME_BREADTH
-    #undef ANYTIME_BREADH
-  #endif
   #ifdef ANYTIME_DEPTH
     #undef ANYTIME_DEPTH
-  #endif
-  #ifdef SUBPROB_HEUR_INC
-    #undef SUBPROB_HEUR_INC
-  #endif
-  #ifdef SUBPROB_HEUR_DEC
-    #undef SUBPROB_HEUR_DEC
   #endif
 #endif
 
@@ -109,11 +98,6 @@ typedef signed char val_t;
 /* only allow one parallel mode */
 #ifdef PARALLEL_DYNAMIC
 #undef PARALLEL_STATIC
-#endif
-
-/* only allow one of the anytime modifications */
-#ifdef ANYTIME_BREADTH
-#undef ANYTIME_DEPTH
 #endif
 
 #endif /* DEFS_H_ */

@@ -24,6 +24,7 @@ public:
   bool orSearch; // use OR search (builds pseudo tree as chain)
   bool par_preOnly; // static parallel: preprocessing only (generate subproblems)
   bool par_postOnly; // static parallel: postprocessing only (read solution files)
+  bool rotate; // enables breadth-rotating AOBB
   int ibound; // bucket elim. i-bound
   int cbound; // cache context size bound
   int cbound_worker; // cache bound for worker processes
@@ -38,7 +39,7 @@ public:
   int maxSubprob; // only generate this many subproblems, then abort (for testing)
   int lds;  // run initial LDS with this limit (-1: enabled)
   int seed; // the seed for the random number generator
-  int stackLimit; // how many nodes to expand per subproblem stack before rotating
+  int rotateLimit; // how many nodes to expand per subproblem stack before rotating
   int subprobOrder; // subproblem ordering, integers defined in _base.h
 
   double initialBound; // initial lower bound
@@ -65,12 +66,12 @@ ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),
-		      par_preOnly(false), par_postOnly(false),
+		      par_preOnly(false), par_postOnly(false), rotate(false),
 		      ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
-		      lds(NONE), seed(NONE), stackLimit(0), subprobOrder(NONE),
+		      lds(NONE), seed(NONE), rotateLimit(0), subprobOrder(NONE),
 		      initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

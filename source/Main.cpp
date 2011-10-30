@@ -202,8 +202,13 @@ bool Main::initSearchSpace() {
   m_search.reset(new ParallelManager(m_problem.get(), m_pseudotree.get(),
                                      m_space.get(), m_heuristic.get()));
 #else
-  m_search.reset(new BranchAndBound(m_problem.get(), m_pseudotree.get(),
-                                    m_space.get(), m_heuristic.get()));
+  if (m_options->rotate) {
+    m_search.reset(new BranchAndBoundRotate(
+        m_problem.get(), m_pseudotree.get(), m_space.get(), m_heuristic.get()));
+  } else {
+    m_search.reset(new BranchAndBound(
+        m_problem.get(), m_pseudotree.get(), m_space.get(), m_heuristic.get()));
+  }
 #endif
 
   // Subproblem specified? If yes, restrict.
@@ -559,12 +564,8 @@ bool Main::start() const {
   version += ") w. assig.";
 #endif
 
-#if defined(ANYTIME_BREADTH)
-  version += " /rotate";
-#elif defined(ANYTIME_DEPTH)
-  version += " /dive";
-#else
-  version += " /plain";
+#if defined(ANYTIME_DEPTH)
+ version += " /dive";
 #endif
 
 #if defined LIKELIHOOD
@@ -604,7 +605,9 @@ bool Main::outputInfo() const {
   << "+ Cutoff depth:\t" << m_options->cutoff_depth << endl
   << "+ Cutoff size:\t" << m_options->cutoff_size << endl
   << "+ Max. workers:\t" << m_options->threads << endl
-  << "+ Run tag:\t" << m_options->runTag << endl;
+  << "+ Run tag:\t" << m_options->runTag << endl
+#else
+  << "+ rotate:\t" << ((m_options->rotate) ? "on" : "off") << endl
 #endif
   ;
 

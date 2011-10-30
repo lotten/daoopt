@@ -32,6 +32,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("cbound,j", po::value<int>()->default_value(1000), "context size bound for caching")
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
       ("cbound-worker,k", po::value<int>()->default_value(1000), "context size bound for caching in worker nodes")
+#else
+      ("rotate,y", "use breadth-rotating AOBB")
+      ("rotatelimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
 #endif
       ("iterations,t", po::value<int>()->default_value(25), "iterations for finding ordering")
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
@@ -53,9 +56,6 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
       ("lds,a",po::value<int>()->default_value(-1), "run initial LDS search with given limit (-1: disabled)")
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
-#ifdef ANYTIME_BREADTH
-      ("stacklimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
-#endif
       ("seed", po::value<int>(), "seed for random number generator, time() otherwise")
       ("or", "use OR search (build pseudo tree as chain)")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
@@ -173,8 +173,10 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     else
       opt->nosearch = false;
 
-    if (vm.count("stacklimit"))
-      opt->stackLimit = vm["stacklimit"].as<int>();
+    if (vm.count("rotate"))
+      opt->rotate = true;
+    if (vm.count("rotatelimit"))
+      opt->rotateLimit = vm["rotatelimit"].as<int>();
 
     if (vm.count("seed"))
       opt->seed = vm["seed"].as<int>();

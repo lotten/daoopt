@@ -5,30 +5,7 @@
  *      Author: lars
  */
 
-#include "Problem.h"
-#include "Function.h"
-#include "Graph.h"
-#include "Pseudotree.h"
-#include "ProgramOptions.h"
-#include "MiniBucketElim.h"
-
 #include "Main.h"
-
-#ifdef PARALLEL_DYNAMIC
-  #include "BranchAndBoundMaster.h"
-  #include "BoundPropagatorMaster.h"
-  #include "SubproblemHandler.h"
-  #include "SigHandler.h"
-#else
-  #ifdef PARALLEL_STATIC
-    #include "ParallelManager.h"
-  #endif
-  #include "BranchAndBound.h"
-  #include "BoundPropagator.h"
-#endif
-
-#include "BestFirst.h"
-#include "LimitedDiscrepancy.h"
 
 /* define to enable diagnostic output of memory stats */
 //#define MEMDEBUG
