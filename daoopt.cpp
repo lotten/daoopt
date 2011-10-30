@@ -2,7 +2,7 @@
  * daoopt.cpp
  *
  *  Created on: Oct 13, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "Main.h"

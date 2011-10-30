@@ -2,7 +2,7 @@
  * Statistics.cpp
  *
  *  Created on: Mar 2, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "Statistics.h"

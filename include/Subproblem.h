@@ -2,7 +2,7 @@
  * Subproblem.h
  *
  *  Created on: Mar 2, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef SUBPROBLEM_H_

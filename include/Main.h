@@ -2,7 +2,7 @@
  * Main.h
  *
  *  Created on: Oct 18, 2011
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef MAIN_H_

@@ -2,7 +2,7 @@
  * BranchAndBoundMaster.h
  *
  *  Created on: Feb 14, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef BRANCHANDBOUNDMASTER_H_

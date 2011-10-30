@@ -2,7 +2,7 @@
  * SigHandler.h
  *
  *  Created on: Dec 10, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef SIGHANDLER_H_

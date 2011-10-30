@@ -2,7 +2,7 @@
  * BranchAndBoundRotate.cpp
  *
  *  Created on: Oct 30, 2011
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #undef DEBUG

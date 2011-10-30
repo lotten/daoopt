@@ -2,7 +2,7 @@
  * hash.h
  *
  *  Created on: Apr 7, 2009
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef HASH_H_

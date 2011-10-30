@@ -2,7 +2,7 @@
  * random.cpp
  *
  *  Created on: Oct 26, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "_base.h"

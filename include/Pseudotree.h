@@ -2,7 +2,7 @@
  * Pseudotree.h
  *
  *  Created on: Oct 24, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef PSEUDOTREE_H_

@@ -2,7 +2,7 @@
  * SubproblemHandler.h
  *
  *  Created on: Nov 12, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef SUBPROBLEMHANDLER_H_

@@ -2,7 +2,7 @@
  * SubproblemCondor.cpp
  *
  *  Created on: Nov 15, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "SubproblemCondor.h"

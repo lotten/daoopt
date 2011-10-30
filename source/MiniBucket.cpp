@@ -2,7 +2,7 @@
  * MiniBucket.cpp
  *
  *  Created on: May 20, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "MiniBucket.h"

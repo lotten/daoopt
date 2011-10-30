@@ -2,7 +2,7 @@
  * Heuristic.h
  *
  *  Created on: Nov 18, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef HEURISTIC_H_

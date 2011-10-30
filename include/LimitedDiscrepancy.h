@@ -2,7 +2,7 @@
  * LimitedDiscrepancy.h
  *
  *  Created on: Apr 25, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef LIMITEDDISCREPANCY_H_

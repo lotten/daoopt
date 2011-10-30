@@ -2,7 +2,7 @@
  * hash.cpp
  *
  *  Created on: Apr 7, 2009
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "hash.h"

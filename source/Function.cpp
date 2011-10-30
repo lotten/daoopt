@@ -2,7 +2,7 @@
  * Function.cpp
  *
  *  Created on: Oct 9, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "Function.h"

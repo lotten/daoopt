@@ -2,7 +2,7 @@
  * SearchNode.h
  *
  *  Created on: Oct 9, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef SEARCHNODE_H_

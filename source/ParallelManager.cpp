@@ -2,7 +2,7 @@
  * ParallelManager.cpp
  *
  *  Created on: Apr 11, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #undef DEBUG

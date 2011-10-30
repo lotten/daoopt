@@ -2,7 +2,7 @@
  * MiniBucket.h
  *
  *  Created on: May 20, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef MINIBUCKET_H_

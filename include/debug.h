@@ -2,7 +2,7 @@
  * debug.h
  *
  *  Created on: Nov 13, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include <iostream>

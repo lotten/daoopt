@@ -2,7 +2,7 @@
  * CacheTable.h
  *
  *  Created on: Dec 4, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef CACHETABLE_H_

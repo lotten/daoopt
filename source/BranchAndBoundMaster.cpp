@@ -2,7 +2,7 @@
  * BranchAndBoundMaster.cpp
  *
  *  Created on: Feb 24, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #undef DEBUG

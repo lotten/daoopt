@@ -2,7 +2,7 @@
  * Search.cpp
  *
  *  Created on: Sep 22, 2009
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #undef DEBUG

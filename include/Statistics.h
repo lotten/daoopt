@@ -2,7 +2,7 @@
  * Statistics.h
  *
  *  Created on: Mar 1, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef STATISTICS_H_

@@ -2,7 +2,7 @@
  * BoundPropagatorMaster.cpp
  *
  *  Created on: Feb 14, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #undef DEBUG

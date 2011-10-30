@@ -2,7 +2,7 @@
  * SearchSpace.h
  *
  *  Created on: Nov 4, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef SEARCHSPACE_H_

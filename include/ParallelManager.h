@@ -2,7 +2,7 @@
  * ParallelManager.h
  *
  *  Created on: Apr 11, 2010
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef PARALLELMANAGER_H_

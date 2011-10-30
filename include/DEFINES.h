@@ -2,7 +2,7 @@
  * defs.h
  *
  *  Created on: Apr 9, 2009
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef DEFS_H_

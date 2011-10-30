@@ -2,7 +2,7 @@
  * Search.h
  *
  *  Created on: Nov 3, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef SEARCH_H_

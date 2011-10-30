@@ -2,7 +2,7 @@
  * utils.cpp
  *
  *  Created on: Oct 10, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "utils.h"

@@ -2,12 +2,12 @@
  * Main.cpp
  *
  *  Created on: Oct 18, 2011
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.4b"
+#define VERSIONINFO "0.99.4c"
 
 time_t _time_start, _time_pre;
 

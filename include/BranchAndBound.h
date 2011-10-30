@@ -2,7 +2,7 @@
  * BranchAndBound.h
  *
  *  Created on: Nov 3, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef BRANCHANDBOUND_H_

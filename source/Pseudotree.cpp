@@ -2,7 +2,7 @@
  * Pseudotree.cpp
  *
  *  Created on: Oct 24, 2008
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #include "Pseudotree.h"

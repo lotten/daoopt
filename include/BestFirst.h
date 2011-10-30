@@ -2,7 +2,7 @@
  * BestFirst.h
  *
  *  Created on: Sep 23, 2009
- *      Author: lars
+ *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
 #ifndef BESTFIRST_H_
