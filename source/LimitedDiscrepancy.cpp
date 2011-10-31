@@ -136,15 +136,19 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
     while (pqueue.size()>offset)
       pqueue.pop(); // skip first entries
 
+    vector<NodeP> vec;  // collect nodes in here
+    vec.reserve(pqueue.size());
+
     while (pqueue.size()) {
       int i = pqueue.top().second;
       pqueue.pop();
       SearchNodeAND* n = new SearchNodeAND(node, i, heur[2*i+1]); // use cached label
       n->setHeur(heur[2*i]); // cached heur. value
-      node->addChild(n);
+      vec.push_back(n);
       m_stack.push(make_pair(n, m_discCache-pqueue.size() ));
     }
 
+    node->addChildren(vec);
 //    node->clearHeurCache();
 
 #endif

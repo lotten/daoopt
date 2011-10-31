@@ -36,7 +36,7 @@ SearchNode* Search::initSearch() {
 
     // create dummy AND node (domain size 1) with global constant as label
     SearchNode* next = new SearchNodeAND(node, 0, m_problem->getGlobalConstant());
-    m_space->root->addChild(next);
+    m_space->root->setChild(next);
 
     return next;
   }
@@ -223,14 +223,12 @@ bool Search::canBePruned(SearchNode* n) const {
     curPSTVal OP_TIMESEQ curAND->getLabel();
     // incorporate already solved sibling OR nodes
     curPSTVal OP_TIMESEQ curAND->getSubSolved();
-
     // incorporate new not-yet-solved sibling OR nodes through their heuristic
-    const CHILDLIST& children = curAND->getChildren();
-    for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
-      if (*it == curOR) continue; // skip previous OR node on current path
-      else curPSTVal OP_TIMESEQ (*it)->getHeur();
+    NodeP* children = curAND->getChildren();
+    for (size_t i = 0; i < curAND->getChildCountFull(); ++i) {
+      if (!children[i] || children[i] == curOR) continue;
+      else curPSTVal OP_TIMESEQ children[i]->getHeur();
     }
-
     curOR = curAND->getParent();
   }
 
@@ -275,7 +273,6 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     // Compute and set heuristic estimate, includes child labels
     heuristicOR(c);
 #endif
-    n->addChild(c);
     chi.push_back(c);
 
 #ifndef NO_HEURISTIC
@@ -299,6 +296,8 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     sort(chi.rbegin(), chi.rend(), SearchNode::heurLess);
   else if (m_space->options->subprobOrder == SUBPROB_HEUR_DEC)
     sort(chi.begin(), chi.end(), SearchNode::heurLess);
+
+  n->addChildren(chi);
 
   return false; // default
 
@@ -344,7 +343,6 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     // set cached heur. value
     c->setHeur( heur[2*i] );
 #endif
-    n->addChild(c);
     chi.push_back(c);
   }
 
@@ -362,6 +360,8 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
   // sort new nodes by increasing heuristic value
   sort(chi.begin(), chi.end(), SearchNode::heurLess);
 #endif
+
+  n->addChildren(chi);
 
   return false; // default
 
@@ -574,12 +574,12 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
     next = new SearchNodeOR(node, node->getVar()) ;
     next->setValue(pst.at(2*i));
 //    cout << " Added dummy OR node with value " << d1 << endl;
-    node->addChild(next);
+    node->setChild(next);
 
     node = next;
     next = new SearchNodeAND(node, 0, pst.at(2*i+1)) ;
 //    cout << " Added dummy AND node with label " << d2 << endl;
-    node->addChild(next);
+    node->setChild(next);
 
   }
 
@@ -588,10 +588,11 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
   // labels/values from the parent problem)
   node = next;
   next = new SearchNodeOR(node, node->getVar());
-  node->addChild(next);
+  node->setChild(next);
+
   node = next;
   next = new SearchNodeAND(node, 0); // label = ELEM_ONE !
-  node->addChild(next);
+  node->setChild(next);
 
   m_space->subproblemLocal = node; // dummy OR node
 

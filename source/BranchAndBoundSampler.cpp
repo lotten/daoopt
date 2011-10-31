@@ -13,6 +13,7 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
   assert(n);
   vector<SearchNode*> chi;
 
+  /*
   // check for existing child nodes
   const CHILDLIST& curChildren = n->getChildren();
   if (curChildren.size()) {
@@ -20,6 +21,7 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
     for (CHILDLIST::const_iterator it=curChildren.begin(); it!=curChildren.end(); ++it)
       chi.push_back(*it);
   }
+  */
 
   if (n->getType() == NODE_AND) {  // AND node
 
@@ -51,7 +53,7 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
       m_stack.push(*it);
       DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
     } // for loop
-    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildren().size() <<  " child AND nodes" << endl; myprint(ss.str()); )
+    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildCountFull() <<  " child AND nodes" << endl; myprint(ss.str()); )
 #ifdef ANYTIME_DEPTH
     // pull last node from normal stack for dive
     m_stackDive.push(m_stack.top());

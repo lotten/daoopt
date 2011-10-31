@@ -29,10 +29,9 @@ struct SearchNodeComp {
 };
 */
 
-/* data type to store child pointers */
-/* TODO: possible cause for different behavior on 32 and 64 bit */
-//typedef set<SearchNode*,SearchNodeComp> CHILDLIST;
-typedef set<SearchNode*> CHILDLIST;
+/* data types to store child pointers */
+typedef SearchNode* NodeP;
+typedef NodeP* CHILDLIST;
 
 
 class SearchNode {
@@ -48,6 +47,8 @@ protected:
                                      // by m_subLeaves yields average leaf depth
 #endif
   CHILDLIST m_children;              // Child nodes
+  size_t m_childCountFull;           // Number of total child nodes (initial count)
+  size_t m_childCountAct;            // Number of remaining active child nodes
 #ifndef NO_ASSIGNMENT
   vector<val_t> m_optAssignment;     // stores the optimal solution to the subproblem
 #endif
@@ -99,8 +100,13 @@ public:
 //  void getPST(vector<double>&) const;
 
   SearchNode* getParent() const { return m_parent; }
-  void addChild(SearchNode* node);
-  const CHILDLIST& getChildren() const { return m_children; }
+
+  void setChild(SearchNode*);
+  void addChildren(const vector<SearchNode*>&);
+  NodeP* getChildren() const { return m_children; }
+  size_t getChildCountFull() const { return m_childCountFull; }
+  size_t getChildCountAct() const { return m_childCountAct; }
+
   bool hasChild(SearchNode* node) const;
   void eraseChild(SearchNode* node);
   void clearChildren();
@@ -211,7 +217,7 @@ public:
   double getSubSolved() const { assert(false); return 0; } // not applicable for OR nodes
 
   /* overrides SearchNode::getHeur() */
-  double getHeur() const;
+//  double getHeur() const;
 
   void setCacheContext(const context_t& t) { m_cacheContext = t; }
   const context_t& getCacheContext() const { return m_cacheContext; }
@@ -253,45 +259,60 @@ ostream& operator << (ostream&, const SearchNode&);
 /* Inline definitions */
 
 inline SearchNode::SearchNode(SearchNode* parent) :
-  m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY)
+    m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY),
+    m_children(NULL), m_childCountFull(0), m_childCountAct(0)
 #ifdef PARALLEL_DYNAMIC
   , m_subCount(0), m_subLeaves(0), m_subLeafD(0)
 #endif
   { /* intentionally empty */ }
 
 inline SearchNode::~SearchNode() {
-  for (CHILDLIST::iterator it = m_children.begin(); it!=m_children.end(); ++it)
-    delete *it;
-//  myprint(string("."));
+  this->clearChildren();
 }
 
-inline void SearchNode::addChild(SearchNode* node) {
-  assert(node);
-  m_children.insert(node);
+inline void SearchNode::setChild(SearchNode* node) {
+  m_children = new NodeP[1];
+  m_children[0] = node;
+  m_childCountFull = m_childCountAct = 1;
+}
+
+inline void SearchNode::addChildren(const vector<SearchNode*>& nodes) {
+  m_children = new NodeP[nodes.size()];
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    m_children[i] = nodes[i];
+  }
+  m_childCountFull = m_childCountAct = nodes.size();
 }
 
 inline bool SearchNode::hasChild(SearchNode* node) const {
-  CHILDLIST::const_iterator it=m_children.begin();
-  for (; it!=m_children.end(); ++it) {
-    if (node == *it)
+  for (size_t i = 0; i < m_childCountFull; ++i) {
+    if (m_children[i] == node)
       return true;
   }
   return false;
 }
 
 inline void SearchNode::eraseChild(SearchNode* node) {
-  CHILDLIST::iterator it = m_children.find(node);
-  if (it != m_children.end()) {
-    m_children.erase(it);
-    delete node;
+  for (size_t i = 0; i < m_childCountFull; ++i) {
+    if (m_children[i] == node) {
+      delete m_children[i];
+      m_children[i] = NULL;
+      --m_childCountAct;
+      return;
+    }
   }
 }
 
 inline void SearchNode::clearChildren() {
-  CHILDLIST::iterator it = m_children.begin();
-  for (;it!=m_children.end();++it)
-    delete *it;
-  m_children.clear();
+  for (size_t i = 0; i < m_childCountFull; ++i) {
+    if (m_children[i]) {
+      delete m_children[i];
+      m_children[i] = NULL;
+    }
+  }
+  m_childCountAct = 0;
+  delete[] m_children;
+  m_children = NULL;
 }
 
 

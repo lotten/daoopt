@@ -48,10 +48,10 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
         // optimal solution to previously solved and deleted child OR nodes
         double d = cur->getSubSolved();
         // current best solution to yet-unsolved OR child nodes
-        for (CHILDLIST::const_iterator it = cur->getChildren().begin();
-            it != cur->getChildren().end(); ++it)
-        {
-          d OP_TIMESEQ (*it)->getValue();
+        NodeP* children = cur->getChildren();
+        for (size_t i = 0; i < cur->getChildCountFull(); ++i) {
+          if (children[i])
+            d OP_TIMESEQ children[i]->getValue();
         }
 
         // store into value (thus includes cost of subSolved)
@@ -68,7 +68,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
 
       // clean up fully propagated nodes (i.e. no children or only one (=prev))
       if (del) {
-        if (prev->getChildren().size() <= 1) {
+        if (prev->getChildCountAct() <= 1) {
 
 #ifndef NO_CACHING
           // prev is OR node, try to cache
@@ -141,7 +141,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
       }
 
       if (del) {
-        if (prev->getChildren().size() <= 1) { // prev has no or one children?
+        if (prev->getChildCountAct() <= 1) { // prev has no or one children?
           highestDelete = make_pair(cur,prev);
 #ifdef PARALLEL_DYNAMIC
           subCount += prev->getSubCount();

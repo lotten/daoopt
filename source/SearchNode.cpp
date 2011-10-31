@@ -8,15 +8,19 @@
 #include "SearchNode.h"
 
 
+#if false
 double SearchNodeOR::getHeur() const {
   return m_heurValue;
+  /*
   if (m_children.empty()) return m_heurValue;
   double h = min(m_heurValue,m_nodeValue);
   for (CHILDLIST::const_iterator it=m_children.begin(); it!=m_children.end(); ++it) {
     if ((*it)->getHeur() > h) h = (*it)->getHeur();
   }
   return h;
+  */
 }
+#endif
 
 
 /* stores the values of the partial solution tree in *bottom-up* order
@@ -33,10 +37,10 @@ void SearchNodeOR::getPST(vector<double>& pst) const {
     curAND = curOR->getParent();
     double label = curAND->getLabel();
     label OP_TIMESEQ curAND->getSubSolved();
-    const CHILDLIST& children = curAND->getChildren();
-    for (CHILDLIST::const_iterator it=children.begin(); it!=children.end(); ++it) {
-      if (*it != curOR) // skip previous or node
-        { label OP_TIMESEQ  (*it)->getHeur(); }
+    NodeP* children = curAND->getChildren();
+    for (size_t i = 0; i < curAND->getChildCountFull(); ++i) {
+      if (children[i] && children[i] != curOR)
+        label OP_TIMESEQ children[i]->getHeur();
     }
     pst.push_back(label);
 
@@ -56,7 +60,7 @@ ostream& operator << (ostream& os, const SearchNode& n) {
   }
 }
 
-
+/*
 ostream& operator << (ostream& os, const CHILDLIST& set) {
   os << '{' ;
   for (CHILDLIST::const_iterator it=set.begin(); it!=set.end();) {
@@ -66,7 +70,7 @@ ostream& operator << (ostream& os, const CHILDLIST& set) {
   cout << '}';
   return os;
 }
-
+*/
 
 string SearchNode::toString(const SearchNode* n) {
   assert(n);
