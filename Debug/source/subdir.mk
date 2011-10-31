@@ -9,6 +9,8 @@ CPP_SRCS += \
 ../source/BoundPropagatorMaster.cpp \
 ../source/BranchAndBound.cpp \
 ../source/BranchAndBoundMaster.cpp \
+../source/BranchAndBoundRotate.cpp \
+../source/BranchAndBoundSampler.cpp \
 ../source/Function.cpp \
 ../source/Graph.cpp \
 ../source/LimitedDiscrepancy.cpp \
@@ -35,6 +37,8 @@ OBJS += \
 ./source/BoundPropagatorMaster.o \
 ./source/BranchAndBound.o \
 ./source/BranchAndBoundMaster.o \
+./source/BranchAndBoundRotate.o \
+./source/BranchAndBoundSampler.o \
 ./source/Function.o \
 ./source/Graph.o \
 ./source/LimitedDiscrepancy.o \
@@ -61,6 +65,8 @@ CPP_DEPS += \
 ./source/BoundPropagatorMaster.d \
 ./source/BranchAndBound.d \
 ./source/BranchAndBoundMaster.d \
+./source/BranchAndBoundRotate.d \
+./source/BranchAndBoundSampler.d \
 ./source/Function.d \
 ./source/Graph.d \
 ./source/LimitedDiscrepancy.d \
