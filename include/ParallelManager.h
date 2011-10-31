@@ -66,8 +66,6 @@ protected:
   double evaluate(const SearchNode*) const;
   /* filters out easy subproblems */
   bool isEasy(const SearchNode*) const;
-  /* synchs the global assignment with the given node */
-  void syncAssignment(const SearchNode*);
   /* applies LDS to the subproblem, i.e. mini bucket forward pass;
    * returns true if subproblem was solved fully */
   bool applyLDS(SearchNode*);

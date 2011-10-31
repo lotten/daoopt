@@ -649,20 +649,6 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
 }
 
 
-void ParallelManager::syncAssignment(const SearchNode* node) {
-
-  // only accept OR nodes
-  assert(node && node->getType()==NODE_OR);
-
-  while (node->getParent()) {
-    node = node->getParent(); // AND node
-    m_assignment.at(node->getVar()) = node->getVal();
-    node = node->getParent(); // OR node
-  }
-
-}
-
-
 bool ParallelManager::isEasy(const SearchNode* node) const {
   assert(node);
 

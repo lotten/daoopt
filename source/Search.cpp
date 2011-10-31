@@ -240,6 +240,18 @@ bool Search::canBePruned(SearchNode* n) const {
 } // Search::canBePruned
 
 
+void Search::syncAssignment(const SearchNode* node) {
+  // only accept OR nodes
+  assert(node && node->getType()==NODE_OR);
+
+  while (node->getParent()) {
+    node = node->getParent(); // AND node
+    m_assignment.at(node->getVar()) = node->getVal();
+    node = node->getParent(); // OR node
+  }
+} // Search::syncAssignment
+
+
 bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
   assert(n && n->getType() == NODE_AND);

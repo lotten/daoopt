@@ -136,6 +136,9 @@ protected:
   /* checks if node can be pruned, returns true if so */
   bool doPruning(SearchNode*);
 
+  /* synchronizes the global assignment with the given node */
+  void syncAssignment(const SearchNode*);
+
   /* generates the children of an AND node, writes them into argument vector,
    * returns true if no children */
   bool generateChildrenAND(SearchNode*, vector<SearchNode*>&);
