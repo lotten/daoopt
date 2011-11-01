@@ -26,8 +26,6 @@ class MiniBucketElim : public Heuristic {
 protected:
   int m_ibound;                  // The ibound for this MB instance
   double m_globalUB;             // The global upper bound
-  Problem* m_problem;            // The problem instance
-  Pseudotree* m_pseudotree;      // The underlying pseudotree
 
   // The augmented buckets that will store the minibucket functions (but not the original ones)
   vector<list<Function*> > m_augmented;
@@ -89,7 +87,7 @@ inline bool MiniBucketElim::isAccurate() {
 }
 
 inline MiniBucketElim::MiniBucketElim(Problem* p, Pseudotree* pt, int ib) :
-  m_ibound(ib), m_globalUB(ELEM_ONE), m_problem(p), m_pseudotree(pt)
+    Heuristic(p, pt), m_ibound(ib), m_globalUB(ELEM_ONE)
 // , m_augmented(p->getN()), m_intermediate(p->getN())
   { }
 

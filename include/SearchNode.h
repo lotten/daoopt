@@ -37,18 +37,21 @@ typedef NodeP* CHILDLIST;
 class SearchNode {
 protected:
   unsigned char m_flags;             // for the boolean flags
+  int m_depth;                       // depth in search space
   SearchNode* m_parent;              // pointer to the parent
   double m_nodeValue;                // node value (as in cost)
   double m_heurValue;                // heuristic estimate of the node's value
-#ifdef PARALLEL_DYNAMIC
+
+  CHILDLIST m_children;              // Child nodes
+  size_t m_childCountFull;           // Number of total child nodes (initial count)
+  size_t m_childCountAct;            // Number of remaining active child nodes
+
+  #ifdef PARALLEL_DYNAMIC
   count_t m_subCount;                // number of nodes expanded below this node
   count_t m_subLeaves;               // number leaf nodes generated below this node
   count_t m_subLeafD;                // cumulative depth of leaf nodes below this node, division
                                      // by m_subLeaves yields average leaf depth
 #endif
-  CHILDLIST m_children;              // Child nodes
-  size_t m_childCountFull;           // Number of total child nodes (initial count)
-  size_t m_childCountAct;            // Number of remaining active child nodes
 #ifndef NO_ASSIGNMENT
   vector<val_t> m_optAssignment;     // stores the optimal solution to the subproblem
 #endif
@@ -96,6 +99,7 @@ public:
   virtual const context_t& getSubprobContext() const = 0;
 #endif
 
+  virtual int getDepth() const = 0;
   virtual void getPST(vector<double>&) const = 0;
 //  void getPST(vector<double>&) const;
 
@@ -165,6 +169,8 @@ public:
   void addSubSolved(double d) { m_subSolved OP_TIMESEQ d; }
   double getSubSolved() const { return m_subSolved; }
 
+  int getDepth() const { return m_parent->getDepth(); }
+
   /* empty implementations, functions meaningless for AND nodes */
   void setCacheContext(const context_t& c) { assert(false); }
   const context_t& getCacheContext() const { assert(false); return emptyCtxt; }
@@ -193,6 +199,7 @@ public:
 class SearchNodeOR : public SearchNode {
 protected:
   int m_var;             // Node variable
+  int m_depth;           // Depth of corresponding variable in pseudo tree
 #ifdef PARALLEL_DYNAMIC
   size_t m_cacheInst;    // Cache instance counter
   double m_initialBound; // the lower bound when the node was first generated
@@ -208,6 +215,8 @@ public:
   int getType() const { return NODE_OR; }
   int getVar() const { return m_var; }
   val_t getVal() const { assert(false); return NONE; } // no val for OR nodes!
+
+  int getDepth() const { return m_depth; }
 
   void setValue(double d) { m_nodeValue = d; }
   double getValue() const { return m_nodeValue; }
@@ -246,7 +255,7 @@ public:
   void clearHeurCache();
 
 public:
-  SearchNodeOR(SearchNode* parent, int var);
+  SearchNodeOR(SearchNode* parent, int var, int depth);
   virtual ~SearchNodeOR();
 };
 
@@ -331,8 +340,8 @@ inline SearchNodeAND::SearchNodeAND(SearchNode* parent, val_t val, double label)
 }
 
 
-inline SearchNodeOR::SearchNodeOR(SearchNode* parent, int var) :
-  SearchNode(parent), m_var(var), m_heurCache(NULL) //, m_cacheContext(NULL)
+inline SearchNodeOR::SearchNodeOR(SearchNode* parent, int var, int depth) :
+  SearchNode(parent), m_var(var), m_depth(depth), m_heurCache(NULL) //, m_cacheContext(NULL)
   { /* empty */ }
 
 

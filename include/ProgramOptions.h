@@ -42,7 +42,7 @@ public:
   int rotateLimit; // how many nodes to expand per subproblem stack before rotating
   int subprobOrder; // subproblem ordering, integers defined in _base.h
   int sampleDepth; // max. depth for randomness in sampler (will follow heuristic otherwise)
-  int sampleScheme; // sampling scheme
+  int sampleScheme; // sampling scheme (TBD)
 
   double initialBound; // initial lower bound
 

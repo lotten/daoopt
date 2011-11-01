@@ -73,7 +73,7 @@ bool BranchAndBoundRotate::doExpand(SearchNode* n) {
       stack->push(*it);
       DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
     }  // for loop
-    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildren().size() <<  " child AND nodes" << endl; myprint(ss.str()); )
+    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildCountFull() <<  " child AND nodes" << endl; myprint(ss.str()); )
   }  // if over node type
 
   return false; // default false

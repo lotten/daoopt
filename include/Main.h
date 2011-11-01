@@ -64,7 +64,7 @@ public:
   bool outputInfo() const;
   bool loadProblem();
   bool findOrLoadOrdering();
-  bool initSearchSpace();
+  bool initDataStructs();
   bool compileHeuristic();
   bool runLDS();
   bool finishPreproc();

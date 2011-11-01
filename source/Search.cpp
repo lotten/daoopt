@@ -31,7 +31,7 @@ SearchNode* Search::initSearch() {
   if (!m_space->root) {
     // create root OR node (dummy variable)
     PseudotreeNode* ptroot = m_pseudotree->getRoot();
-    SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar());
+    SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar(), -1);
     m_space->root = node;
 
     // create dummy AND node (domain size 1) with global constant as label
@@ -279,7 +279,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
        it!=ptnode->getChildren().rend(); ++it)
   {
     int vChild = (*it)->getVar();
-    SearchNodeOR* c = new SearchNodeOR(n, vChild);
+    SearchNodeOR* c = new SearchNodeOR(n, vChild, depth+1);
 #ifndef NO_HEURISTIC
     // Compute and set heuristic estimate, includes child labels
     heuristicOR(c);
@@ -593,7 +593,7 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
 
     // add dummy OR node with proper value
     node = next;
-    next = new SearchNodeOR(node, node->getVar()) ;
+    next = new SearchNodeOR(node, node->getVar(), -1) ;
     next->setValue(pst.at(2*i));
 //    cout << " Added dummy OR node with value " << d1 << endl;
     node->setChild(next);
@@ -609,7 +609,7 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
   // value since the previous dummy nodes might have non-empty
   // labels/values from the parent problem)
   node = next;
-  next = new SearchNodeOR(node, node->getVar());
+  next = new SearchNodeOR(node, node->getVar(), -1);
   node->setChild(next);
 
   node = next;

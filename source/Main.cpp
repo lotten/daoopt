@@ -178,7 +178,7 @@ bool Main::findOrLoadOrdering() {
 }
 
 
-bool Main::initSearchSpace() {
+bool Main::initDataStructs() {
 
   // The main search space
 #ifdef PARALLEL_DYNAMIC
@@ -187,10 +187,10 @@ bool Main::initSearchSpace() {
   m_space.reset( new SearchSpace(m_pseudotree.get(), m_options.get()) );
 #endif
 
+  // Heuristic is initialized here, built later in compileHeuristic()
 #ifdef NO_HEURISTIC
   m_heuristic.reset(new Unheuristic);
 #else
-  // Mini bucket heuristic
   m_heuristic.reset(new MiniBucketElim(m_problem.get(), m_pseudotree.get(), m_options->ibound) );
 #endif
 
@@ -300,7 +300,6 @@ bool Main::compileHeuristic() {
 #endif
     }
   }
-
 
 #ifndef NO_HEURISTIC
   if (m_search->getCurOptValue() >= m_heuristic->getGlobalUB()) {

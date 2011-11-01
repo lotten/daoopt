@@ -879,7 +879,7 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
   assert(first);
 
   // one more dummy OR node for OPEN list (top of stack needs to be OR node)
-  SearchNode* next = new SearchNodeOR(first, first->getVar()) ;
+  SearchNode* next = new SearchNodeOR(first, first->getVar(), -1) ;
   first->setChild(next);
   m_external.push_back(next);
 

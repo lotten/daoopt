@@ -13,17 +13,6 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
   assert(n);
   vector<SearchNode*> chi;
 
-  /*
-  NodeP* children = n->getChildren();
-  if (children) {
-    chi.reserve(n->getChildCountAct());
-    for (size_t i = 0; i < n->getChildCountFull(); ++i) {
-      if (children[i])
-        chi.push_back(children[i]);
-    }
-  }
-  */
-
   if (n->getType() == NODE_AND) {  // AND node
 
     if (chi.size() == 0 && generateChildrenAND(n,chi)) {
@@ -31,20 +20,14 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
     }
 
 #ifdef DEBUG
-    ostringstream ss;
+    oss ss;
     for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
       ss << '\t' << *it << ": " << *(*it) << endl;
     myprint (ss.str());
 #endif
 
-#if defined(ANYTIME_DEPTH)
-    // reverse iterator needed since dive step reverses subproblem order
-    for (vector<SearchNode*>::reverse_iterator it=chi.rbegin(); it!=chi.rend(); ++it)
-      m_stackDive.push(*it);
-#else
     for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
       m_stack.push(*it);
-#endif
 
   } else {  // OR node
 
@@ -52,16 +35,22 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
       return true; // no children
     }
 
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
-      m_stack.push(*it);
-      DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
-    } // for loop
-    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildCountFull() <<  " child AND nodes" << endl; myprint(ss.str()); )
-#ifdef ANYTIME_DEPTH
-    // pull last node from normal stack for dive
-    m_stackDive.push(m_stack.top());
-    m_stack.pop();
-#endif
+    int pick = NONE;
+    if (m_space->options->sampleDepth <= n->getDepth())
+      pick = rand::next(chi.size());
+
+    for (int i = 0; i < chi.size(); ++i) {
+      if (i != pick) {
+        m_stack.push(chi[i]);
+        DIAG(oss ss; ss <<'\t'<< chi[i] <<": "<< *(chi[i]) <<" (l="<< chi[i]->getLabel() <<")"<< endl; myprint(ss.str()); )
+      }
+    }
+    if (pick != NONE) {
+      m_stack.push(chi[pick]);
+      DIAG(oss ss; ss <<'\t'<< chi[pick] <<": "<< *(chi[pick]) <<" (l="<< chi[pick]->getLabel() <<")"<< endl; myprint(ss.str()); )
+    }
+
+    DIAG (oss ss; ss << "\tGenerated " << n->getChildCountFull() <<  " child AND nodes" << endl; myprint(ss.str()); )
 
   } // if over node type
 

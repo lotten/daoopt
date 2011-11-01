@@ -51,6 +51,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #ifdef PARALLEL_STATIC
       ("pre", "perform preprocessing and generate subproblems only")
       ("post", "read previously solved subproblems and compile solution")
+      ("sampledepth", po::value<int>()->default_value(5), "randomness cutoff for initial sampling")
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
@@ -188,6 +189,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       opt->par_preOnly = true;
     else if (vm.count("post"))
       opt->par_postOnly = true;
+
+    if (vm.count("sampledepth"))
+      opt->sampleDepth = vm["sampledepth"].as<int>();
 
     if (vm.count("reduce"))
       opt->out_reducedFile = vm["reduce"].as<string>();
