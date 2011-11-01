@@ -820,7 +820,7 @@ bool ParallelManager::applyLDS(SearchNode* node) {
     complete = true; // subproblem solved fully
   }
 
-  m_ldsSearch->resetSearch(node);
+  m_ldsSearch->reset(node);
   SearchNode* n = m_ldsSearch->nextLeaf();
   while (n) {
     m_ldsProp->propagate(n,true,node);

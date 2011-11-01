@@ -30,7 +30,7 @@ protected:
 
   bool doExpand(SearchNode*);
 
-  void resetSearch(SearchNode*);
+  void reset(SearchNode*);
 
   SearchNode* nextNode();
 
@@ -76,7 +76,7 @@ inline bool LimitedDiscrepancy::isDone() const {
   return m_stack.empty();
 }
 
-inline void LimitedDiscrepancy::resetSearch(SearchNode* n) {
+inline void LimitedDiscrepancy::reset(SearchNode* n) {
   assert(n);
   while (m_stack.size())
     m_stack.pop();

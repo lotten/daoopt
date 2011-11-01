@@ -24,7 +24,7 @@ protected:
 protected:
   bool isDone() const;
   bool doExpand(SearchNode* n);
-  void resetSearch(SearchNode* p);
+  void reset(SearchNode* p = NULL);
   SearchNode* nextNode();
   bool isMaster() const { return false; }
 
@@ -45,8 +45,12 @@ inline bool BranchAndBound::isDone() const {
 #endif
 }
 
-inline void BranchAndBound::resetSearch(SearchNode* p) {
-  assert(p);
+inline void BranchAndBound::reset(SearchNode* p) {
+  if (!p) {
+    p = m_space->getTrueRoot();
+    if (p->getChildren())
+      p = p->getChildren()[0];
+  }
 #ifdef ANYTIME_DEPTH
   while (!m_stackDive.empty())
     m_stackDive.pop();

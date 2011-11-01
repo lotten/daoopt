@@ -117,7 +117,7 @@ protected:
   SearchNode* initSearch();
 
   /* resets the queue/stack/etc. to the given node */
-  virtual void resetSearch(SearchNode*) = 0;
+  virtual void reset(SearchNode* = NULL) = 0;
 
   /* returns the next search node for processing (top of stack/queue/etc.) */
   virtual SearchNode* nextNode() = 0;

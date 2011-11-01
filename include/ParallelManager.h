@@ -46,7 +46,7 @@ protected:
   /* implemented from Search class */
   bool isDone() const;
   bool doExpand(SearchNode* n);
-  void resetSearch(SearchNode* p);
+  void reset(SearchNode* p);
   SearchNode* nextNode();
   bool isMaster() const { return true; }
 
@@ -109,7 +109,7 @@ inline bool ParallelManager::isDone() const {
   return false;
 }
 
-inline void ParallelManager::resetSearch(SearchNode* n) {
+inline void ParallelManager::reset(SearchNode* n) {
   m_external.clear();
   m_local.clear();
   m_external.push_back(n);

@@ -41,6 +41,8 @@ public:
   int seed; // the seed for the random number generator
   int rotateLimit; // how many nodes to expand per subproblem stack before rotating
   int subprobOrder; // subproblem ordering, integers defined in _base.h
+  int sampleDepth; // max. depth for randomness in sampler (will follow heuristic otherwise)
+  int sampleScheme; // sampling scheme
 
   double initialBound; // initial lower bound
 

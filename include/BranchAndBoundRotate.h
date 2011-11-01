@@ -37,7 +37,7 @@ protected:
 protected:
   bool isDone() const;
   bool doExpand(SearchNode* n);
-  void resetSearch(SearchNode* p);
+  void reset(SearchNode* p);
   SearchNode* nextNode();
   bool isMaster() const { return false; }
 
@@ -57,7 +57,7 @@ inline bool BranchAndBoundRotate::isDone() const {
   return false;
 }
 
-inline void BranchAndBoundRotate::resetSearch(SearchNode* p) {
+inline void BranchAndBoundRotate::reset(SearchNode* p) {
   assert(p);
   while (m_stacks.size()) {
     delete m_stacks.front();

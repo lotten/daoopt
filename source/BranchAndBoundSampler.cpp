@@ -14,18 +14,19 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
   vector<SearchNode*> chi;
 
   /*
-  // check for existing child nodes
-  const CHILDLIST& curChildren = n->getChildren();
-  if (curChildren.size()) {
-    chi.reserve(curChildren.size());
-    for (CHILDLIST::const_iterator it=curChildren.begin(); it!=curChildren.end(); ++it)
-      chi.push_back(*it);
+  NodeP* children = n->getChildren();
+  if (children) {
+    chi.reserve(n->getChildCountAct());
+    for (size_t i = 0; i < n->getChildCountFull(); ++i) {
+      if (children[i])
+        chi.push_back(children[i]);
+    }
   }
   */
 
   if (n->getType() == NODE_AND) {  // AND node
 
-    if (generateChildrenAND(n,chi)) {
+    if (chi.size() == 0 && generateChildrenAND(n,chi)) {
       return true; // no children
     }
 
@@ -47,8 +48,10 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
 
   } else {  // OR node
 
-    if (generateChildrenOR(n,chi))
+    if (chi.size() == 0 && generateChildrenOR(n,chi)) {
       return true; // no children
+    }
+
     for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
       m_stack.push(*it);
       DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
@@ -65,18 +68,3 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
   return false; // default false
 }
 
-/*
-BranchAndBoundSampler::BranchAndBoundSampler(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) :
-   Search(prob,pt,space,heur) {
-#ifndef NO_CACHING
-  // Init context cache table
-  if (!m_space->cache)
-    m_space->cache = new CacheTable(prob->getN());
-#endif
-
-  SearchNode* first = this->initSearch();
-  if (first) {
-    m_stack.push(first);
-  }
-}
-*/

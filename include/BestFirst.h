@@ -30,7 +30,7 @@ protected:
 
 protected:
 
-  void resetSearch(SearchNode* p);
+  void reset(SearchNode* p);
   SearchNode* nextNode();
 
   /* inherited from Search class */
@@ -54,7 +54,7 @@ inline SearchNode* BestFirst::nextNode() {
 }
 
 
-inline void BestFirst::resetSearch(SearchNode* p) {
+inline void BestFirst::reset(SearchNode* p) {
   assert(p);
   while (!m_queue.empty())
       m_queue.pop();

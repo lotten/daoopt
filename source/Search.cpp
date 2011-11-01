@@ -253,6 +253,17 @@ void Search::syncAssignment(const SearchNode* node) {
 bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
   assert(n && n->getType() == NODE_AND);
+
+  if (n->getChildren()) {  // node previously expanded
+    if (n->getChildCountAct() == 0)
+      return true;
+    for (size_t i = 0; i < n->getChildCountFull(); ++i) {
+      if (n->getChildren()[i])
+        chi.push_back(n->getChildren()[i]);
+    }
+    return false;
+  }
+
   m_space->nodesAND += 1;
 
   int var = n->getVar();
@@ -307,6 +318,17 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
 
   assert (n && n->getType() == NODE_OR);
+
+  if (n->getChildren()) {  // node previously expanded
+    if (n->getChildCountAct() == 0)
+      return true;
+    for (size_t i = 0; i < n->getChildCountFull(); ++i) {
+      if (n->getChildren()[i])
+        chi.push_back(n->getChildren()[i]);
+    }
+    return false;
+  }
+
   m_space->nodesOR +=1 ;
 
   int var = n->getVar();
@@ -597,7 +619,7 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
   m_space->subproblemLocal = node; // dummy OR node
 
   // empty existing queue/stack/etc. and add new node
-  this->resetSearch(next); // dummy AND node
+  this->reset(next); // dummy AND node
 
   return depth;
 
