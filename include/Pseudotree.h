@@ -164,6 +164,7 @@ protected:
   Complexity* m_complexity; // Contains information about subproblem complexity
 #endif
   set<int> m_subproblemVars; // The variables in the subproblem (including self)
+  vector<int> m_subproblemVarMap; // Maps variables to their index in subprob assignment
   set<int> m_context; // The node's full OR context (!doesn't include own variable!)
   set<int> m_cacheContext; // The (possibly smaller) context for (adaptive) caching
   list<int> m_cacheResetList; // List of var's whose cache tables need to be reset when this
@@ -205,8 +206,11 @@ public:
   int getDepth() const { return m_depth; }
   int getSubHeight() const { return m_subHeight; }
   int getSubWidth() const { return m_subWidth; }
+
   size_t getSubprobSize() const { return m_subproblemVars.size(); }
   const set<int>& getSubprobVars() const { return m_subproblemVars; }
+  const vector<int>& getSubprobVarMap() const { return m_subproblemVarMap; }
+  void setSubprobVarMap(const vector<int>& map) { m_subproblemVarMap = map; }
 
 public:
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
@@ -219,7 +223,7 @@ public:
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   void initSubproblemComplexity();
 #endif
-  const set<int>& updateSubprobVars();
+  const set<int>& updateSubprobVars(int numVars);
   int updateDepthHeight(int d);
   int updateSubWidth();
 

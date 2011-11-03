@@ -46,7 +46,7 @@ protected:
   size_t m_childCountFull;           // Number of total child nodes (initial count)
   size_t m_childCountAct;            // Number of remaining active child nodes
 
-  #ifdef PARALLEL_DYNAMIC
+#ifdef PARALLEL_DYNAMIC
   count_t m_subCount;                // number of nodes expanded below this node
   count_t m_subLeaves;               // number leaf nodes generated below this node
   count_t m_subLeafD;                // cumulative depth of leaf nodes below this node, division

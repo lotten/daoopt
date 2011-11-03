@@ -22,7 +22,7 @@ int Pseudotree::restrictSubproblem(int i) {
   m_nodes[i]->setParent(m_root);
 
   // recompute subproblem variables (recursive)
-  m_root->updateSubprobVars();
+  m_root->updateSubprobVars(m_size);
   m_sizeConditioned = m_root->getSubprobSize()-1; // -1 for bogus
 
   // update subproblem height, substract -1 for bogus node
@@ -249,7 +249,7 @@ void Pseudotree::buildChain(Graph G, const vector<int>& elim, const int cachelim
   m_root->updateSubWidth();
 
   // initiate subproblem variables computation (recursive)
-  m_root->updateSubprobVars();
+  m_root->updateSubprobVars(m_nodes.size());
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
@@ -344,7 +344,7 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
     (*it)->orderChildren(m_subOrder);
 
   // initiate subproblem variables computation (recursive)
-  m_root->updateSubprobVars();
+  m_root->updateSubprobVars(m_nodes.size());
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
@@ -402,7 +402,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
 
   m_height = m_root->updateDepthHeight(-1) - 1;
   m_root->updateSubWidth();
-  m_root->updateSubprobVars();
+  m_root->updateSubprobVars(m_nodes.size());
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
   m_heightConditioned = pt.m_heightConditioned;
@@ -572,7 +572,7 @@ int PseudotreeNode::updateSubWidth() {
 
 
 /* recursively updates the set of variables in the current subproblem */
-const set<int>& PseudotreeNode::updateSubprobVars() {
+const set<int>& PseudotreeNode::updateSubprobVars(int numVars) {
 
   // clear current set
   m_subproblemVars.clear();
@@ -581,9 +581,17 @@ const set<int>& PseudotreeNode::updateSubprobVars() {
 
   // iterate over children and collect their subproblem variables
   for (vector<PseudotreeNode*>::iterator it = m_children.begin(); it!=m_children.end(); ++it) {
-    const set<int>& childVars = (*it)->updateSubprobVars();
+    const set<int>& childVars = (*it)->updateSubprobVars(numVars);
     for (set<int>::const_iterator itC = childVars.begin(); itC!=childVars.end(); ++itC)
       m_subproblemVars.insert(*itC);
+  }
+
+  m_subproblemVarMap.clear();
+  m_subproblemVarMap.resize(numVars, NONE);
+  size_t i = 0;
+  for (set<int>::const_iterator it = m_subproblemVars.begin();
+       it != m_subproblemVars.end(); ++it, ++i) {
+    m_subproblemVarMap[*it] = i;
   }
 
 #ifdef DEBUG

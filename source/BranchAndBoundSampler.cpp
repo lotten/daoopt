@@ -36,7 +36,7 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
     }
 
     int pick = NONE;
-    if (m_space->options->sampleDepth <= n->getDepth())
+    if (n->getDepth() <= m_space->options->sampleDepth)
       pick = rand::next(chi.size());
 
     for (int i = 0; i < chi.size(); ++i) {

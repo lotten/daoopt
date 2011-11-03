@@ -244,8 +244,11 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
   int endVar = end->getVar();
   const set<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
 
-  // will keep track of the merged assignment
-  map<int,val_t> assig;
+  // get variable map for end node
+  vector<int> endVarMap = m_space->pseudotree->getNode(endVar)->getSubprobVarMap();
+  // allocate assignment in end node
+  vector<val_t>& assig = end->getOptAssig();
+  assig.resize(endSubprob.size(), UNKNOWN);
 
   int curVar = UNKNOWN, curVal = UNKNOWN;
 
@@ -256,7 +259,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
     if (cur->getType() == NODE_AND) {
       curVal = cur->getVal();
       if (curVal!=UNKNOWN)
-        assig.insert(make_pair(curVar,curVal));
+        assig[endVarMap[curVar]] = curVal;
     }
 
     if (cur->getOptAssig().size()) {
@@ -267,16 +270,17 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
 
       for(; itVar!= curSubprob.end(); ++itVar, ++itVal ) {
         if (*itVal != UNKNOWN)
-          assig.insert(make_pair(*itVar, *itVal));
+          assig[endVarMap[*itVar]] = *itVal;
       }
 
       // clear optimal assignment of AND node, since now propagated upwards
       if (cur->getType() == NODE_AND)
-        cur->clearOptAssig(); // TODO ?
+        cur->clearOptAssig(); // TODO correct ?
     }
 
   } // end for
 
+#if false
   // now record assignment into end node
   // TODO dynamically allocate (resize) subprob vector (not upfront)
   end->getOptAssig().resize(endSubprob.size(), UNKNOWN);
@@ -294,6 +298,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
     }
     ++itVar, ++itVal;
   }
+#endif
 
   DIAG(ostringstream ss; ss << "< Tuple for "<< *end << " after recording: " << (end->getOptAssig()) << endl; myprint(ss.str());)
 

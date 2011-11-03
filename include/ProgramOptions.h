@@ -74,6 +74,7 @@ inline ProgramOptions::ProgramOptions() :
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
 		      lds(NONE), seed(NONE), rotateLimit(0), subprobOrder(NONE),
+		      sampleDepth(NONE), sampleScheme(NONE),
 		      initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

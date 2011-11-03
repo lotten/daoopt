@@ -28,6 +28,7 @@
   #endif
   #include "BranchAndBound.h"
   #include "BranchAndBoundRotate.h"
+  #include "BranchAndBoundSampler.h"
   #include "BoundPropagator.h"
 #endif
 
