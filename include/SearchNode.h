@@ -159,7 +159,7 @@ protected:
 
 public:
   int getType() const { return NODE_AND; }
-  int getVar() const { return (m_parent)?m_parent->getVar():UNKNOWN; }
+  int getVar() const { assert(m_parent); return m_parent->getVar(); }
   val_t getVal() const { return m_val; }
 
   void setValue(double d) { m_nodeValue = d; }

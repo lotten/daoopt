@@ -396,6 +396,8 @@ double Search::heuristicOR(SearchNode* n) {
   double d;
   double* dv = new double[m_problem->getDomainSize(v)*2];
   double h = ELEM_ZERO; // the new OR nodes h value
+  const list<Function*>& funs = m_pseudotree->getFunctions(v);
+
   for (val_t i=0;i<m_problem->getDomainSize(v);++i) {
     m_assignment[v] = i;
 
@@ -404,7 +406,6 @@ double Search::heuristicOR(SearchNode* n) {
 
     // precompute label value
     d = ELEM_ONE;
-    const list<Function*>& funs = m_pseudotree->getFunctions(v);
     for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
     {
       d OP_TIMESEQ (*it)->getValue(m_assignment);
