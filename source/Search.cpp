@@ -261,13 +261,15 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
   assert(n && n->getType() == NODE_AND);
 
   if (n->getChildren()) {  // node previously expanded
-    if (n->getChildCountAct() == 0)
-      return true;
-    for (size_t i = 0; i < n->getChildCountFull(); ++i) {
-      if (n->getChildren()[i])
-        chi.push_back(n->getChildren()[i]);
+    if (n->getChildCountAct() == 0) {
+      n->clearChildren();
+    } else {
+      for (size_t i = 0; i < n->getChildCountFull(); ++i) {
+        if (n->getChildren()[i])
+          chi.push_back(n->getChildren()[i]);
+      }
+      return false;
     }
-    return false;
   }
 
   m_space->nodesAND += 1;
@@ -331,13 +333,15 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
   assert (n && n->getType() == NODE_OR);
 
   if (n->getChildren()) {  // node previously expanded
-    if (n->getChildCountAct() == 0)
-      return true;
-    for (size_t i = 0; i < n->getChildCountFull(); ++i) {
-      if (n->getChildren()[i])
-        chi.push_back(n->getChildren()[i]);
+    if (n->getChildCountAct() == 0) {
+      n->clearChildren();
+    } else {
+      for (size_t i = 0; i < n->getChildCountFull(); ++i) {
+        if (n->getChildren()[i])
+          chi.push_back(n->getChildren()[i]);
+      }
+      return false;
     }
-    return false;
   }
 
   m_space->nodesOR +=1 ;

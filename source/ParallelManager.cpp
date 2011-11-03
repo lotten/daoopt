@@ -694,10 +694,10 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
 
-//      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
-//        m_ldsProp->propagate(*it,true);
-//        continue; // skip to next
-//      }
+      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
+        m_ldsProp->propagate(*it,true);
+        continue; // skip to next
+      }
 
       if (doCaching(*it)) {
         m_prop.propagate(*it,true); continue;
