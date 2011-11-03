@@ -25,7 +25,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
   // 'del' signals whether we are still deleting nodes in this call
   bool del = (upperLimit!=n) ? true : false;
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   // keeps track of the size of the deleted subspace and its number of leaf nodes
   count_t subCount = 0;
   count_t subLeaves = 0;
@@ -94,7 +94,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
           }
 #endif
           highestDelete = make_pair(cur,prev);
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
           subCount += prev->getSubCount();
           subLeaves += prev->getSubLeaves();
           subLeafD += prev->getSubLeafD();
@@ -143,7 +143,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
       if (del) {
         if (prev->getChildCountAct() <= 1) { // prev has no or one children?
           highestDelete = make_pair(cur,prev);
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
           subCount += prev->getSubCount();
           subLeaves += prev->getSubLeaves();
           subLeafD += prev->getSubLeafD();
@@ -215,7 +215,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
       // Store value of OR node to be deleted into AND parent
       highestDelete.first->addSubSolved(highestDelete.second->getValue());
     }
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
     // store size of deleted subproblem in parent node
     highestDelete.first->addSubCount(subCount);
     highestDelete.first->addSubLeaves(subLeaves);
@@ -236,9 +236,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
 /* collects the joint assignment from 'start' upwards until 'end' and
  * records it into 'end' for later use */
 void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
-
   assert(start && end);
-
   DIAG(ostringstream ss; ss << "< REC opt. assignment from " << *start << " to " << *end << endl; myprint(ss.str());)
 
   int endVar = end->getVar();
@@ -251,9 +249,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
   assig.resize(endSubprob.size(), UNKNOWN);
 
   int curVar = UNKNOWN, curVal = UNKNOWN;
-
   for (SearchNode* cur=start; cur!=end; cur=cur->getParent()) {
-
     curVar = cur->getVar();
 
     if (cur->getType() == NODE_AND) {
@@ -277,31 +273,9 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
       if (cur->getType() == NODE_AND)
         cur->clearOptAssig(); // TODO correct ?
     }
-
   } // end for
 
-#if false
-  // now record assignment into end node
-  // TODO dynamically allocate (resize) subprob vector (not upfront)
-  end->getOptAssig().resize(endSubprob.size(), UNKNOWN);
-  set<int>::const_iterator itVar = endSubprob.begin();
-  vector<val_t>::iterator itVal = end->getOptAssig().begin();
-
-  map<int,val_t>::const_iterator itAssig = assig.begin();
-
-  while( itAssig != assig.end() /*&& itVar != endSubprob.end()*/ ) {
-    if (*itVar == itAssig->first) {
-      // record assignment
-      *itVal = itAssig->second;
-      // forward pointers
-      ++itAssig;
-    }
-    ++itVar, ++itVal;
-  }
-#endif
-
   DIAG(ostringstream ss; ss << "< Tuple for "<< *end << " after recording: " << (end->getOptAssig()) << endl; myprint(ss.str());)
-
 }
 
 #endif // NO_ASSIGNMENT

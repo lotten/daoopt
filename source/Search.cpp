@@ -58,7 +58,9 @@ bool Search::doProcess(SearchNode* node) {
       node->setLeaf(); // mark as leaf
       int depth = m_pseudotree->getNode(var)->getDepth();
       m_leafProfile.at(depth) += 1; // count leaf node
-      PAR_ONLY( node->setSubLeaves(1) );
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+      node->setSubLeaves(1);
+#emdof
       return true; // and abort
     } */
   } else { // NODE_OR
@@ -144,13 +146,17 @@ bool Search::doPruning(SearchNode* node) {
     if (node->getType() == NODE_AND) {
       // count 1 leaf AND node
       m_leafProfile.at(depth) += 1;
-      PAR_ONLY( node->setSubLeaves(1) ) ;
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+      node->setSubLeaves(1);
+#endif
     } else { // NODE_OR
       if ( ISNAN(node->getValue()) ) // value could be set by LDS
         node->setValue(ELEM_ZERO);
       // assume all AND children would have been created and pruned
       m_leafProfile.at(depth) += m_problem->getDomainSize(var);
-      PAR_ONLY( node->addSubLeaves(m_problem->getDomainSize(var)) ) ;
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+      node->addSubLeaves(m_problem->getDomainSize(var));
+#endif
     }
     return true;
   }
@@ -270,8 +276,9 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
 
-  PAR_ONLY(n->setSubCount(1));
-
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+  n->setSubCount(1);
+#endif
   if (depth>=0) m_nodeProfile[depth] +=1; // ignores dummy node
 
   // create new OR children (going in reverse due to reversal on stack)
@@ -288,7 +295,9 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
 #ifndef NO_HEURISTIC
     // store initial lower bound on subproblem (needed for master init.)
-    PAR_ONLY( c->setInitialBound(lowerBound(c)) );
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+    c->setInitialBound(lowerBound(c));
+#endif
 #endif
 
   } // for loop over new OR children
@@ -297,7 +306,9 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     n->setLeaf(); // terminal node
     n->setValue(ELEM_ONE);
     if (depth!=-1) m_leafProfile[depth] += 1;
-    PAR_ONLY( n->setSubLeaves(1) );
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+    n->setSubLeaves(1);
+#endif
     return true; // no children
   }
 
@@ -350,7 +361,9 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
       d OP_TIMESEQ (*it)->getValue(m_assignment);
     if (d == ELEM_ZERO) {
       m_leafProfile[depth] += 1;
-      PAR_ONLY( n->addSubLeaves(1) );
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+      n->addSubLeaves(1);
+#endif
       continue; // label=0 -> skip
     }
     SearchNodeAND* c = new SearchNodeAND(n, i, d);
@@ -358,7 +371,9 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     // early pruning if heuristic is zero (since it's an upper bound)
     if (heur[2*i] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
       m_leafProfile[depth] += 1;
-      PAR_ONLY( n->addSubLeaves(1) );
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+      n->addSubLeaves(1);
+#endif
       continue;
     }
     SearchNodeAND* c = new SearchNodeAND(n, i, heur[2*i+1]); // uses cached label
@@ -396,6 +411,8 @@ double Search::heuristicOR(SearchNode* n) {
   double d;
   double* dv = new double[m_problem->getDomainSize(v)*2];
   double h = ELEM_ZERO; // the new OR nodes h value
+  const list<Function*>& funs = m_pseudotree->getFunctions(v);
+
   for (val_t i=0;i<m_problem->getDomainSize(v);++i) {
     m_assignment[v] = i;
 
@@ -404,7 +421,6 @@ double Search::heuristicOR(SearchNode* n) {
 
     // precompute label value
     d = ELEM_ONE;
-    const list<Function*>& funs = m_pseudotree->getFunctions(v);
     for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
     {
       d OP_TIMESEQ (*it)->getValue(m_assignment);
@@ -774,7 +790,6 @@ bool Search::restrictSubproblem(string file) {
   cout << "Restricted to subproblem with root node " << rootVar << " at depth " << depth  << endl;
 
   return true; // success
-
 }
 
 

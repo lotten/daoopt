@@ -426,9 +426,7 @@ bool Main::runSearchDynamic() {
 #ifdef PARALLEL_STATIC
 /* static master mode for distributed execution */
 bool Main::runSearchStatic() {
-
   bool success = true;
-
   bool preOnly = m_options->par_preOnly, postOnly = m_options->par_postOnly;
 
   if (!postOnly) { // full or pre-only mode

@@ -15,6 +15,7 @@
 #include "ProgramOptions.h"
 #include "Search.h"
 #include "LimitedDiscrepancy.h"
+#include "BranchAndBoundSampler.h"
 #include "BoundPropagator.h"
 #include "utils.h"
 
@@ -26,9 +27,13 @@ protected:
   size_t m_subprobCount;
 
   /* for LDS */
-  SearchSpace* m_ldsSpace;  // plain pointer to avoid destructor call
+//  SearchSpace* m_ldsSpace;  // plain pointer to avoid destructor call
   scoped_ptr<LimitedDiscrepancy> m_ldsSearch;
   scoped_ptr<BoundPropagator> m_ldsProp;
+
+  /* for sampling subproblems */
+  scoped_ptr<SearchSpace> m_sampleSpace;
+  scoped_ptr<Search> m_sampleSearch;
 
   /* stack for local solving */
   stack<SearchNode*> m_stack;

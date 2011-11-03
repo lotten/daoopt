@@ -65,7 +65,7 @@ bool BranchAndBound::doExpand(SearchNode* n) {
       m_stack.push(*it);
       DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
     } // for loop
-    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildren().size() <<  " child AND nodes" << endl; myprint(ss.str()); )
+    DIAG (ostringstream ss; ss << "\tGenerated " << n->getChildCountFull() <<  " child AND nodes" << endl; myprint(ss.str()); )
 #ifdef ANYTIME_DEPTH
     // pull last node from normal stack for dive
     m_stackDive.push(m_stack.top());

@@ -46,7 +46,7 @@ protected:
   size_t m_childCountFull;           // Number of total child nodes (initial count)
   size_t m_childCountAct;            // Number of remaining active child nodes
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   count_t m_subCount;                // number of nodes expanded below this node
   count_t m_subLeaves;               // number leaf nodes generated below this node
   count_t m_subLeafD;                // cumulative depth of leaf nodes below this node, division
@@ -78,7 +78,7 @@ public:
   virtual void setCacheInst(size_t i) = 0;
   virtual size_t getCacheInst() const = 0;
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   count_t getSubCount() const { return m_subCount; }
   void setSubCount(count_t c) { m_subCount = c; }
   void addSubCount(count_t c) { m_subCount += c; }
@@ -159,7 +159,7 @@ protected:
 
 public:
   int getType() const { return NODE_AND; }
-  int getVar() const { return (m_parent)?m_parent->getVar():UNKNOWN; }
+  int getVar() const { assert(m_parent); return m_parent->getVar(); }
   val_t getVal() const { return m_val; }
 
   void setValue(double d) { m_nodeValue = d; }
@@ -176,9 +176,9 @@ public:
   const context_t& getCacheContext() const { assert(false); return emptyCtxt; }
   void setCacheInst(size_t i) { assert(false); }
   size_t getCacheInst() const { assert(false); return 0; }
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setInitialBound(double d) { assert(false); }
-  double getInitialBound() const { assert(false); }
+  double getInitialBound() const { assert(false); return 0.0; }
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setSubprobContext(const context_t& t) { assert(false); }
@@ -202,6 +202,8 @@ protected:
   int m_depth;           // Depth of corresponding variable in pseudo tree
 #ifdef PARALLEL_DYNAMIC
   size_t m_cacheInst;    // Cache instance counter
+#endif
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   double m_initialBound; // the lower bound when the node was first generated
 #endif
   double* m_heurCache;   // Stores the precomputed heuristic values of the AND children
@@ -239,7 +241,7 @@ public:
   size_t getCacheInst() const { return 0; }
 #endif
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setInitialBound(double d) { m_initialBound = d; }
   double getInitialBound() const { return m_initialBound; }
 #endif
@@ -270,7 +272,7 @@ ostream& operator << (ostream&, const SearchNode&);
 inline SearchNode::SearchNode(SearchNode* parent) :
     m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY),
     m_children(NULL), m_childCountFull(0), m_childCountAct(0)
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   , m_subCount(0), m_subLeaves(0), m_subLeafD(0)
 #endif
   { /* intentionally empty */ }

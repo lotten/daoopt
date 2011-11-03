@@ -25,10 +25,10 @@
 #else
   #ifdef PARALLEL_STATIC
     #include "ParallelManager.h"
+    #include "BranchAndBoundSampler.h"
   #endif
   #include "BranchAndBound.h"
   #include "BranchAndBoundRotate.h"
-  #include "BranchAndBoundSampler.h"
   #include "BoundPropagator.h"
 #endif
 
@@ -46,11 +46,12 @@ protected:
 #if defined PARALLEL_DYNAMIC
   scoped_ptr<BranchAndBoundMaster> m_search;
   scoped_ptr<SearchSpaceMaster> m_space;
-#elif defined PARALLEL_STATIC
+#else
+#ifdef PARALLEL_STATIC
   scoped_ptr<ParallelManager> m_search;
-  scoped_ptr<SearchSpace> m_space;
 #else
   scoped_ptr<Search> m_search;
+#endif
   scoped_ptr<SearchSpace> m_space;
 #endif
 

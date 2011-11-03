@@ -694,10 +694,10 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
 
-      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
-        m_ldsProp->propagate(*it,true);
-        continue; // skip to next
-      }
+//      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
+//        m_ldsProp->propagate(*it,true);
+//        continue; // skip to next
+//      }
 
       if (doCaching(*it)) {
         m_prop.propagate(*it,true); continue;
@@ -865,9 +865,9 @@ string ParallelManager::filename(const char* pre, const char* ext, int count) co
 
 
 ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h)
-  : Search(prob, pt, s, h), m_subprobCount(0),
-    m_ldsSpace(NULL), m_ldsSearch(NULL), m_ldsProp(NULL),
-    m_prop(prob, s)
+  : Search(prob, pt, s, h), m_subprobCount(0)
+//    , m_ldsSpace(NULL)
+    , m_prop(prob, s)
 {
 #ifndef NO_CACHING
   // Init context cache table
@@ -888,6 +888,10 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
 //  m_ldsSpace->root = m_space->root;
   m_ldsSearch.reset(new LimitedDiscrepancy(prob, pt, m_space, h, 0));
   m_ldsProp.reset(new BoundPropagator(prob, m_space, false));
+
+  // Set up subproblem sampler
+  m_sampleSpace.reset(new SearchSpace(pt, s->options));
+  m_sampleSearch.reset(new BranchAndBoundSampler(prob, pt, m_sampleSpace.get(), h));
 
 }
 

@@ -21,7 +21,7 @@ protected:
   Problem*     m_problem;
   SearchSpace* m_space;
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   /* caches the root variable of the last deleted subproblem */
   int m_subRootvarCache;
   /* caches the size of the last deleted subproblem */
@@ -44,7 +44,7 @@ public:
    */
   SearchNode* propagate(SearchNode* n, bool reportSolution = false, SearchNode* upperLimit = NULL);
 
-#ifdef PARALLEL_DYNAMIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   int getSubRootvarCache() const { return m_subRootvarCache; }
   count_t getSubCountCache() const { return m_subCountCache; }
   count_t getSubLeavesCache() const { return m_subLeavesCache; }
