@@ -48,6 +48,8 @@ protected:
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   count_t m_subCount;                // number of nodes expanded below this node
+#endif
+#ifdef PARALLEL_DYNAMIC
   count_t m_subLeaves;               // number leaf nodes generated below this node
   count_t m_subLeafD;                // cumulative depth of leaf nodes below this node, division
                                      // by m_subLeaves yields average leaf depth
@@ -70,7 +72,7 @@ public:
   void setHeur(double d) { m_heurValue = d; }
   // the first one is overridden in SearchNodeOR, the second one isn't
   virtual double getHeur() const { return m_heurValue; }
-  virtual double getHeurOrg() const { return m_heurValue; }
+//  virtual double getHeurOrg() const { return m_heurValue; }
 
   virtual void setCacheContext(const context_t&) = 0;
   virtual const context_t& getCacheContext() const = 0;
@@ -83,6 +85,10 @@ public:
   void setSubCount(count_t c) { m_subCount = c; }
   void addSubCount(count_t c) { m_subCount += c; }
 
+  virtual void setInitialBound(double d) = 0;
+  virtual double getInitialBound() const = 0;
+#endif
+#ifdef PARALLEL_DYNAMIC
   count_t getSubLeaves() const { return m_subLeaves; }
   void setSubLeaves(count_t c) { m_subLeaves = c; }
   void addSubLeaves(count_t c) { m_subLeaves += c; }
@@ -90,9 +96,6 @@ public:
   count_t getSubLeafD() const { return m_subLeafD; }
   void setSubLeafD(count_t d) { m_subLeafD = d; }
   void addSubLeafD(count_t d) { m_subLeafD += d; }
-
-  virtual void setInitialBound(double d) = 0;
-  virtual double getInitialBound() const = 0;
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   virtual void setSubprobContext(const context_t&) = 0;
@@ -273,7 +276,10 @@ inline SearchNode::SearchNode(SearchNode* parent) :
     m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY),
     m_children(NULL), m_childCountFull(0), m_childCountAct(0)
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-  , m_subCount(0), m_subLeaves(0), m_subLeafD(0)
+  , m_subCount(0)
+#endif
+#ifdef PARALLEL_DYNAMIC
+  , m_subLeaves(0), m_subLeafD(0)
 #endif
   { /* intentionally empty */ }
 

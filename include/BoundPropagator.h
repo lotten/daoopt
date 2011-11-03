@@ -11,7 +11,9 @@
 #include "SearchSpace.h"
 #include "SearchNode.h"
 #include "Pseudotree.h"
-
+#ifdef PARALLEL_STATIC
+#include "Statistics.h"
+#endif
 
 class BoundPropagator {
 
@@ -21,7 +23,11 @@ protected:
   Problem*     m_problem;
   SearchSpace* m_space;
 
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#ifdef PARALLEL_STATIC
+  SubproblemStats m_subproblemStatsCache;
+#endif
+
+#ifdef PARALLEL_DYNAMIC
   /* caches the root variable of the last deleted subproblem */
   int m_subRootvarCache;
   /* caches the size of the last deleted subproblem */
@@ -44,7 +50,11 @@ public:
    */
   SearchNode* propagate(SearchNode* n, bool reportSolution = false, SearchNode* upperLimit = NULL);
 
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#ifdef PARALLEL_STATIC
+  const SubproblemStats& getSubproblemStatsCache() const { return m_subproblemStatsCache; }
+#endif
+
+#ifdef PARALLEL_DYNAMIC
   int getSubRootvarCache() const { return m_subRootvarCache; }
   count_t getSubCountCache() const { return m_subCountCache; }
   count_t getSubLeavesCache() const { return m_subLeavesCache; }

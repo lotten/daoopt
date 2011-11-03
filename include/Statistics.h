@@ -10,6 +10,49 @@
 
 #include "DEFINES.h"
 
+#ifdef PARALLEL_STATIC
+
+#include "SearchNode.h"
+#include "Pseudotree.h"
+
+struct SubproblemStats {
+
+  /* The following are all specific to the conditioned subproblem in question */
+  int rootVar;
+  int numVars;
+  int depth;
+  int height;
+  int width;
+  count_t subNodeCount;
+  double upperBound;
+  double lowerBound;
+  double boundGap;
+
+  void update(SearchNode*, PseudotreeNode*, count_t);
+
+};
+
+inline void SubproblemStats::update(SearchNode* n, PseudotreeNode* pt, count_t count) {
+  assert(n && pt);
+  assert(n->getType() == NODE_OR);
+  assert(pt->getVar() == n->getVar());
+
+  rootVar = n->getVar();
+
+  numVars = pt->getSubprobSize();
+  depth = pt->getDepth();
+  height = pt->getSubHeight();
+  width = pt->getSubWidth();
+
+  upperBound = n->getHeur();
+  lowerBound = n->getInitialBound();
+  boundGap = upperBound - lowerBound;
+
+  subNodeCount = count;
+}
+
+#endif
+
 #ifdef PARALLEL_DYNAMIC
 
 #include "Subproblem.h"

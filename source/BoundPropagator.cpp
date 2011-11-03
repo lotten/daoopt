@@ -25,7 +25,11 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
   // 'del' signals whether we are still deleting nodes in this call
   bool del = (upperLimit!=n) ? true : false;
 
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#ifdef PARALLEL_STATIC
+  count_t subCount = 0;
+#endif
+
+#ifdef PARALLEL_DYNAMIC
   // keeps track of the size of the deleted subspace and its number of leaf nodes
   count_t subCount = 0;
   count_t subLeaves = 0;
@@ -94,7 +98,11 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
           }
 #endif
           highestDelete = make_pair(cur,prev);
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#ifdef PARALLEL_STATIC
+          subCount += prev->getSubCount();
+          m_subproblemStatsCache.update(prev, m_space->pseudotree->getNode(prev->getVar()), subCount);
+#endif
+#ifdef PARALLEL_DYNAMIC
           subCount += prev->getSubCount();
           subLeaves += prev->getSubLeaves();
           subLeafD += prev->getSubLeafD();
@@ -105,7 +113,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
           m_subLeavesCache = subLeaves;
           m_subLeafDCache = subLeafD;
           // cache lower/upper bound of OR to be deleted (for master init.)
-          m_subBoundsCache = make_pair(highestDelete.second->getInitialBound(), highestDelete.second->getHeurOrg());
+          m_subBoundsCache = make_pair(highestDelete.second->getInitialBound(), highestDelete.second->getHeur());
 
           // climb up one level
           subLeafD += subLeaves;
@@ -143,7 +151,10 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
       if (del) {
         if (prev->getChildCountAct() <= 1) { // prev has no or one children?
           highestDelete = make_pair(cur,prev);
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#ifdef PARALLEL_STATIC
+          subCount += prev->getSubCount();
+#endif
+#ifdef PARALLEL_DYNAMIC
           subCount += prev->getSubCount();
           subLeaves += prev->getSubLeaves();
           subLeafD += prev->getSubLeafD();
@@ -211,18 +222,23 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
   }
 
   if (highestDelete.first) {
-    if(highestDelete.first->getType() == NODE_AND) {
+    SearchNode* parent = highestDelete.first;
+    SearchNode* child = highestDelete.second;
+    if(parent->getType() == NODE_AND) {
       // Store value of OR node to be deleted into AND parent
-      highestDelete.first->addSubSolved(highestDelete.second->getValue());
+      parent->addSubSolved(child->getValue());
     }
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#ifdef PARALLEL_STATIC
+    parent->addSubCount(subCount);
+#endif
+#ifdef PARALLEL_DYNAMIC
     // store size of deleted subproblem in parent node
-    highestDelete.first->addSubCount(subCount);
-    highestDelete.first->addSubLeaves(subLeaves);
-    highestDelete.first->addSubLeafD(subLeafD);
+    parent->addSubCount(subCount);
+    parent->addSubLeaves(subLeaves);
+    parent->addSubLeafD(subLeafD);
 #endif
     // finally clean up, delete subproblem with unnecessary nodes from memory
-    highestDelete.first->eraseChild(highestDelete.second);
+    parent->eraseChild(child);
   }
 
   DIAG(myprint("! Prop done.\n"));
