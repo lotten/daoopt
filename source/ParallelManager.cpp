@@ -69,18 +69,17 @@ bool ParallelManager::doLearning() {
 
   for (; sampleCount < m_options->sampleCount; ++sampleCount) {
     m_sampleSearch->reset();
+    prop.resetSubCount();
+
     SearchNode* n = NULL;
-
-    bool keepGoing = true;
-    while (keepGoing) {
+    do  {
       n = m_sampleSearch->nextLeaf();
+      if (!n) break;
       prop.propagate(n, false);
-      keepGoing = n && prop.getSubCountCache() < m_options->sampleSize * 100000;
-    }
+    } while (prop.getSubCountCache() < m_options->sampleSize * 100000);
 
-    n = m_sampleSearch->nextLeaf();
-    if (!n) {
-      cout << "Sample done." << endl;
+    if (n) {
+      cout << prop.getSubproblemStatsCache() << endl;
       m_learner->addSample(prop.getSubproblemStatsCache());
     } else {  // problem solved
       assert(false);  // TODO !
@@ -88,7 +87,7 @@ bool ParallelManager::doLearning() {
     }
   }
 
-  return false;
+  return true;
 }
 
 

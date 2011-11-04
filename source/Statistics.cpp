@@ -9,6 +9,28 @@
 
 #include "utils.h"
 
+#ifdef PARALLEL_STATIC
+
+ostream& operator << (ostream& os, const SubproblemStats& s) {
+  os << NONE << '\t';  // subprob id
+  os << s.rootVar << '\t';
+  os << s.depth << '\t';
+  os << s.numVars << '\t';
+  os << s.lowerBound << '\t';
+  os << s.upperBound << '\t';
+  os << s.height << '\t';
+  os << s.width << '\t';
+  os << UNKNOWN << '\t';  // # OR nodes
+  os << s.subNodeCount << '\t';
+  os << UNKNOWN << '\t';  // time
+  os << UNKNOWN << '\t';  // avgD
+  os << UNKNOWN << '\t';  // metric
+
+  return os;
+}
+
+#endif
+
 #ifdef PARALLEL_DYNAMIC
 
 #define FALLOFF 0.9

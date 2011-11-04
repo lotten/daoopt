@@ -54,6 +54,7 @@ public:
 #ifdef PARALLEL_STATIC
   const SubproblemStats& getSubproblemStatsCache() const { return m_subproblemStatsCache; }
   count_t getSubCountCache() const { return m_subproblemCountCache; }
+  void resetSubCount() { m_subproblemCountCache = 0; }
 #endif
 
 #ifdef PARALLEL_DYNAMIC
@@ -74,7 +75,11 @@ protected:
 
 public:
   BoundPropagator(Problem* p, SearchSpace* s, bool doCaching = true)
-    : m_doCaching(doCaching), m_problem(p), m_space(s) { /* empty */ }
+    : m_doCaching(doCaching), m_problem(p), m_space(s)
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+  , m_subproblemCountCache(0)
+#endif
+  { /* empty */ }
   virtual ~BoundPropagator() {}
 };
 

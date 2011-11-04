@@ -32,6 +32,8 @@ struct SubproblemStats {
 
 };
 
+ostream& operator << (ostream& os, const SubproblemStats& s);
+
 inline void SubproblemStats::update(SearchNode* n, PseudotreeNode* pt, count_t count) {
   assert(n && pt);
   assert(n->getType() == NODE_OR);
