@@ -40,9 +40,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
       ("cutoff-width,w", po::value<int>()->default_value(-1), "cutoff width for central search")
-      ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^6)")
-      ("local-size,u", po::value<int>()->default_value(-1), "minimum subproblem size (* 10^6)")
-      ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^6) for local initialization")
+      ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^5)")
+      ("local-size,u", po::value<int>()->default_value(-1), "minimum subproblem size (* 10^5)")
+      ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^5) for local initialization")
       ("noauto", "don't determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(-1), "max. number of concurrent subproblem processes")
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
@@ -52,6 +52,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("pre", "perform preprocessing and generate subproblems only")
       ("post", "read previously solved subproblems and compile solution")
       ("sampledepth", po::value<int>()->default_value(10), "randomness cutoff for initial sampling")
+      ("samplecount", po::value<int>()->default_value(5), "number of subproblem samples to collect")
+      ("samplecount", po::value<double>()->default_value(5.0), "min. sample size (in 10^5 nodes)")
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
@@ -192,6 +194,10 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 
     if (vm.count("sampledepth"))
       opt->sampleDepth = vm["sampledepth"].as<int>();
+    if (vm.count("samplecount"))
+      opt->sampleCount = vm["samplecount"].as<int>();
+    if (vm.count("samplesize"))
+      opt->sampleSize = vm["samplesize"].as<double>();
 
     if (vm.count("reduce"))
       opt->out_reducedFile = vm["reduce"].as<string>();

@@ -13,6 +13,7 @@ CPP_SRCS += \
 ../source/BranchAndBoundSampler.cpp \
 ../source/Function.cpp \
 ../source/Graph.cpp \
+../source/LearningEngine.cpp \
 ../source/LimitedDiscrepancy.cpp \
 ../source/Main.cpp \
 ../source/MiniBucket.cpp \
@@ -41,6 +42,7 @@ OBJS += \
 ./source/BranchAndBoundSampler.o \
 ./source/Function.o \
 ./source/Graph.o \
+./source/LearningEngine.o \
 ./source/LimitedDiscrepancy.o \
 ./source/Main.o \
 ./source/MiniBucket.o \
@@ -69,6 +71,7 @@ CPP_DEPS += \
 ./source/BranchAndBoundSampler.d \
 ./source/Function.d \
 ./source/Graph.d \
+./source/LearningEngine.d \
 ./source/LimitedDiscrepancy.d \
 ./source/Main.d \
 ./source/MiniBucket.d \

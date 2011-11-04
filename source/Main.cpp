@@ -430,6 +430,7 @@ bool Main::runSearchStatic() {
   bool preOnly = m_options->par_preOnly, postOnly = m_options->par_postOnly;
 
   if (!postOnly) { // full or pre-only mode
+    success = success && m_search->doLearning();
     /* find frontier from scratch */
     success = success && m_search->findFrontier();
     /* generate files for subproblems */

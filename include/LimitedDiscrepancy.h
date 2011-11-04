@@ -25,27 +25,13 @@ protected:
   stack<pair<SearchNode*,size_t> > m_stack;
 
 protected:
-
   bool isDone() const;
-
   bool doExpand(SearchNode*);
-
-  void reset(SearchNode*);
-
   SearchNode* nextNode();
-
   bool isMaster() const { return false; }
 
-  /*
 public:
-  void setInitialSolution(double
-#ifndef NO_ASSIGNMENT
-    ,const vector<val_t>&
-#endif
-  ) const;
-  */
-
-public:
+  void reset(SearchNode*);
   LimitedDiscrepancy(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur, size_t disc);
   virtual ~LimitedDiscrepancy() {}
 

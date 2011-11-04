@@ -5,8 +5,9 @@
  *      Author: lars
  */
 
-#include "BranchAndBoundSampler.h"
+#undef DEBUG
 
+#include "BranchAndBoundSampler.h"
 
 bool BranchAndBoundSampler::doExpand(SearchNode* n) {
 

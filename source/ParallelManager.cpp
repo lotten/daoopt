@@ -60,6 +60,38 @@ struct PQEntryComp {
   }
 };
 
+
+bool ParallelManager::doLearning() {
+
+  // collect samples
+  int sampleCount = 0;
+  BoundPropagator prop(m_problem, m_sampleSpace.get());
+
+  for (; sampleCount < m_options->sampleCount; ++sampleCount) {
+    m_sampleSearch->reset();
+    SearchNode* n = NULL;
+
+    bool keepGoing = true;
+    while (keepGoing) {
+      n = m_sampleSearch->nextLeaf();
+      prop.propagate(n, false);
+      keepGoing = n && prop.getSubCountCache() < m_options->sampleSize * 100000;
+    }
+
+    n = m_sampleSearch->nextLeaf();
+    if (!n) {
+      cout << "Sample done." << endl;
+      m_learner->addSample(prop.getSubproblemStatsCache());
+    } else {  // problem solved
+      assert(false);  // TODO !
+      break;
+    }
+  }
+
+  return false;
+}
+
+
 bool ParallelManager::restoreFrontier() {
 
   assert (!m_external.empty());
@@ -211,8 +243,8 @@ bool ParallelManager::findFrontier() {
 
   // split subproblems
   while (m_open.size()
-      && (m_space->options->threads == NONE
-          || (int) m_open.size() < m_space->options->threads)) {
+      && (m_options->threads == NONE
+          || (int) m_open.size() < m_options->threads)) {
 
     eval = m_open.top().first;
     node = m_open.top().second;
@@ -220,10 +252,10 @@ bool ParallelManager::findFrontier() {
     DIAG(oss ss; ss << "Top " << node <<"(" << *node << ") with eval " << eval << endl; myprint(ss.str());)
 
     // check for fixed-depth cutoff
-    if (m_space->options->cutoff_depth != NONE) {
+    if (m_options->cutoff_depth != NONE) {
       PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
       int d = ptnode->getDepth();
-      if (d == m_space->options->cutoff_depth) {
+      if (d == m_options->cutoff_depth) {
         node->setExtern();
         m_external.push_back(node);
         continue;
@@ -299,14 +331,14 @@ bool ParallelManager::writeJobs() const {
     string s;
     while (!templ.eof()) {
       getline(templ, s);
-      s = str_replace(s,"%PROBLEM%",m_space->options->problemName);
-      s = str_replace(s,"%TAG%",m_space->options->runTag);
+      s = str_replace(s,"%PROBLEM%",m_options->problemName);
+      s = str_replace(s,"%TAG%",m_options->runTag);
       jobstr << s << endl;
     }
   } else {
     string s = default_job_template;
-    s = str_replace(s,"%PROBLEM%",m_space->options->problemName);
-    s = str_replace(s,"%TAG%",m_space->options->runTag);
+    s = str_replace(s,"%PROBLEM%",m_options->problemName);
+    s = str_replace(s,"%TAG%",m_options->runTag);
     jobstr << s;
   }
   templ.close();
@@ -617,27 +649,27 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
   job // special condor attribute
     << '+' << CONDOR_ATTR_THREADID << " = $(Process)" << endl
     // Make sure input files get transferred
-    << "transfer_input_files = " << m_space->options->out_reducedFile
-    << ", " << m_space->options->in_orderingFile
+    << "transfer_input_files = " << m_options->out_reducedFile
+    << ", " << m_options->in_orderingFile
     << ", " << subprobsFile;
-  if (!m_space->options->in_evidenceFile.empty())
-    job << ", " << m_space->options->in_evidenceFile;
+  if (!m_options->in_evidenceFile.empty())
+    job << ", " << m_options->in_evidenceFile;
   job << endl;
 
   string solutionFile = filename(PREFIX_SOL,".$(Process).gz");
 
   job // command line arguments
     << "arguments = "
-    << " -f " << m_space->options->out_reducedFile;
-  if (!m_space->options->in_evidenceFile.empty())
-    job << " -e " << m_space->options->in_evidenceFile;
+    << " -f " << m_options->out_reducedFile;
+  if (!m_options->in_evidenceFile.empty())
+    job << " -e " << m_options->in_evidenceFile;
   job
-    << " -o " << m_space->options->in_orderingFile
+    << " -o " << m_options->in_orderingFile
     << " -s " << subprobsFile << ":$(Process)"
-    << " -i " << m_space->options->ibound
-    << " -j " << m_space->options->cbound_worker
+    << " -i " << m_options->ibound
+    << " -j " << m_options->cbound_worker
     << " -c " << solutionFile
-    << " -r " << m_space->options->subprobOrder
+    << " -r " << m_options->subprobOrder
     << " -t 0" << endl;
 
   job << "queue " << m_subprobCount << endl;
@@ -658,7 +690,7 @@ bool ParallelManager::isEasy(const SearchNode* node) const {
 //  int height = ptnode->getSubHeight();
   int width = ptnode->getSubWidth();
 
-  if (width <= m_space->options->cutoff_width)
+  if (width <= m_options->cutoff_width)
     return true;
 
   return false; // default
@@ -816,7 +848,7 @@ bool ParallelManager::applyLDS(SearchNode* node) {
 
   bool complete = false;
   PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
-  if (ptnode->getSubWidth() <= m_space->options->ibound) {
+  if (ptnode->getSubWidth() <= m_options->ibound) {
     complete = true; // subproblem solved fully
   }
 
@@ -851,9 +883,9 @@ void ParallelManager::setInitialSolution(double d
 string ParallelManager::filename(const char* pre, const char* ext, int count) const {
   ostringstream ss;
   ss << pre;
-  ss << m_space->options->problemName;
+  ss << m_options->problemName;
   ss << ".";
-  ss << m_space->options->runTag;
+  ss << m_options->runTag;
   if (count!=NONE) {
     ss << ".";
     ss << count;
@@ -864,16 +896,18 @@ string ParallelManager::filename(const char* pre, const char* ext, int count) co
 }
 
 
-ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h)
-  : Search(prob, pt, s, h), m_subprobCount(0)
+ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur)
+  : Search(prob, pt, space, heur), m_subprobCount(0)
 //    , m_ldsSpace(NULL)
-    , m_prop(prob, s)
+    , m_prop(prob, space)
 {
 #ifndef NO_CACHING
   // Init context cache table
   if (!m_space->cache)
     m_space->cache = new CacheTable(prob->getN());
 #endif
+
+  m_options = space->options;
 
   SearchNode* first = this->initSearch();
   assert(first);
@@ -884,14 +918,15 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, 
   m_external.push_back(next);
 
   // set up LDS
-//  m_ldsSpace = new SearchSpace(m_pseudotree, m_space->options);
+//  m_ldsSpace = new SearchSpace(m_pseudotree, m_options);
 //  m_ldsSpace->root = m_space->root;
-  m_ldsSearch.reset(new LimitedDiscrepancy(prob, pt, m_space, h, 0));
+  m_ldsSearch.reset(new LimitedDiscrepancy(prob, pt, m_space, heur, 0));
   m_ldsProp.reset(new BoundPropagator(prob, m_space, false));
 
-  // Set up subproblem sampler
-  m_sampleSpace.reset(new SearchSpace(pt, s->options));
-  m_sampleSearch.reset(new BranchAndBoundSampler(prob, pt, m_sampleSpace.get(), h));
+  // Set up subproblem sampler and complexity prediction
+  m_sampleSpace.reset(new SearchSpace(pt, m_options));
+  m_sampleSearch.reset(new BranchAndBoundSampler(prob, pt, m_sampleSpace.get(), heur));
+  m_learner.reset(new LinearRegressionLearner(m_options));
 
 }
 

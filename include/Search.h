@@ -106,6 +106,9 @@ public:
 #endif
   ) const;
 
+  /* resets the queue/stack/etc. to the given node */
+  virtual void reset(SearchNode* = NULL) = 0;
+
 #ifdef PARALLEL_DYNAMIC
   /* returns the cached lower/upper bounds on the first node at each depth */
 //  const vector<pair<double,double> >& getBounds() const { return m_bounds; }
@@ -115,9 +118,6 @@ protected:
 
   /* initializes the search space, returns the first node to process */
   SearchNode* initSearch();
-
-  /* resets the queue/stack/etc. to the given node */
-  virtual void reset(SearchNode* = NULL) = 0;
 
   /* returns the next search node for processing (top of stack/queue/etc.) */
   virtual SearchNode* nextNode() = 0;

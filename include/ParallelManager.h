@@ -17,6 +17,7 @@
 #include "LimitedDiscrepancy.h"
 #include "BranchAndBoundSampler.h"
 #include "BoundPropagator.h"
+#include "LearningEngine.h"
 #include "utils.h"
 
 class ParallelManager : virtual public Search {
@@ -25,11 +26,15 @@ protected:
 
   /* counter for subproblem IDs */
   size_t m_subprobCount;
+  ProgramOptions* m_options;
 
   /* for LDS */
 //  SearchSpace* m_ldsSpace;  // plain pointer to avoid destructor call
   scoped_ptr<LimitedDiscrepancy> m_ldsSearch;
   scoped_ptr<BoundPropagator> m_ldsProp;
+
+  /* for complexity prediction */
+  scoped_ptr<LearningEngine> m_learner;
 
   /* for sampling subproblems */
   scoped_ptr<SearchSpace> m_sampleSpace;
@@ -89,6 +94,8 @@ protected:
 
 
 public:
+  /* performs subproblem sampling and learns a model to predict complexities */
+  bool doLearning();
   /* computes the parallel frontier and , returns true iff successful */
   bool findFrontier();
   /* writes subproblem information to disk */

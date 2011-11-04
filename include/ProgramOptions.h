@@ -42,7 +42,9 @@ public:
   int rotateLimit; // how many nodes to expand per subproblem stack before rotating
   int subprobOrder; // subproblem ordering, integers defined in _base.h
   int sampleDepth; // max. depth for randomness in sampler (will follow heuristic otherwise)
+  int sampleCount; // number of subproblem samples to collect for learning complexities
   int sampleScheme; // sampling scheme (TBD)
+  double sampleSize; // min. size of subproblems to sample (in 10^6 nodes)
 
   double initialBound; // initial lower bound
 
@@ -74,7 +76,8 @@ inline ProgramOptions::ProgramOptions() :
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
 		      lds(NONE), seed(NONE), rotateLimit(0), subprobOrder(NONE),
-		      sampleDepth(NONE), sampleScheme(NONE),
+		      sampleDepth(NONE), sampleCount(NONE), sampleScheme(NONE),
+		      sampleSize(1.0),
 		      initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

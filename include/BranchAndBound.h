@@ -24,11 +24,11 @@ protected:
 protected:
   bool isDone() const;
   bool doExpand(SearchNode* n);
-  void reset(SearchNode* p = NULL);
   SearchNode* nextNode();
   bool isMaster() const { return false; }
 
 public:
+  void reset(SearchNode* p = NULL);
   BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) ;
   virtual ~BranchAndBound() {}
 };

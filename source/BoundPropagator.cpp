@@ -100,6 +100,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
           highestDelete = make_pair(cur,prev);
 #ifdef PARALLEL_STATIC
           subCount += prev->getSubCount();
+          m_subproblemCountCache = subCount;
           m_subproblemStatsCache.update(prev, m_space->pseudotree->getNode(prev->getVar()), subCount);
 #endif
 #ifdef PARALLEL_DYNAMIC
