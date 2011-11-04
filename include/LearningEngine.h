@@ -30,6 +30,9 @@ public:
    * with the given stats */
   virtual double predict(const SubproblemStats&) const = 0;
 
+  /* Prints subproblem stats to file (with column titles) */
+  void statsToFile(const string& fn) const;
+
   LearningEngine(ProgramOptions* opt) : m_options(opt) {}
   virtual ~LearningEngine() {};
 

@@ -25,6 +25,7 @@
 #define PREFIX_SUB "temp_sub."
 #define PREFIX_LOG "temp_log."
 #define PREFIX_STATS "temp_stats."
+#define PREFIX_SAMPLE "temp_sample."
 
 #define PREFIX_JOBS "temp_jobs."
 
@@ -62,11 +63,15 @@ struct PQEntryComp {
 
 
 bool ParallelManager::doLearning() {
+#ifndef NO_ASSIGNMENT
+  m_sampleSearch->setInitialSolution(this->getCurOptValue(), this->getCurOptTuple());
+#else
+  m_sampleSearch->setInitialSolution(this->getCurOptValue());
+#endif
+  BoundPropagator prop(m_problem, m_sampleSpace.get());
 
   // collect samples
   int sampleCount = 0;
-  BoundPropagator prop(m_problem, m_sampleSpace.get());
-
   for (; sampleCount < m_options->sampleCount; ++sampleCount) {
     m_sampleSearch->reset();
     prop.resetSubCount();
@@ -86,6 +91,11 @@ bool ParallelManager::doLearning() {
       break;
     }
   }
+
+  // Output sample stats to file
+  oss fname;
+  fname << PREFIX_SAMPLE << m_options->problemName << '.' << m_options->runTag << ".csv";
+  m_learner->statsToFile(fname.str());
 
   return true;
 }

@@ -24,8 +24,8 @@ protected:
   SearchSpace* m_space;
 
 #ifdef PARALLEL_STATIC
-  count_t m_subproblemCountCache;
-  SubproblemStats m_subproblemStatsCache;
+  count_t m_subCountCache;
+  SubproblemStats m_subStatsCache;
 #endif
 
 #ifdef PARALLEL_DYNAMIC
@@ -52,9 +52,9 @@ public:
   SearchNode* propagate(SearchNode* n, bool reportSolution = false, SearchNode* upperLimit = NULL);
 
 #ifdef PARALLEL_STATIC
-  const SubproblemStats& getSubproblemStatsCache() const { return m_subproblemStatsCache; }
-  count_t getSubCountCache() const { return m_subproblemCountCache; }
-  void resetSubCount() { m_subproblemCountCache = 0; }
+  const SubproblemStats& getSubproblemStatsCache() const { return m_subStatsCache; }
+  count_t getSubCountCache() const { return m_subCountCache; }
+  void resetSubCount() { m_subCountCache = 0; }
 #endif
 
 #ifdef PARALLEL_DYNAMIC
@@ -77,7 +77,7 @@ public:
   BoundPropagator(Problem* p, SearchSpace* s, bool doCaching = true)
     : m_doCaching(doCaching), m_problem(p), m_space(s)
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-  , m_subproblemCountCache(0)
+  , m_subCountCache(0)
 #endif
   { /* empty */ }
   virtual ~BoundPropagator() {}

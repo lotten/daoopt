@@ -39,8 +39,12 @@ SearchNode* Search::initSearch() {
     m_space->root->setChild(next);
 
     return next;
+  } else {
+    if (m_space->root->getChildCountAct())
+      return m_space->root->getChildren()[0];
+    else
+      return m_space->root;
   }
-  return NULL;
 }
 
 
@@ -651,14 +655,17 @@ void Search::setInitialSolution(double d
     ,const vector<val_t>& tuple
 #endif
   ) const {
-  assert(m_space);
-  m_space->root->setValue(d);
+  assert(m_space && m_space->root);
+  double curValue = m_space->root->getValue();
+  if (ISNAN(curValue) || d > curValue) {
+    m_space->root->setValue(d);
 #ifdef NO_ASSIGNMENT
-  m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
+    m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
 #else
-  m_space->root->setOptAssig(tuple);
-  m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
+    m_space->root->setOptAssig(tuple);
+    m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
 #endif
+  }
 }
 
 

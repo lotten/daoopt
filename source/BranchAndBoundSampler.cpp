@@ -40,7 +40,7 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
     if (n->getDepth() <= m_space->options->sampleDepth)
       pick = rand::next(chi.size());
 
-    for (int i = 0; i < chi.size(); ++i) {
+    for (int i = 0; i < (int) chi.size(); ++i) {
       if (i != pick) {
         m_stack.push(chi[i]);
         DIAG(oss ss; ss <<'\t'<< chi[i] <<": "<< *(chi[i]) <<" (l="<< chi[i]->getLabel() <<")"<< endl; myprint(ss.str()); )
