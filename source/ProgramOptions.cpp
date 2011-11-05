@@ -51,9 +51,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #ifdef PARALLEL_STATIC
       ("pre", "perform preprocessing and generate subproblems only")
       ("post", "read previously solved subproblems and compile solution")
-      ("sampledepth", po::value<int>()->default_value(10), "randomness cutoff for initial sampling")
-      ("samplecount", po::value<int>()->default_value(5), "number of subproblem samples to collect")
-      ("samplesize", po::value<double>()->default_value(5.0), "min. sample size (in 10^5 nodes)")
+      ("sampledepth", po::value<int>()->default_value(10), "Randomness branching depth for initial sampling")
+      ("samplesizes", po::value<string>(), "Sequence of sample sizes for complexity prediction (in 10^5 nodes)")
+      ("samplerepeat", po::value<int>()->default_value(1), "Number of sample sequence repeats")
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
@@ -194,10 +194,10 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 
     if (vm.count("sampledepth"))
       opt->sampleDepth = vm["sampledepth"].as<int>();
-    if (vm.count("samplecount"))
-      opt->sampleCount = vm["samplecount"].as<int>();
-    if (vm.count("samplesize"))
-      opt->sampleSize = vm["samplesize"].as<double>();
+    if (vm.count("samplesizes"))
+      opt->sampleSizes = vm["samplesizes"].as<string>();
+    if (vm.count("samplerepeat"))
+      opt->sampleRepeat = vm["samplerepeat"].as<int>();
 
     if (vm.count("reduce"))
       opt->out_reducedFile = vm["reduce"].as<string>();

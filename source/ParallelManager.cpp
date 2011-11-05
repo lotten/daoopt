@@ -70,9 +70,20 @@ bool ParallelManager::doLearning() {
 #endif
   BoundPropagator prop(m_problem, m_sampleSpace.get());
 
+  vector<double> sampleSizes;
+  for (int i = 0; i < m_options->sampleRepeat; ++i) {
+    istringstream iss(m_options->sampleSizes);
+    while (iss) {
+      double d;
+      iss >> d;
+      iss.ignore(1);
+      sampleSizes.push_back(d);
+    }
+  }
+
   // collect samples
   int sampleCount = 0;
-  for (; sampleCount < m_options->sampleCount; ++sampleCount) {
+  for (; sampleCount < sampleSizes.size(); ++sampleCount) {
     m_sampleSearch->reset();
     prop.resetSubCount();
 
@@ -81,7 +92,7 @@ bool ParallelManager::doLearning() {
       n = m_sampleSearch->nextLeaf();
       if (!n) break;
       prop.propagate(n, false);
-    } while (prop.getSubCountCache() < m_options->sampleSize * 100000);
+    } while (prop.getSubCountCache() < sampleSizes[sampleCount] * 100000);
 
     if (n) {
       cout << prop.getSubproblemStatsCache() << endl;
