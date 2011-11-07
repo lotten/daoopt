@@ -107,6 +107,9 @@ public:
   /* recreates the frontier given a previously written subproblem file */
   bool restoreFrontier();
 
+  /* implemented from Search */
+  size_t getSubproblemCount() const { return m_subprobCount; }
+
 public:
   ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h);
   virtual ~ParallelManager() {}

@@ -165,12 +165,11 @@ bool ParallelManager::restoreFrontier() {
 
   }
 
+  m_subprobCount = subprobs.size();
   ss.clear();
-  ss << "Recovered " << subprobs.size() << " subproblems from file " << subprobFile << endl;
+  ss << "Recovered " << m_subprobCount << " subproblems from file " << subprobFile << endl;
   myprint(ss.str());
 
-  m_subprobCount = count;
-  m_nextThreadId = count;
 
   //////////////////////////////////////////////////////////////////////
   // part 2: now expand search space until stored frontier nodes found
@@ -292,7 +291,6 @@ bool ParallelManager::findFrontier() {
 
   // move from open stack to external queue
   m_external.reserve(m_open.size());
-  m_nextThreadId = m_open.size(); // thread count
   while (m_open.size()) {
     m_open.top().second->setExtern();
     m_external.push_back(m_open.top().second);

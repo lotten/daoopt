@@ -28,7 +28,6 @@ protected:
 
 //  count_t m_nodesOR;             // Keeps track of the number of OR nodes
 //  count_t m_nodesAND;            // Keeps track of the number of AND nodes
-  count_t m_nextThreadId;        // Next subproblem thread id
 
   Problem* m_problem;           // The problem instance
   Pseudotree* m_pseudotree;     // Pseudo tree
@@ -67,7 +66,7 @@ public:
   count_t getSubCount() const { return m_space->getTrueRoot()->getSubCount(); }
 #endif
 //  pair<count_t,count_t> getNoNodes() const { return make_pair(m_nodesOR, m_nodesAND); }
-  count_t getThreadCount() const { return m_nextThreadId; }
+  virtual count_t getSubproblemCount() const { assert(false); return NONE; }
 
   const vector<count_t>& getNodeProfile() const { return m_nodeProfile; }
   const vector<count_t>& getLeafProfile() const { return m_leafProfile; }

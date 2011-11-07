@@ -11,7 +11,7 @@
 #include "ProgramOptions.h"
 
 Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
-  m_nextThreadId(0), m_problem(prob), m_pseudotree(pt), m_space(s), m_heuristic(h)
+    m_problem(prob), m_pseudotree(pt), m_space(s), m_heuristic(h)
 #ifdef PARALLEL_DYNAMIC
   , m_nextSubprob(NULL)
 #endif

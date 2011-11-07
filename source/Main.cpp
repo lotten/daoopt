@@ -435,7 +435,7 @@ bool Main::runSearchStatic() {
     success = success && m_search->findFrontier();
     /* generate files for subproblems */
     success = success && m_search->writeJobs();
-    if (m_search->getThreadCount()==0) m_solved = true;
+    if (m_search->getSubproblemCount()==0) m_solved = true;
   } else { // post-only mode
     /* restore frontier from file */
     success = success && m_search->findFrontier(); // TODO
@@ -481,7 +481,7 @@ bool Main::outputStats() const {
   cout << endl << "--------- Search done ---------" << endl;
   cout << "Problem name:  " << m_problem->getName() << endl;
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-  cout << "Condor jobs:   " << m_search->getThreadCount() << endl;
+  cout << "Condor jobs:   " << m_search->getSubproblemCount() << endl;
 #endif
   cout << "OR nodes:      " << m_space->nodesOR << endl;
   cout << "AND nodes:     " << m_space->nodesAND << endl;

@@ -21,6 +21,7 @@
 class SearchMaster : virtual public Search {
 
 protected:
+  count_t m_nextThreadId;           // Next subproblem thread id
   SearchSpaceMaster* m_spaceMaster; // master search space
 
 public:
@@ -29,6 +30,9 @@ public:
 
   /* performs initialization, returns true iff problem is solved in the process */
   bool init() ;
+
+  /* implemented from Search class */
+  size_t getSubproblemCount() const { return m_nextThreadId; }
 
 protected:
 
@@ -67,7 +71,7 @@ protected:
 
 
 inline SearchMaster::SearchMaster(Problem* prob, Pseudotree* pt, SearchSpaceMaster* s, Heuristic* h) :
-          Search(prob, pt, s, h), m_spaceMaster(s)
+          Search(prob, pt, s, h), m_nextThreadId(0), m_spaceMaster(s)
 {
   m_spaceMaster->stats = new Statistics();
 }
