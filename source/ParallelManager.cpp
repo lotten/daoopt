@@ -364,7 +364,7 @@ bool ParallelManager::writeJobs() const {
   // reset CSV file
   string csvfile = filename(PREFIX_STATS,".csv");
   ofstream csv(csvfile.c_str(),ios_base::out | ios_base::trunc);
-  csv << "#id\troot\tdepth\tvars\tlb\tub\theight\twidth" << endl;
+  csv << "#id\troot\tdepth\tvars\tlb\tub\theight\twidth\test" << endl;
   csv.close();
 
   // encode actual subproblems
@@ -647,6 +647,7 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
 
     double lb = lowerBound(node);
     double ub = node->getHeur();
+    double estimate = evaluate(node);
 
     csv << id
         << '\t' << rootVar
@@ -655,7 +656,8 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
         << '\t' << lb
         << '\t' << ub
         << '\t' << height
-        << '\t' << width;
+        << '\t' << width
+        << '\t' << estimate;
     csv << endl;
 
   } // for-loop over nodes
@@ -780,9 +782,7 @@ double ParallelManager::evaluate(const SearchNode* node) const {
   double L = lowerBound(node);
   double U = node->getHeur();
 
-  //double z = (ub-lb) * pow(height,.5) * pow(width,.5);                                             
   double z = 2*(U-L) + h + 0.5 * log10(n);
-
   // for pdb1e5k
 //  double z = -19.922 - 5.489*(U-L) + 2.548*d + 0.148*(U-L)*h - 0.204*U;
   // for pdb1tfe
