@@ -7,7 +7,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.4d"
+#define VERSIONINFO "0.99.4e"
 
 time_t _time_start, _time_pre;
 
@@ -174,6 +174,12 @@ bool Main::findOrLoadOrdering() {
     m_pseudotree->outputToFile(m_options->out_pstFile);
   }
 
+  if (m_options->maxWidthAbort != NONE &&
+      m_options->maxWidthAbort < m_pseudotree->getWidth()) {
+    cout << "Problem too complex complex, aborting (limit is w="
+         << m_options->maxWidthAbort << ")" << endl;
+    return false;
+  }
   return true;
 }
 

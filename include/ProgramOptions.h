@@ -44,6 +44,7 @@ public:
   int sampleDepth; // max. depth for randomness in sampler (will follow heuristic otherwise)
   int sampleScheme; // sampling scheme (TBD)
   int sampleRepeat; // how many times to repeat the sample size sequence
+  int maxWidthAbort; // upper bound for induced width, abort if above this
 
   double initialBound; // initial lower bound
 
@@ -77,6 +78,7 @@ inline ProgramOptions::ProgramOptions() :
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
 		      lds(NONE), seed(NONE), rotateLimit(0), subprobOrder(NONE),
 		      sampleDepth(NONE), sampleScheme(NONE), sampleRepeat(NONE),
+		      maxWidthAbort(NONE),
 		      initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */
