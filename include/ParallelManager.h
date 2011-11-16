@@ -108,7 +108,7 @@ public:
   bool restoreFrontier();
 
   /* implemented from Search */
-  size_t getSubproblemCount() const { return m_subprobCount; }
+  count_t getSubproblemCount() const { return m_subprobCount; }
 
 public:
   ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h);
