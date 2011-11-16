@@ -130,7 +130,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       opt->order_iterations = vm["iterations"].as<int>();
 
     if (vm.count("max-width"))
-      opt->maxWidthAbort = vm["iterations"].as<int>();
+      opt->maxWidthAbort = vm["max-width"].as<int>();
 
     if (vm.count("cutoff-depth"))
       opt->cutoff_depth = vm["cutoff-depth"].as<int>();
