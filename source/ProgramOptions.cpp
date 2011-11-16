@@ -37,7 +37,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("rotatelimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
 #endif
       ("iterations,t", po::value<int>()->default_value(25), "iterations for finding ordering")
-      ("max-depth", po::value<int>(), "max. induced width to process, abort otherwise")
+      ("max-width", po::value<int>(), "max. induced width to process, abort otherwise")
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
       ("cutoff-width,w", po::value<int>()->default_value(-1), "cutoff width for central search")
@@ -129,8 +129,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     if (vm.count("iterations"))
       opt->order_iterations = vm["iterations"].as<int>();
 
-    if (vm.count("max-depth"))
-      opt->maxWidthAbort = vm["iterations"].as<int>();
+    if (vm.count("max-width"))
+      opt->maxWidthAbort = vm["max-width"].as<int>();
 
     if (vm.count("cutoff-depth"))
       opt->cutoff_depth = vm["cutoff-depth"].as<int>();
