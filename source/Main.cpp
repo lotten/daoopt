@@ -18,8 +18,10 @@ bool Main::parseOptions(int argc, char** argv) {
   cout << endl;
   // parse command line
   ProgramOptions* opt = parseCommandLine(argc, argv);
-  if (!opt)
+  if (!opt) {
+    err_txt("Error parsing command line.");
     return false;
+  }
 
   if (opt->seed == NONE)
     opt->seed = time(0);
@@ -176,8 +178,11 @@ bool Main::findOrLoadOrdering() {
 
   if (m_options->maxWidthAbort != NONE &&
       m_options->maxWidthAbort < m_pseudotree->getWidth()) {
-    cout << "Problem too complex complex, aborting (limit is w="
-         << m_options->maxWidthAbort << ")" << endl;
+    oss msg;
+    msg << "Problem instance with width w="<< m_pseudotree->getWidth()
+        << " is too complex, aborting (limit is w="
+        << m_options->maxWidthAbort << ")";
+    err_txt(msg.str());
     return false;
   }
   return true;
@@ -220,12 +225,13 @@ bool Main::initDataStructs() {
   // Subproblem specified? If yes, restrict.
   if (!m_options->in_subproblemFile.empty()) {
     if (m_options->in_orderingFile.empty()) {
-      cout << "Error: Subproblem specified but no ordering given." << endl;
+      err_txt("Subproblem specified but no ordering given.");
       return false;
     }else {
       m_options->order_iterations = 0;
       cout << "Reading subproblem from file " << m_options->in_subproblemFile << '.' << endl;
       if (!m_search->restrictSubproblem(m_options->in_subproblemFile) ) {
+        err_txt("Subproblem restriction failed.");
         return false;
       }
     }
@@ -294,14 +300,15 @@ bool Main::compileHeuristic() {
     if (m_options->in_boundFile.size()) {
       cout << "Loading initial lower bound from file " << m_options->in_boundFile << '.' << endl;
       if (!m_search->loadInitialBound(m_options->in_boundFile)) {
+        err_txt("Loading initial bound failed");
         return false;
       }
     } else if (!ISNAN ( m_options->initialBound )) {
-      cout <<  "Setting external lower bound " << m_options->initialBound << endl;
 #ifdef NO_ASSIGNMENT
+      cout <<  "Setting external lower bound " << m_options->initialBound << endl;
       m_search->setInitialSolution(m_options->initialBound);
 #else
-      cout << "Error: Compiled with tuple support, value-based bound not possible." << endl;
+      err_txt("Compiled with tuple support, value-based bound not possible.");
       return false;
 #endif
     }
@@ -333,6 +340,7 @@ bool Main::runLDS() {
                            m_heuristic.get(), m_options->lds);
     if (!m_options->in_subproblemFile.empty()) {
       if (!lds.restrictSubproblem(m_options->in_subproblemFile))
+        err_txt("Subproblem restriction for LDS failed.");
         return false;
     }
     BoundPropagator propLDS(m_problem.get(), spaceLDS.get(), false);  // doCaching = false
@@ -458,6 +466,7 @@ bool Main::runSearchStatic() {
 
   if (!success) {
     myprint("!!! Search failed. !!!\n");
+    err_txt("Main search routine failed.");
     return false;
   }
 

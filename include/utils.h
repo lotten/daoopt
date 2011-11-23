@@ -40,6 +40,7 @@ inline int memoryusage() {
 
 void myprint(std::string s);
 void myerror(std::string s);
+void err_txt(std::string s);
 
 ostream& operator <<(ostream& os, const vector<int>& s);
 ostream& operator <<(ostream& os, const vector<uint>& s);

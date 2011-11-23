@@ -27,6 +27,14 @@ void myerror(std::string s) {
   }
 }
 
+void err_txt(std::string s) {
+  GETLOCK(mtx_io, lk);
+  std::cerr << "Error: " << s << endl;
+  ofstream ferr("err.txt", ios_base::out | ios_base::app);
+  ferr << "DAOOPT: " << s << endl;
+  ferr.close();
+}
+
 
 /***************************************/
 /*        some cout functions          */
