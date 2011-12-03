@@ -58,6 +58,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
+      ("slsX", po::value<int>()->default_value(0), "Number of initial SLS iterations")
+      ("slsT", po::value<int>()->default_value(5), "Time per SLS iteration")
       ("lds,a",po::value<int>()->default_value(-1), "run initial LDS search with given limit (-1: disabled)")
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
       ("seed", po::value<int>(), "seed for random number generator, time() otherwise")
@@ -166,6 +168,11 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 
     if (vm.count("lds"))
       opt->lds = vm["lds"].as<int>();
+
+    if (vm.count("slsX"))
+      opt->slsIter = vm["slsX"].as<int>();
+    if (vm.count("slsT"))
+      opt->slsTime = vm["slsT"].as<int>();
 
     if (vm.count("memlimit"))
       opt->memlimit = vm["memlimit"].as<int>();

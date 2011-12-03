@@ -23,6 +23,7 @@ CPP_SRCS += \
 ../source/ProgramOptions.cpp \
 ../source/Pseudotree.cpp \
 ../source/Random.cpp \
+../source/SLSWrapper.cpp \
 ../source/Search.cpp \
 ../source/SearchMaster.cpp \
 ../source/SearchNode.cpp \
@@ -52,6 +53,7 @@ OBJS += \
 ./source/ProgramOptions.o \
 ./source/Pseudotree.o \
 ./source/Random.o \
+./source/SLSWrapper.o \
 ./source/Search.o \
 ./source/SearchMaster.o \
 ./source/SearchNode.o \
@@ -81,6 +83,7 @@ CPP_DEPS += \
 ./source/ProgramOptions.d \
 ./source/Pseudotree.d \
 ./source/Random.d \
+./source/SLSWrapper.d \
 ./source/Search.d \
 ./source/SearchMaster.d \
 ./source/SearchNode.d \

@@ -45,6 +45,8 @@ public:
   int sampleScheme; // sampling scheme (TBD)
   int sampleRepeat; // how many times to repeat the sample size sequence
   int maxWidthAbort; // upper bound for induced width, abort if above this
+  int slsIter; // number of SLS iterations for initial lower bound
+  int slsTime; // time per SLS iteration (in seconds)
 
   double initialBound; // initial lower bound
 
@@ -78,7 +80,7 @@ inline ProgramOptions::ProgramOptions() :
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
 		      lds(NONE), seed(NONE), rotateLimit(0), subprobOrder(NONE),
 		      sampleDepth(NONE), sampleScheme(NONE), sampleRepeat(NONE),
-		      maxWidthAbort(NONE),
+		      maxWidthAbort(NONE), slsIter(0), slsTime(5),
 		      initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

@@ -504,10 +504,6 @@ void Problem::updateSolution(double cost,
     pair<size_t,size_t> nodes,
     bool output) {
 
-#ifndef NO_ASSIGNMENT
-  bool subprob = ((int) sol.size() != m_n) ? true : false;
-#endif
-
   if ( (ISNAN(m_curCost) || cost > m_curCost ) ) // TODO? && cost != ELEM_ZERO )
     m_curCost = cost;
   else
@@ -515,36 +511,30 @@ void Problem::updateSolution(double cost,
 
   if (cost == ELEM_ZERO) output = false;
   ostringstream ss;
-
-  if (output) {
+  if (output)
     ss << "u " << nodes.first << ' ' <<  nodes.second << ' ' << SCALE_LOG(cost) ;
-  }
 
 #ifndef NO_ASSIGNMENT
+  bool subprob = ((int) sol.size() != m_n) ? true : false;
+  bool fullProb = ((int) sol.size() == m_nOrg) ? true : false;
 
-  int solsize = -1;
-  if (subprob) { // only subproblem
+  if (fullProb || subprob) {
     m_curSolution = sol;
-    solsize = (int) sol.size() -1 ;
-  }
-  else { // reconstruct full solution
+  } else {  // reconstruct full solution
     m_curSolution.resize(m_nOrg, UNKNOWN);
-    solsize = m_nOrg;
 
     for (int i=0; i<m_nOrg; ++i) {
       map<int,int>::const_iterator itRen = m_old2new.find(i);
       if (itRen != m_old2new.end()) { // var part of solution
-	m_curSolution.at(i) = sol.at(itRen->second);
+        m_curSolution.at(i) = sol.at(itRen->second);
       } else {
-	map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
-	if (itEvid != m_evidence.end()) { // var part of evidence
-	  m_curSolution.at(i) = itEvid->second;
-	} else { // var had unary domain
-	  m_curSolution.at(i) = 0;
-	}
+	      map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
+	      if (itEvid != m_evidence.end())  // var part of evidence
+	        m_curSolution.at(i) = itEvid->second;
+	      else  // var had unary domain
+	        m_curSolution.at(i) = 0;
       }
     }
-
   }
 
   if (output) {

@@ -9,6 +9,7 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include source/subdir.mk
+-include lib/sls4mpe/subdir.mk
 -include lib/boost.src/thread/src/pthread/subdir.mk
 -include lib/boost.src/thread/src/subdir.mk
 -include lib/boost.src/program_options/src/subdir.mk

@@ -25,6 +25,7 @@ C_UPPER_DEPS :=
 SUBDIRS := \
 source \
 lib \
+lib/sls4mpe \
 lib/boost.src/program_options/src \
 include \
 . \

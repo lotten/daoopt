@@ -16,6 +16,7 @@
 #include "Pseudotree.h"
 #include "ProgramOptions.h"
 #include "MiniBucketElim.h"
+#include "SLSWrapper.h"
 
 #ifdef PARALLEL_DYNAMIC
   #include "BranchAndBoundMaster.h"
@@ -42,6 +43,7 @@ protected:
   scoped_ptr<Problem> m_problem;
   scoped_ptr<Pseudotree> m_pseudotree;
   scoped_ptr<Heuristic> m_heuristic;
+  scoped_ptr<SLSWrapper> m_slsWrapper;
 
 #if defined PARALLEL_DYNAMIC
   scoped_ptr<BranchAndBoundMaster> m_search;
@@ -66,6 +68,7 @@ public:
   bool outputInfo() const;
   bool loadProblem();
   bool findOrLoadOrdering();
+  bool runSLS();
   bool initDataStructs();
   bool compileHeuristic();
   bool runLDS();

@@ -7,7 +7,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.4e"
+#define VERSIONINFO "0.99.5"
 
 time_t _time_start, _time_pre;
 
@@ -189,6 +189,21 @@ bool Main::findOrLoadOrdering() {
 }
 
 
+bool Main::runSLS() {
+  if (!m_options->in_subproblemFile.empty())
+    return true;  // no SLS in case of subproblem processing
+  if (m_options->slsIter <= 0)
+    return true;
+  cout << "Running SLS " << m_options->slsIter << " times for "
+       << m_options->slsTime << " seconds" << endl;
+  m_slsWrapper.reset(new SLSWrapper());
+  m_slsWrapper->init(m_options->in_problemFile, m_options->slsIter, m_options->slsTime);
+  m_slsWrapper->run();
+  cout << "SLS finished" << endl;
+  return true;
+}
+
+
 bool Main::initDataStructs() {
 
   // The main search space
@@ -249,6 +264,18 @@ bool Main::initDataStructs() {
 #ifdef MEMDEBUG
   malloc_stats();
 #endif
+
+  // pull solution from SLS, if applicable
+  if (m_options->slsIter > 0) {
+    vector<val_t> slsTup;
+    double slsSol = m_slsWrapper->getSolution(&slsTup);
+    m_search->setInitialSolution(slsSol
+#ifndef NO_ASSIGNMENT
+        ,slsTup
+#endif
+    );
+    cout << "Passed SLS solution to search: " << slsSol << endl;
+  }
 
   return true;
 }
@@ -319,7 +346,7 @@ bool Main::compileHeuristic() {
     m_solved = true;
     cout << endl << "--------- Solved during preprocessing ---------" << endl;
   }
-  if (m_heuristic->isAccurate()) {
+  else if (m_heuristic->isAccurate()) {
     cout << endl << "Heuristic is accurate!" << endl;
     m_options->lds = 0; // set LDS to 0 (sufficient given perfect heuristic)
     m_solved = true;
@@ -343,6 +370,18 @@ bool Main::runLDS() {
         err_txt("Subproblem restriction for LDS failed.");
         return false;
     }
+
+    if (m_options->slsIter > 0) {
+      vector<val_t> slsTup;
+      double slsSol = m_slsWrapper->getSolution(&slsTup);
+      lds.setInitialSolution(slsSol
+#ifndef NO_ASSIGNMENT
+          ,slsTup
+#endif
+      );
+      cout << "LDS: Solution from SLS loaded." << endl;
+    }
+
     BoundPropagator propLDS(m_problem.get(), spaceLDS.get(), false);  // doCaching = false
     SearchNode* n = lds.nextLeaf();
     while (n) {
