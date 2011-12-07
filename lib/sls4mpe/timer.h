@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_TIMER_H_
 #define _SLS4MPE_TIMER_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #define WIN32 1
 #ifdef WIN32
 	#define NT 1 
@@ -23,4 +26,6 @@ double elapsed_seconds();
 
 }  // sls4mpe
 
+#endif
 #endif  // _TIMER_H_
+

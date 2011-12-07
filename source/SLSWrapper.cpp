@@ -6,6 +6,7 @@
  */
 
 #include "SLSWrapper.h"
+#ifdef ENABLE_SLS
 
 bool SLSWrapper::init(string filename, int iter, int time/*Problem* prob*/) {
 
@@ -73,3 +74,6 @@ double SLSWrapper::getSolution(vector<val_t>* tuple) const {
   }
   return m_likelihood;
 }
+
+#endif  /* ENABLE_SLS */
+

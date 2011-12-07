@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include <iostream>
 #include "sls4mpe/main_algo.h"
 
@@ -2247,3 +2250,5 @@ double sizeOfVariableSet(vector<int> vars){
 }
 
 }  // sls4mpe
+
+#endif

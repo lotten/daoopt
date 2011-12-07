@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_PROBABILITYTABLE_H_
 #define _SLS4MPE_PROBABILITYTABLE_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/main_algo.h"
 #include "sls4mpe/Variable.h"
 #include "sls4mpe/my_set.h"
@@ -146,4 +149,5 @@ inline double ProbabilityTable::change(int localVar, int value){
 
 }  // sls4mpe
 
+#endif
 #endif

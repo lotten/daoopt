@@ -58,8 +58,10 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
+#ifdef ENABLE_SLS
       ("slsX", po::value<int>()->default_value(0), "Number of initial SLS iterations")
       ("slsT", po::value<int>()->default_value(5), "Time per SLS iteration")
+#endif
       ("lds,a",po::value<int>()->default_value(-1), "run initial LDS search with given limit (-1: disabled)")
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
       ("seed", po::value<int>(), "seed for random number generator, time() otherwise")

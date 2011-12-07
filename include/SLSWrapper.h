@@ -11,12 +11,14 @@
 #ifndef SLSWRAPPER_H_
 #define SLSWRAPPER_H_
 
+#include "Problem.h"
+
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/main_algo.h"
 #include "sls4mpe/timer.h"
 #include "sls4mpe/global.h"
 #include "sls4mpe/ProblemReader.h"
-
-#include "Problem.h"
 
 class SLSWrapper {
 protected:
@@ -45,5 +47,6 @@ inline SLSWrapper::~SLSWrapper() {
     delete[] m_assignment;
 }
 
+#endif /* ENABLE_SLS */
 
 #endif /* SLSWRAPPER_H_ */

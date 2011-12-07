@@ -1,5 +1,9 @@
 #ifndef _SLS4MPE_PROBLEMREADER_H_
 #define _SLS4MPE_PROBLEMREADER_H_
+
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include <cstdio>
 #include "sls4mpe/global.h"
 #include "sls4mpe/Variable.h"
@@ -25,4 +29,5 @@ private:
 
 }  // sls4mpe
 
+#endif
 #endif

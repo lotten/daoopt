@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include <string.h>
 #include "sls4mpe/Variable.h"
 #include "sls4mpe/my_set.h"
@@ -333,3 +336,5 @@ Variable::~Variable(){
 }
 
 }  // sls4mpe
+
+#endif

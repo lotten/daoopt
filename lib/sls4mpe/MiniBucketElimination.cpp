@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/MiniBucketElimination.h"
 #include "sls4mpe/random_numbers.h"
 #include "sls4mpe/my_set.h"
@@ -520,3 +523,5 @@ void MiniBucketElimination::preprocess(double weightBoundToStopExecution, int *o
 }
 
 }  // sls4mpe
+
+#endif

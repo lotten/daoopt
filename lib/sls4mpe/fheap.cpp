@@ -2,6 +2,9 @@
 /*
  *   Shane Saunders
  */
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -522,3 +525,6 @@ void fh_dump(fheap_t *h)
 #endif
 
 }  // sls4mpe
+
+#endif
+

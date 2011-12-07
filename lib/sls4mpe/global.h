@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_GLOBAL_H_
 #define _SLS4MPE_GLOBAL_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 namespace sls4mpe {
 class ProbabilityTable; // just such that we know the name;
 class Variable; // just such that we know the name;
@@ -176,4 +179,5 @@ extern bool verbose;
 
 }  // sls4mpe
 
+#endif
 #endif

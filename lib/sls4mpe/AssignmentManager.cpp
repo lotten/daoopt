@@ -1,5 +1,7 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/AssignmentManager.h"
-#include "DEFINES.h"  // for NO_ASSIGNMENT
 
 namespace sls4mpe {
 
@@ -211,3 +213,5 @@ double AssignmentManager::get_log_score(){
 }
 
 }  // sls4mpe
+
+#endif

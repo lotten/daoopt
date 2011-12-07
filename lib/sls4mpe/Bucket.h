@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_BUCKET_H_
 #define _SLS4MPE_BUCKET_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/ProbabilityTable.h"
 #include "sls4mpe/global.h"
 #include <vector>
@@ -34,4 +37,5 @@ public:
 
 }  // sls4mpe
 
+#endif
 #endif

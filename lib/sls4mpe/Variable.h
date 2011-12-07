@@ -1,5 +1,9 @@
 #ifndef _SLS4MPE_VARIABLE_H
 #define _SLS4MPE_VARIABLE_H
+
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include <stdio.h>
 #include "sls4mpe/global.h"
 #include <set>
@@ -90,4 +94,5 @@ double inline Variable::score(int value){
 
 }  // sls4mpe
 
+#endif
 #endif

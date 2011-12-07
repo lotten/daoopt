@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/my_set.h"
 #include <stdio.h>
 #include <vector>
@@ -215,3 +218,5 @@ void without(int num, const int* array, int element){
 }*/
 
 }  // sls4mpe
+
+#endif

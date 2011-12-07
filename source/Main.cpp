@@ -190,6 +190,7 @@ bool Main::findOrLoadOrdering() {
 
 
 bool Main::runSLS() {
+#ifdef ENABLE_SLS
   if (!m_options->in_subproblemFile.empty())
     return true;  // no SLS in case of subproblem processing
   if (m_options->slsIter <= 0)
@@ -200,6 +201,7 @@ bool Main::runSLS() {
   m_slsWrapper->init(m_options->in_problemFile, m_options->slsIter, m_options->slsTime);
   m_slsWrapper->run();
   cout << "SLS finished" << endl;
+#endif
   return true;
 }
 
@@ -265,6 +267,7 @@ bool Main::initDataStructs() {
   malloc_stats();
 #endif
 
+#ifdef ENABLE_SLS
   // pull solution from SLS, if applicable
   if (m_options->slsIter > 0) {
     vector<val_t> slsTup;
@@ -276,6 +279,7 @@ bool Main::initDataStructs() {
     );
     cout << "Passed SLS solution to search: " << slsSol << endl;
   }
+#endif
 
   return true;
 }
@@ -371,6 +375,7 @@ bool Main::runLDS() {
         return false;
     }
 
+#ifdef ENABLE_SLS
     if (m_options->slsIter > 0) {
       vector<val_t> slsTup;
       double slsSol = m_slsWrapper->getSolution(&slsTup);
@@ -381,6 +386,7 @@ bool Main::runLDS() {
       );
       cout << "LDS: Solution from SLS loaded." << endl;
     }
+#endif
 
     BoundPropagator propLDS(m_problem.get(), spaceLDS.get(), false);  // doCaching = false
     SearchNode* n = lds.nextLeaf();

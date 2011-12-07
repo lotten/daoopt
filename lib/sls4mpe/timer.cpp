@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/timer.h"
 
 namespace sls4mpe {
@@ -47,3 +50,5 @@ double elapsed_seconds(){
 }
 
 }  // sls4mpe
+
+#endif

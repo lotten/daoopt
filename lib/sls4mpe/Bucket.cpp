@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/Bucket.h"
 #include "sls4mpe/my_set.h"
 #include "sls4mpe/Variable.h"
@@ -187,3 +190,5 @@ int Bucket::constructPartititons(int ib, double weightBound){
 }
 
 }  // sls4mpe
+
+#endif

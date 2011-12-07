@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/random_numbers.h"
 
 namespace sls4mpe {
@@ -62,3 +65,5 @@ long int random_lh( long *idum, long int low, long int high )
 }
 
 }  // sls4mpe
+
+#endif

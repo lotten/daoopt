@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_MINIBUCKETELIMINATION_H_
 #define _SLS4MPE_MINIBUCKETELIMINATION_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/Bucket.h"
 #include "sls4mpe/Variable.h"
 
@@ -33,4 +36,5 @@ private:
 
 }  // sls4mpe
 
+#endif
 #endif

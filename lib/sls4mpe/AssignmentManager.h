@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_ASSIGNMENTMANAGER_H_
 #define _SLS4MPE_ASSIGNMENTMANAGER_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include "sls4mpe/global.h"
 #include "sls4mpe/my_set.h"
 #include "sls4mpe/ProbabilityTable.h"
@@ -124,4 +127,5 @@ public:
 
 }  // sls4mpe
 
+#endif
 #endif

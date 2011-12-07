@@ -1,3 +1,6 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include <iostream>
 #include "sls4mpe/ProblemReader.h"
 #include "sls4mpe/global.h"
@@ -657,3 +660,5 @@ void ProblemReader::parse_parameters(int argc,char *argv[]){
 }
 
 }  // sls4mpe
+
+#endif

@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_MY_SET_H_
 #define _SLS4MPE_MY_SET_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #include <vector>
 using namespace std;
 
@@ -30,4 +33,5 @@ void addAllToFrom(vector<int> *vec, int* array, int size);
 
 }  // sls4mpe
 
+#endif
 #endif

@@ -1,3 +1,5 @@
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
 
 #include <cmath>
 #include <new>
@@ -441,3 +443,5 @@ ProbabilityTable::~ProbabilityTable(){
 }
 
 }  // sls4mpe
+
+#endif

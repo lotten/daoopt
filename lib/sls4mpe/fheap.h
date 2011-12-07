@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_FHEAP_H_
 #define _SLS4MPE_FHEAP_H_
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 namespace sls4mpe {
 
 /*** Header File for the Fibonacci Heap Implementation ***/
@@ -119,4 +122,5 @@ void fh_dump(fheap_t *h);
 
 }  // sls4mpe
 
+#endif
 #endif

@@ -1,6 +1,9 @@
 #ifndef _SLS4MPE_RANDOM_NUMBERS_H_
 #define _SLS4MPE_RANDIN_NUMBERS_H
 
+#include "DEFINES.h"
+#ifdef ENABLE_SLS
+
 #define IA 16807
 #define IM 2147483647
 #define AM (1.0/IM)
@@ -20,4 +23,5 @@ long int random_lh( long *idum, long int low, long int high );
 
 }  // sls4mpe
 
+#endif
 #endif

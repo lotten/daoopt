@@ -16,7 +16,9 @@
 #include "Pseudotree.h"
 #include "ProgramOptions.h"
 #include "MiniBucketElim.h"
+#ifdef ENABLE_SLS
 #include "SLSWrapper.h"
+#endif
 
 #ifdef PARALLEL_DYNAMIC
   #include "BranchAndBoundMaster.h"
@@ -43,7 +45,9 @@ protected:
   scoped_ptr<Problem> m_problem;
   scoped_ptr<Pseudotree> m_pseudotree;
   scoped_ptr<Heuristic> m_heuristic;
+#ifdef ENABLE_SLS
   scoped_ptr<SLSWrapper> m_slsWrapper;
+#endif
 
 #if defined PARALLEL_DYNAMIC
   scoped_ptr<BranchAndBoundMaster> m_search;
