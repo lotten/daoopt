@@ -1,6 +1,9 @@
 /*
  * Heuristic.h
  *
+ *  Copyright (C) 2011 Lars Otten
+ *  Licensed under the MIT License, see LICENSE.TXT
+ *  
  *  Created on: Nov 18, 2008
  *      Author: Lars Otten <lotten@ics.uci.edu>
  */

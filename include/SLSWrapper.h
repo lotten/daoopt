@@ -4,6 +4,9 @@
  *  Wrapper around the SLS4MPE code by Frank Hutter, so it can
  *  be used as a library.
  *
+ *  Copyright (C) 2011 Lars Otten
+ *  Licensed under the MIT License, see LICENSE.TXT
+ *  
  *  Created on: Nov 17, 2011
  *      Author: Lars Otten <lotten@ics.uci.edu>
  */

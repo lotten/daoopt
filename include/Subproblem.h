@@ -1,6 +1,9 @@
 /*
  * Subproblem.h
  *
+ *  Copyright (C) 2011 Lars Otten
+ *  Licensed under the MIT License, see LICENSE.TXT
+ *  
  *  Created on: Mar 2, 2010
  *      Author: Lars Otten <lotten@ics.uci.edu>
  */

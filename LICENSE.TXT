@@ -1,8 +1,9 @@
 DAOOPT: AND/OR Branch and Bound framework for MPE problems in
-graphical models
+graphical models, distributed and sequential.
 
-Copyright (C) 2011 by Lars Otten <lotten@ics.uci.edu>
-Main source code licensed under the MIT license:
+Copyright (C) 2011 Lars Otten <lotten@ics.uci.edu>
+
+Source code (except libraries, see below) licensed under the MIT license:
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +25,12 @@ THE SOFTWARE.
 
 -----
 
-This source code distribution also contains (in the lib/ folder):
-- partial Boost libaries, Boost Software License 1.0
-- gzstream library, LGPL 2.1 license
-- zlib library, custom license (see lib/zlib.h)
+This distribution also contains (in the lib/ folder):
+- partial Boost libaries, Boost Software License 1.0.
+    http://www.boost.org/
+- gzstream library, LGPL 2.1 license.
+    http://www.cs.unc.edu/Research/compgeom/gzstream/
+- zlib library, custom license (see lib/zlib.h).
+    http://zlib.net/
+- Frank Hutter's sls4mpe solver, unknown license.
+    http://www.cs.ubc.ca/labs/beta/Projects/SLS4MPE/

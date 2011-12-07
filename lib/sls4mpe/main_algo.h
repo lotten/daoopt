@@ -1,3 +1,7 @@
+/*
+ * SLS4MPE by Frank Hutter, http://www.cs.ubc.ca/labs/beta/Projects/SLS4MPE/
+ * Some modifications by Lars Otten
+ */
 #ifndef _SLS4MPE_MAIN_ALGO_H_
 #define _SLS4MPE_MAIN_ALGO_H_
 

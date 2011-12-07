@@ -1,6 +1,9 @@
 /*
  * BranchAndBoundRotate.cpp
  *
+ *  Copyright (C) 2011 Lars Otten
+ *  Licensed under the MIT License, see LICENSE.TXT
+ *  
  *  Created on: Oct 30, 2011
  *      Author: Lars Otten <lotten@ics.uci.edu>
  */

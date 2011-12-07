@@ -1,3 +1,8 @@
+/*
+ * SLS4MPE by Frank Hutter, http://www.cs.ubc.ca/labs/beta/Projects/SLS4MPE/
+ * Some modifications by Lars Otten
+ */
+
 /*** Fibonacci Heap Implementation ***/
 /*
  *   Shane Saunders
