@@ -63,11 +63,15 @@ struct PQEntryComp {
 
 
 bool ParallelManager::doLearning() {
+  if (m_options->sampleRepeat == 0)
+    return true;
+
 #ifndef NO_ASSIGNMENT
   m_sampleSearch->setInitialSolution(this->getCurOptValue(), this->getCurOptTuple());
 #else
   m_sampleSearch->setInitialSolution(this->getCurOptValue());
 #endif
+
   BoundPropagator prop(m_problem, m_sampleSpace.get());
 
   vector<double> sampleSizes;
