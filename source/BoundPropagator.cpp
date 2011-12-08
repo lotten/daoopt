@@ -275,7 +275,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
     if (cur->getType() == NODE_AND) {
       curVal = cur->getVal();
       if (curVal!=UNKNOWN)
-        assig[endVarMap[curVar]] = curVal;
+        assig.at(endVarMap.at(curVar)) = curVal;
     }
 
     if (cur->getOptAssig().size()) {

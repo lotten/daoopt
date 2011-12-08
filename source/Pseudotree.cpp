@@ -25,8 +25,8 @@ int Pseudotree::restrictSubproblem(int i) {
   m_nodes[i]->setParent(m_root);
 
   // recompute subproblem variables (recursive)
-  m_root->updateSubprobVars(m_size);
-  m_sizeConditioned = m_root->getSubprobSize()-1; // -1 for bogus
+  m_root->updateSubprobVars(m_nodes.size());  // already includes dummy
+  m_sizeConditioned = m_root->getSubprobSize()-1;  // -1 for dummy
 
   // update subproblem height, substract -1 for bogus node
   m_heightConditioned = m_root->updateDepthHeight(-1) - 1;
@@ -347,8 +347,8 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
     (*it)->orderChildren(m_subOrder);
 
   // initiate subproblem variables computation (recursive)
-  m_root->updateSubprobVars(m_nodes.size());
-  m_size = m_root->getSubprobSize() -1; // -1 for bogus
+  m_root->updateSubprobVars(m_nodes.size());  // includes dummy
+  m_size = m_root->getSubprobSize() - 1;  // -1 for dummy
 
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping

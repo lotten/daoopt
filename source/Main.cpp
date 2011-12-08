@@ -10,7 +10,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.5"
+#define VERSIONINFO "0.99.5a"
 
 time_t _time_start, _time_pre;
 
@@ -162,7 +162,7 @@ bool Main::findOrLoadOrdering() {
     m_pseudotree->buildChain(g, elim, m_options->cbound);
   }
 
-  // Complete pseudo tree init.
+  // Pseudo tree has dummy node after build(), add to problem
   m_problem->addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   m_pseudotree->addFunctionInfo(m_problem->getFunctions());
 #if defined PARALLEL_DYNAMIC //or defined PARALLEL_STATIC
