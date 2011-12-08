@@ -5,7 +5,8 @@ An implementation of sequential and distributed AND/OR Branch and
 Bound for MPE (max-product) problems expressed over graphical models
 like Bayes and Markov networks.
 
-*By Lars Otten, University of California, Irvine*
+*By Lars Otten, University of California, Irvine -- see LICENSE.txt
+ for licensing details*
 
 Compilation / Usage
 -------------------
@@ -41,7 +42,8 @@ can be turned on/off by setting the respective preprocessor defines in
 To see the list of command line parameters, run the solver with the
 `--help` argument. Problem input should be in [UAI
 format](http://graphmod.ics.uci.edu/uai08/FileFormat/), a simple
-text-based format to specify graphical model problems.
+text-based format to specify graphical model problems. Gzipped input
+is supported.
 
 ### Sequential execution
 
@@ -51,11 +53,14 @@ further setup needed.
 ### Distributed execution
 
 DAOOPT assumes the Condor grid environment and the machine that the
-master executable runs on needs to be able to submit jobs. You will
-also need to compile the sequential solver first, for the architecture
-that the parallel jobs will be running on. Rename the sequential
-solver to `daoopt.INTEL` for 32 bit Linux and/or `daoopt.X86_64` for
-64 bit Linux; placed in the working directory it will be used
+master executable runs on needs to be able to submit jobs. The file
+`daoopt-template.condor` from the working directory will be the basis
+for the parallel subproblem submissions, it can be used to customize
+Condor options. The sequential solver will be used for the parallel
+subproblems, so you will also need to compile that first for the
+appropriate architecture: rename the sequential solver to
+`daoopt.INTEL` for 32 bit Linux hosts and/or `daoopt.X86_64` for 64
+bit Linux hosts; placed in the working directory these will be used
 automatically.
 
 Background / References
