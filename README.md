@@ -98,6 +98,11 @@ research. Some relevant publications:
   Distributed Branch and Bound". In DISCML'11 Workshop, at NIPS'11,
   Granada, Spain, December 2011.
 
+### Acknowledgments
+
+This work has been partially supported by NIH grant 5R01HG004175-03 and
+NSF grants IIS-0713118 and IIS-1065618.
+
 Disclaimer
 ----------
 
