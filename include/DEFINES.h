@@ -1,8 +1,21 @@
 /*
  * defs.h
  *
- *  Copyright (C) 2011 Lars Otten
- *  Licensed under the MIT License, see LICENSE.TXT
+ *  Copyright (C) 2008-2012 Lars Otten
+ *  This file is part of DAOOPT.
+ *
+ *  DAOOPT is free software: you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  DAOOPT is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with DAOOPT.  If not, see <http://www.gnu.org/licenses/>.
  *  
  *  Created on: Apr 9, 2009
  *      Author: Lars Otten <lotten@ics.uci.edu>
@@ -32,6 +45,7 @@
 /******************************************************************
  * define PARALLEL_DYNAMIC if multithreading should be used (for central
  * process), used only if NOTHREADS hasn't been set externally
+ * NOTE: these are usually set through the makefile
  */
 
 #ifndef PARALLEL_DYNAMIC
@@ -39,7 +53,7 @@
 #endif
 
 #ifndef PARALLEL_STATIC
-#define PARALLEL_STATIC
+//#define PARALLEL_STATIC
 #endif
 
 /*****************************************************************/
