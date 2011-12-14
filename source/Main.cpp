@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.6"
+#define VERSIONINFO "0.99.6b"
 
 time_t _time_start, _time_pre;
 
@@ -121,35 +121,64 @@ bool Main::findOrLoadOrdering() {
     cout << "Read elimination ordering from file " << m_options->in_orderingFile
          << " (" << w << '/' << m_pseudotree->getHeight() << ")." << endl;
   } else {
-    // no ordering from file, compute at least one
-    m_options->order_iterations = max(1, m_options->order_iterations);
+    if (m_options->order_timelimit == NONE)
+      // compute at least one
+      m_options->order_iterations = max(1, m_options->order_iterations);
   }
+
+  time_t time_order_start, time_order_cur;
+  double timediff = 0.0;
+  time(&time_order_start);
 
   // Search for variable elimination ordering, looking for min. induced
   // width, breaking ties via pseudo tree height
-  cout << "Searching for elimination ordering over at least "
-       << m_options->order_iterations << " iterations..." << flush;
-  int i=0, j=0;
-  for (int remaining = m_options->order_iterations; remaining--; ++i, ++j) {
-    vector<int> elimCand;
+  cout << "Searching for elimination ordering,";
+  if (m_options->order_iterations != NONE)
+    cout << " " << m_options->order_iterations << " iterations";
+  if (m_options->order_timelimit != NONE)
+    cout << " " << m_options->order_timelimit << " seconds";
+  cout << ":" << flush;
+
+  int iterCount=0, sinceLast=0;
+  int remaining = m_options->order_iterations;
+
+  while (true) {
+    vector<int> elimCand;  // new ordering candidate
+    bool improved = false;  // improved in this iteration?
     int new_w = m_pseudotree->eliminate(g,elimCand,w);
     if (new_w < w) {
-      elim = elimCand; w = new_w;
+      elim = elimCand; w = new_w; improved = true;
       m_pseudotree->build(g, elimCand, m_options->cbound);
-      cout << " " << i << ':' << w <<'/' << m_pseudotree->getHeight() << flush;
-      if (m_options->autoIter) { remaining = max(remaining,j+1); j=0; }
+      cout << " " << iterCount << ':' << w <<'/' << m_pseudotree->getHeight() << flush;
     } else if (new_w == w) {
       Pseudotree ptCand(m_problem.get(), m_options->subprobOrder);
       ptCand.build(g, elimCand, m_options->cbound);
       if (ptCand.getHeight() < m_pseudotree->getHeight()) {
-        elim = elimCand;
+        elim = elimCand; improved = true;
         m_pseudotree->build(g, elim, m_options->cbound);
-        cout << " " << i << ':' << w << '/' << m_pseudotree->getHeight() << flush;
-        if (m_options->autoIter) { remaining = max(remaining,j+1); j=0; }
+        cout << " " << iterCount << ':' << w << '/' << m_pseudotree->getHeight() << flush;
       }
     }
+    ++iterCount, ++sinceLast;
+
+    // Adaptive ordering scheme
+    if (improved && m_options->autoIter && remaining > 0) {
+      remaining = max(remaining, sinceLast+1);
+      sinceLast = 0;
+    }
+
+    // check termination conditions
+    if (m_options->order_iterations != NONE && --remaining == 0)
+      break;
+    time(&time_order_cur);
+    timediff = difftime(time_order_cur, time_order_start);
+    if (m_options->order_timelimit != NONE && timediff > m_options->order_timelimit)
+      break;
   }
-  cout << endl << "Ran " << i << " iterations, lowest width/height found: "
+  time(&time_order_cur);
+  timediff = difftime(time_order_cur, time_order_start);
+  cout << endl << "Ran " << iterCount << " iterations (" << int(timediff)
+       << " seconds), lowest width/height found: "
        << w << '/' << m_pseudotree->getHeight() << '\n';
 
   // Save order to file?

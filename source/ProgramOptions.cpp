@@ -52,7 +52,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("rotate,y", "use breadth-rotating AOBB")
       ("rotatelimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
 #endif
-      ("iterations,t", po::value<int>()->default_value(25), "iterations for finding ordering")
+      ("orderIter,t", po::value<int>()->default_value(25), "iterations for finding ordering")
+      ("orderTime", po::value<int>()->default_value(-1), "maximum time for finding ordering")
       ("max-width", po::value<int>(), "max. induced width to process, abort otherwise")
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
@@ -146,8 +147,10 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     if (vm.count("cbound-worker"))
       opt->cbound_worker = vm["cbound-worker"].as<int>();
 
-    if (vm.count("iterations"))
-      opt->order_iterations = vm["iterations"].as<int>();
+    if (vm.count("orderIter"))
+      opt->order_iterations = vm["orderIter"].as<int>();
+    if (vm.count("orderTime"))
+      opt->order_timelimit = vm["orderTime"].as<int>();
 
     if (vm.count("max-width"))
       opt->maxWidthAbort = vm["max-width"].as<int>();

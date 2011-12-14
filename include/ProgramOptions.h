@@ -46,6 +46,7 @@ public:
   int cbound_worker; // cache bound for worker processes
   int threads; // max. number of parallel subproblems
   int order_iterations; // no. of randomized order finding iterations
+  int order_timelimit; // no. of seconds to look for variable ordering
   int cutoff_depth; // fixed cutoff depth for central search
   int cutoff_width; // fixed width for central cutoff
   int nodes_init; // number of nodes for local initialization (times 10^6)
@@ -91,7 +92,8 @@ inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),
 		      par_preOnly(false), par_postOnly(false), rotate(false),
 		      ibound(0), cbound(0), cbound_worker(0),
-		      threads(0), order_iterations(0), cutoff_depth(NONE), cutoff_width(NONE),
+		      threads(0), order_iterations(0), order_timelimit(0),
+		      cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
 		      lds(NONE), seed(NONE), rotateLimit(0), subprobOrder(NONE),
