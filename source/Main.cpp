@@ -23,7 +23,10 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.6b"
+#include "UAI2012.h"
+string UAI2012::filename = "";
+
+#define VERSIONINFO "0.99.6b-UAI12"
 
 time_t _time_start, _time_pre;
 
@@ -44,6 +47,9 @@ bool Main::parseOptions(int argc, char** argv) {
   rand::seed(opt->seed);
 
   m_options.reset(opt);
+
+  UAI2012::filename = m_options->in_problemFile;
+
   return true;
 }
 

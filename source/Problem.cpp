@@ -26,6 +26,8 @@
 #include <sstream>
 #include <fstream>
 
+#include "UAI2012.h"
+
 //extern time_t time_start;
 
 void Problem::removeEvidence() {
@@ -426,15 +428,22 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
   in.open(evid.c_str());
 
-  in >> x;
-  m_e = x; // Number of evidence
-
-  for (int i=0; i<m_e; ++i) {
-    in >> x; // Variable index
-    in >> y; // Variable value
-    xs = (val_t) y;
-    m_evidence.insert(make_pair(x,xs));
+  in >> x;  // Number of evidence samples
+  if (x > 1) {
+    myerror("Warning: Ignoring all but one evidence sample.\n");
   }
+
+  if (x == 1) {
+    in >> x;
+    m_e = x; // Number of evidence variables
+
+    for (int i=0; i<m_e; ++i) {
+      in >> x; // Variable index
+      in >> y; // Variable value
+      xs = (val_t) y;
+      m_evidence.insert(make_pair(x,xs));
+    }
+  }  // else: x == 0, no evidence
 
   in.close();
 
@@ -558,6 +567,7 @@ void Problem::updateSolution(double cost,
     for (vector<val_t>::const_iterator it=m_curSolution.begin(); it!=m_curSolution.end(); ++it) {
       ss << ' ' << (int) (*it); 
     }
+    UAI2012::outputSolutionValT(m_curSolution);
   }
 #endif
 
