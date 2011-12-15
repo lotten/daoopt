@@ -100,7 +100,7 @@ bool AssignmentManager::updateIfNewBest(double log_prob){
 	if(gotBetter && log_prob > overallBestLogProb + EPS){  // new global best.
 	  time_t now; time(&now);
 	  double elapsed = difftime(now, timestamp_start);
-	  fprintf(stdout, "[%i] u -1 -1 %g", (int) elapsed, log_prob);
+	  fprintf(stdout, "[%i] u -1 -1 %g %i", (int) elapsed, log_prob, numVars);
 #ifndef NO_ASSIGNMENT
 	  for(int var=0; var<numVars; var++)
 	    fprintf(stdout, " %i", variables[var]->value);
