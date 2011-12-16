@@ -143,6 +143,10 @@ bool Main::findOrLoadOrdering() {
   int remaining = m_options->order_iterations;
 
   while (true) {
+
+    if (m_options->order_iterations != NONE && remaining == 0)
+      break;
+
     vector<int> elimCand;  // new ordering candidate
     bool improved = false;  // improved in this iteration?
     int new_w = m_pseudotree->eliminate(g,elimCand,w);
@@ -159,7 +163,7 @@ bool Main::findOrLoadOrdering() {
         cout << " " << iterCount << ':' << w << '/' << m_pseudotree->getHeight() << flush;
       }
     }
-    ++iterCount, ++sinceLast;
+    ++iterCount, ++sinceLast, --remaining;
 
     // Adaptive ordering scheme
     if (improved && m_options->autoIter && remaining > 0) {
@@ -168,8 +172,6 @@ bool Main::findOrLoadOrdering() {
     }
 
     // check termination conditions
-    if (m_options->order_iterations != NONE && --remaining == 0)
-      break;
     time(&time_order_cur);
     timediff = difftime(time_order_cur, time_order_start);
     if (m_options->order_timelimit != NONE && timediff > m_options->order_timelimit)
