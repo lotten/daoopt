@@ -759,6 +759,8 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
   // for each AND node, generate OR children
   for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
     DIAG(oss ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str());)
+
+    doProcess(*it);
     if (generateChildrenAND(*it,chi2)) {
       m_prop.propagate(*it, true);
       continue;
