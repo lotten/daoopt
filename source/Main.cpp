@@ -243,7 +243,7 @@ bool Main::runSLS() {
   cout << "Running SLS " << m_options->slsIter << " times for "
        << m_options->slsTime << " seconds" << endl;
   m_slsWrapper.reset(new SLSWrapper());
-  m_slsWrapper->init(m_options->in_problemFile, m_options->slsIter, m_options->slsTime);
+  m_slsWrapper->init(m_problem.get(), m_options->slsIter, m_options->slsTime);
   m_slsWrapper->run();
   cout << "SLS finished" << endl;
 #endif

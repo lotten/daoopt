@@ -36,9 +36,9 @@ int main(int argc, char** argv) {
     exit(0);
   if (!main.outputInfo())
     exit(0);
-  if (!main.runSLS())
-    exit(0);
   if (!main.loadProblem())
+    exit(0);
+  if (!main.runSLS())
     exit(0);
   if (!main.findOrLoadOrdering())
     exit(0);

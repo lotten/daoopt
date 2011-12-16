@@ -69,6 +69,10 @@ void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
   // generate new function mapping
   for (vector<Function*>::const_iterator itF=fns.begin(); itF!=fns.end(); ++itF) {
     const set<int>& scope = (*itF)->getScope();
+    if (scope.size() == 0) {
+      m_nodes[m_elimOrder.back()]->addFunction(*itF);
+      continue;
+    }
     vector<int>::const_iterator it = m_elimOrder.begin();
     for (;;++it) {
       if (scope.find(*it)!=scope.end()) {

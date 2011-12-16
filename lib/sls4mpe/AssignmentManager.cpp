@@ -9,7 +9,7 @@
 
 namespace sls4mpe {
 
-extern time_t timestamp_start;
+SLSWrapper* slsWrapper;  // for reporting solutions back
 
 void AssignmentManager::outputCurrentAssignment(FILE* outfile){
 	copyAssignment(tmpAssignment);
@@ -98,15 +98,10 @@ bool AssignmentManager::updateIfNewBest(double log_prob){
 	}
 
 	if(gotBetter && log_prob > overallBestLogProb + EPS){  // new global best.
-	  time_t now; time(&now);
-	  double elapsed = difftime(now, timestamp_start);
-	  fprintf(stdout, "[%i] u -1 -1 %g %i", (int) elapsed, log_prob, numVars);
-#ifndef NO_ASSIGNMENT
-	  for(int var=0; var<numVars; var++)
-	    fprintf(stdout, " %i", variables[var]->value);
-#endif
-	  fprintf(stdout, "\n");
-	  //std::cout << "[" << int(elapsed) << "] u -1 -1 " << log_prob << std::endl;
+	  int solVec[num_vars];
+	  for (int i=0; i<num_vars; ++i)
+	    solVec[i] = variables[i]->value;
+    slsWrapper->reportSolution(log_prob, num_vars, solVec);
 	}
 
 	if(M_MPE){ // additional work.
