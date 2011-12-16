@@ -6,6 +6,7 @@
 #define _SLS4MPE_GLOBAL_H_
 
 #include "DEFINES.h"
+class SLSWrapper;
 #ifdef ENABLE_SLS
 
 namespace sls4mpe {
@@ -180,6 +181,8 @@ const int NUM_BP_VARS = 100000;
 extern int externalInitValues[NUM_BP_VARS];
 
 extern bool verbose;
+
+extern SLSWrapper* slsWrapper;
 
 }  // sls4mpe
 

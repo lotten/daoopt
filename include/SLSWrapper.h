@@ -40,11 +40,13 @@ class SLSWrapper {
 protected:
   double m_likelihood;
   int* m_assignment;
+  Problem* m_problem;
 
 public:
-  bool init(string filename, int iter, int time);
+  bool init(Problem* prob, int iter, int time);
   bool run();
   double getSolution(vector<val_t>* tuple = NULL) const;
+  void reportSolution(double cost, int num_vars, int* assignment);
 
 public:
   SLSWrapper();

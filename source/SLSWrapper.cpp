@@ -24,7 +24,10 @@
 #include "SLSWrapper.h"
 #ifdef ENABLE_SLS
 
-bool SLSWrapper::init(string filename, int iter, int time/*Problem* prob*/) {
+bool SLSWrapper::init(Problem* prob, int iter, int time) {
+
+  assert(prob);
+  m_problem = prob;
 
   sls4mpe::verbose = false;
   sls4mpe::start_timer();
@@ -34,44 +37,74 @@ bool SLSWrapper::init(string filename, int iter, int time/*Problem* prob*/) {
 
   sls4mpe::network_filename[0] = '\0';
   sls4mpe::sls_filename[0] = '\0';
-  strncpy(sls4mpe::network_filename, filename.c_str(), filename.size());
+  //strncpy(sls4mpe::network_filename, filename.c_str(), filename.size());
 
   sls4mpe::maxRuns = iter;
   sls4mpe::maxTime = time;
 
   sls4mpe::preprocessingSizeBound = 0;
 
+  sls4mpe::slsWrapper = this;
+
+  /*
   sls4mpe::ProblemReader pReader;
   pReader.readNetwork();
+   */
 
-#if false
-  /* the following emulates the readUAI() method */
+  // load network directly into SLS from Problem*
   sls4mpe::num_vars = prob->getN();
-  sls4mpe::num_pots = prob->getC();
+  sls4mpe::num_pots = prob->getC() + 1; // for global constant dummy function
   sls4mpe::allocateVarsAndPTs(false);
 
   for (int i=0; i < prob->getN(); ++i)
     sls4mpe::variables[i]->setDomainSize(prob->getDomainSize(i));
 
   for (int i=0; i < prob->getC(); ++i) {
-    Function* fun = prob->getFunctions()[i];
+    Function* fn = prob->getFunctions().at(i);
 
-    sls4mpe::probTables[i]->init(fun->getArity());
-    sls4mpe::probTables[i]->setNumEntries(fun->getTableSize());
-    int j=0;
-    for (set<int>::const_iterator it = fun->getScope().begin();
-         it != fun->getScope().end(); ++it, ++j) {
+    sls4mpe::probTables[i]->init(fn->getArity());
+    int j = 0;
+    for (set<int>::const_iterator it = fn->getScope().begin();
+         it != fn->getScope().end(); ++it, ++j)
       sls4mpe::probTables[i]->setVar(j, *it);
-    }
 
-    double* table = fun->getTable();
-    for (size_t j = 0; j < fun->getTableSize(); ++j)
-      sls4mpe::probTables[i]->setEntry(j,table[j]);
-
-  }
+    sls4mpe::probTables[i]->setNumEntries(fn->getTableSize());
+    for (size_t j = 0; j < fn->getTableSize(); ++j) {
+#ifdef USE_LOG
+      sls4mpe::probTables[i]->setLogEntry(j, fn->getTable()[j]);
+#else
+      sls4mpe::probTables[i]->setEntry(j, fn->getTable()[j]);
 #endif
+    }
+  }
+
+  // dummy function for global constant
+  int i = sls4mpe::num_pots - 1;
+  sls4mpe::probTables[i]->init(0);
+  sls4mpe::probTables[i]->setNumEntries(1);
+#ifdef USE_LOG
+  sls4mpe::probTables[i]->setLogEntry(0, prob->getGlobalConstant());
+#else
+  sls4mpe::probTables[i]->setEntry(0, prob->getGlobalConstant());
+#endif
+
+
   return true;
 }
+
+
+void SLSWrapper::reportSolution(double cost, int num_vars, int* assignment) {
+#ifndef NO_ASSIGNMENT
+  assert(assignment);
+  vector<val_t> assigVec(num_vars);
+  for (int i = 0; i < num_vars; ++i)
+    assigVec[i] = assignment[i];
+  m_problem->updateSolution(cost, assigVec, make_pair(0,0), true);
+#else
+  m_problem->updateSolution(cost, make_pair(0,0), true);
+#endif
+}
+
 
 bool SLSWrapper::run() {
   m_assignment = new int[sls4mpe::num_vars];

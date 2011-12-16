@@ -144,6 +144,14 @@ void ProbabilityTable::setEntry(int index, double entry){
 	highestLogProb = MAX(logCPT[index], highestLogProb);
 }
 
+void ProbabilityTable::setLogEntry(int index, double entry) {
+  if (entry != -INFINITY)
+    logCPT[index] = entry;
+  else
+    logCPT[index] = log_zero;
+  highestLogProb = MAX(logCPT[index], highestLogProb);
+}
+
 void ProbabilityTable::initRun(){
 	for(int i=0; i<numEntries; i++) penalty[i] = 0;
 }

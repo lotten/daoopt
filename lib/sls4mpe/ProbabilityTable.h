@@ -29,6 +29,7 @@ public:
 	void setVar(int localIndex, int var);
 	void setNumEntries(int newNumEntries);
 	void setEntry(int index, double entry);
+	void setLogEntry(int index, double entry);
 	void setFactorsOfVars(int i, int factor);
 	void outputVars();
 	void outputCPT();

@@ -6,6 +6,7 @@
 #define _SLS4MPE_ASSIGNMENTMANAGER_H_
 
 #include "DEFINES.h"
+#include "SLSWrapper.h"
 #ifdef ENABLE_SLS
 
 #include "sls4mpe/global.h"
