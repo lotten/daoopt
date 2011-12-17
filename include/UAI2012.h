@@ -32,16 +32,22 @@ struct UAI2012 {
 
   static void outputSolutionInt(const vector<int>& assignment) {
     assert(filename != "");
-    ofstream outfile;
-    string fname = filename + ".MPE";
-    outfile.open(fname.c_str(), ios::out | ios::trunc);
-    outfile <<  "MPE" << endl << "1" << endl;  // TODO: allow more than one evid. sample
-    outfile << assignment.size();
+
+    // generate the solution file contents first
+    ostringstream ss;
+    ss <<  "MPE" << endl << "1" << endl;  // TODO: allow more than one evid. sample
+    ss << assignment.size();
     for (vector<int>::const_iterator it = assignment.begin();
          it != assignment.end(); ++it) {
-      outfile << " " << (*it);
+      ss << " " << (*it);
     }
-    outfile << endl;
+    ss << endl;
+
+    // now write them to file
+    string fname = filename + ".MPE";
+    ofstream outfile;
+    outfile.open(fname.c_str(), ios::out | ios::trunc);
+    outfile << ss.str()
     outfile.close();
   }
 
