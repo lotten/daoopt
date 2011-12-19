@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# Simple wrapper script for PASCAL Inference Challenge 2012.
+# by Lars Otten, December 2011
+
+if [ "$4" != "MPE" ] ; then
+  echo "Expecting MPE task as fourth argument"
+  exit 1  
+fi
+
+if [ "${INF_TIME}" == "" ] ; then
+  echo "Environment variable for time limit not found."
+  exit 1
+fi
+
+if [ "${INF_MEMORY}" == "" ] ; then
+  echo "Environment variable for memory limit not found."
+  exit 1
+fi
+
+echo "Found time limit ${INF_TIME} and memory limit ${INF_MEMORY}."
+
+# Determine memory limit for mini buckets (to leave space for search)  
+MEMLIMIT=$((${INF_MEMORY}-250))
+
+# 20 second timelimit
+if [ ${INF_TIME} -eq 20 ] ; then
+  ./daooptW -f $1 -e $2 --seed $3 --slsX 3 --slsT 2 -t50 --orderTime 3 -m100 -i10 -a1 
+
+# 20 minute timelimit
+elif [ ${INF_TIME} -eq 1200 ] ; then
+  ./daooptW -f $1 -e $2 --seed $3 --slsX 10 --slsT 6 -t300 --orderTime 60 -m${MEMLIMIT} -i20 -a2
+
+# 1 hour timelimit
+elif [ ${INF_TIME} -eq 3600 ] ; then
+  ./daooptW -f $1 -e $2 --seed $3 --slsX 20 --slsT 10 -t500 --orderTime 180 -m${MEMLIMIT} -i25 -a2
+
+# unknown timelimit
+else
+  echo "Only timelimit 60, 1200, 3600 are supported."
+  exit 1
+fi
+

@@ -47,7 +47,7 @@ struct UAI2012 {
     string fname = filename + ".MPE";
     ofstream outfile;
     outfile.open(fname.c_str(), ios::out | ios::trunc);
-    outfile << ss.str()
+    outfile << ss.str();
     outfile.close();
   }
 
