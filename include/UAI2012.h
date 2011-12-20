@@ -28,7 +28,7 @@
 
 struct UAI2012 {
 
-  static string filename;
+  static string filename;  // filename for solution output
 
   static void outputSolutionInt(const vector<int>& assignment) {
     assert(filename != "");
@@ -44,9 +44,8 @@ struct UAI2012 {
     ss << endl;
 
     // now write them to file
-    string fname = filename + ".MPE";
     ofstream outfile;
-    outfile.open(fname.c_str(), ios::out | ios::trunc);
+    outfile.open(filename.c_str(), ios::out | ios::trunc);
     outfile << ss.str();
     outfile.close();
   }
