@@ -56,25 +56,26 @@ SearchNode* BranchAndBoundRotate::nextNode() {
 
 bool BranchAndBoundRotate::doExpand(SearchNode* n) {
   assert(n);
-  vector<SearchNode*> chi;
+  m_expand.clear();
 
   MyStack* stack = m_stacks.front();
   if (n->getType() == NODE_AND) {  // AND node
-    if (generateChildrenAND(n,chi))
+    if (generateChildrenAND(n, m_expand))
       return true; // no children
 
 #ifdef DEBUG
     ostringstream ss;
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it)
       ss << '\t' << *it << ": " << *(*it) << endl;
     myprint (ss.str());
 #endif
 
-    if (chi.size() == 1) {  // no decomposition
-      stack->push(chi.at(0));
+    if (m_expand.size() == 1) {  // no decomposition
+      stack->push(m_expand.at(0));
     } else {  // decomposition, split stacks
       // reverse iterator needed since new stacks are put in queue (and not depth-first stack)
-      for (vector<SearchNode*>::reverse_iterator it=chi.rbegin(); it!=chi.rend(); ++it) {
+      for (vector<SearchNode*>::reverse_iterator it = m_expand.rbegin();
+           it != m_expand.rend(); ++it) {
         MyStack* s = new MyStack(stack);
         stack->addChild();
         s->push(*it);
@@ -82,10 +83,10 @@ bool BranchAndBoundRotate::doExpand(SearchNode* n) {
       }
     }
   } else {  // OR node
-    if (generateChildrenOR(n,chi))
+    if (generateChildrenOR(n, m_expand))
       return true; // no children
 
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it) {
       stack->push(*it);
       DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
     }  // for loop

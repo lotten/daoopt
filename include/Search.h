@@ -63,6 +63,9 @@ protected:
 
   vector<val_t> m_assignment;   // The current (partial assignment)
 
+  vector<SearchNode*> m_expand;  // Reusable vector for node expansions (to avoid repeated
+                                 // (de)allocation of memory)
+
 #ifdef PARALLEL_DYNAMIC
   /* keeps tracks up lower/upper bound on first OR node generated for
    * each depth level. used for initialization of cutoff scheme. */
