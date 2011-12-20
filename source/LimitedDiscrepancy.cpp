@@ -31,89 +31,36 @@
 
 
 bool LimitedDiscrepancy::doExpand(SearchNode* node) {
-
   assert(node);
+  m_expand.clear();
+
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
 
-  vector<SearchNode*> chi;
-
   if (node->getType() == NODE_AND) { /*******************************************/
 
-    if (generateChildrenAND(node,chi))
+    if (generateChildrenAND(node, m_expand))
       return true; // no children
 
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it)
       m_stack.push( make_pair(*it,m_discCache) );
 
-#if false
-    // we need to generate *all* OR successors
-
-    ++m_space->nodesAND; // count node
-#ifdef PARALLEL_DYNAMIC
-    node->setSubCount(1);
-#endif
-
-    if (depth >= 0) { // ignores dummy nodes
-      m_nodeProfile.at(depth) += 1; // count node as expanded
-    }
-
-    // create new OR children
-    for (vector<PseudotreeNode*>::const_iterator it=ptnode->getChildren().begin();
-        it!=ptnode->getChildren().end(); ++it)
-    {
-      int vChild = (*it)->getVar();
-
-      SearchNodeOR* n = new SearchNodeOR(node, vChild);
-
-      // Compute and set heuristic estimate
-      heuristicOR(n);
-
-      node->addChild(n);
-      // add node to stack with same disc. value as parent
-      m_stack.push(make_pair(n,m_discCache));
-
-#ifdef DEBUG
-      ostringstream ss;
-      ss << '\t' << n << ": " << *n;
-      if (n->isCachable())
-        ss << " - Cache: " << (*it)->getCacheContext();
-      ss << endl;
-      myprint (ss.str());
-#endif
-
-      // store initial lower bound on subproblem (needed for master init.)
-      PAR_ONLY( n->setInitialBound(lowerBound(n)) );
-
-    } // for loop
-
-    if (node->getChildren().size()) {
-      /* nothing right now */
-    } else { // no children
-      node->setLeaf(); // -> terminal node
-      node->setValue(ELEM_ONE);
-      if (depth!=-1) m_leafProfile.at(depth) += 1; // count leaf node
-      PAR_ONLY( node->setSubLeaves(1) );
-      return true;
-    }
-
-#endif
   } else { // NODE_OR /*********************************************************/
 
 #if false
-    if (generateChildrenOR(node,chi))
+    if (generateChildrenOR(node, m_expand))
       return true;
 
-    vector<SearchNode*>::iterator it = chi.begin();
-    size_t offset = chi.size() - min(chi.size(),m_discCache+1);
+    vector<SearchNode*>::iterator it = m_expand.begin();
+    size_t offset = m_expand.size() - min(m_expand.size(), m_discCache+1);
     while (offset--) { // skip nodes with high discrepancy
       node->eraseChild(*it);
       ++it;
     }
 
     size_t c = 0;
-    for (; it!=chi.end(); ++it, ++c) {
+    for (; it != m_expand.end(); ++it, ++c) {
       m_stack.push( make_pair(*it,c) );
     }
 

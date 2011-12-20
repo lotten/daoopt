@@ -49,35 +49,35 @@ SearchNode* BranchAndBound::nextNode() {
 
 
 bool BranchAndBound::doExpand(SearchNode* n) {
-
   assert(n);
-  vector<SearchNode*> chi;
+  m_expand.clear();
+
   if (n->getType() == NODE_AND) {  // AND node
 
-    if (generateChildrenAND(n,chi))
+    if (generateChildrenAND(n, m_expand))
       return true; // no children
 
 #ifdef DEBUG
     ostringstream ss;
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    for (vector<SearchNode*>::iterator it=m_expand.begin(); it!=m_expand.end(); ++it)
       ss << '\t' << *it << ": " << *(*it) << endl;
     myprint (ss.str());
 #endif
 
 #if defined(ANYTIME_DEPTH)
     // reverse iterator needed since dive step reverses subproblem order
-    for (vector<SearchNode*>::reverse_iterator it=chi.rbegin(); it!=chi.rend(); ++it)
+    for (vector<SearchNode*>::reverse_iterator it=m_expand.rbegin(); it!=m_expand.rend(); ++it)
       m_stackDive.push(*it);
 #else
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it)
       m_stack.push(*it);
 #endif
 
   } else {  // OR node
 
-    if (generateChildrenOR(n,chi))
+    if (generateChildrenOR(n, m_expand))
       return true; // no children
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it) {
       m_stack.push(*it);
       DIAG( ostringstream ss; ss << '\t' << *it << ": " << *(*it) << " (l=" << (*it)->getLabel() << ")" << endl; myprint(ss.str()); )
     } // for loop

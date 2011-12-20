@@ -845,22 +845,22 @@ bool ParallelManager::doExpand(SearchNode* n) {
 
   assert(n);
 
-  vector<SearchNode*> chi;
+  m_expand.clear();
 
   if (n->getType() == NODE_AND) { /////////////////////////////////////
 
-    if (generateChildrenAND(n,chi))
+    if (generateChildrenAND(n, m_expand))
       return true; // no children
 
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it)
       m_stack.push(*it);
 
   } else { // NODE_OR /////////////////////////////////////////////////
 
-    if (generateChildrenOR(n,chi))
+    if (generateChildrenOR(n, m_expand))
       return true; // no children
 
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it) {
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it) {
       m_stack.push(*it);
     } // for loop
 

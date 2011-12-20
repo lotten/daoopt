@@ -39,6 +39,9 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 
   // initialize the local assignment vector for BaB
   m_assignment.resize(m_problem->getN(),NONE);
+
+  // Preallocate space for expansion vector. 128 should be plenty.
+  m_expand.reserve(128);
 }
 
 
