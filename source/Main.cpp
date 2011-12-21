@@ -48,7 +48,8 @@ bool Main::parseOptions(int argc, char** argv) {
 
   m_options.reset(opt);
 
-  UAI2012::filename = m_options->in_problemFile;
+  size_t idx = m_options->in_problemFile.find_last_of('/');
+  UAI2012::filename = m_options->in_problemFile.substr(idx + 1) + ".MPE";
 
   return true;
 }

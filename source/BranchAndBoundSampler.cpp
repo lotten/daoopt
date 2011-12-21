@@ -26,45 +26,44 @@
 #include "BranchAndBoundSampler.h"
 
 bool BranchAndBoundSampler::doExpand(SearchNode* n) {
-
   assert(n);
-  vector<SearchNode*> chi;
+  m_expand.clear();
 
   if (n->getType() == NODE_AND) {  // AND node
 
-    if (chi.size() == 0 && generateChildrenAND(n,chi)) {
+    if (m_expand.size() == 0 && generateChildrenAND(n, m_expand)) {
       return true; // no children
     }
 
 #ifdef DEBUG
     oss ss;
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    for (vector<SearchNode*>::iterator it = m_expand.begin(); it != m_expand.end(); ++it)
       ss << '\t' << *it << ": " << *(*it) << endl;
     myprint (ss.str());
 #endif
 
-    for (vector<SearchNode*>::iterator it=chi.begin(); it!=chi.end(); ++it)
+    for (vector<SearchNode*>::iterator it=m_expand.begin(); it!=m_expand.end(); ++it)
       m_stack.push(*it);
 
   } else {  // OR node
 
-    if (chi.size() == 0 && generateChildrenOR(n,chi)) {
+    if (m_expand.size() == 0 && generateChildrenOR(n, m_expand)) {
       return true; // no children
     }
 
     int pick = NONE;
     if (n->getDepth() <= m_space->options->sampleDepth)
-      pick = rand::next(chi.size());
+      pick = rand::next(m_expand.size());
 
-    for (int i = 0; i < (int) chi.size(); ++i) {
+    for (int i = 0; i < (int) m_expand.size(); ++i) {
       if (i != pick) {
-        m_stack.push(chi[i]);
-        DIAG(oss ss; ss <<'\t'<< chi[i] <<": "<< *(chi[i]) <<" (l="<< chi[i]->getLabel() <<")"<< endl; myprint(ss.str()); )
+        m_stack.push(m_expand[i]);
+        DIAG(oss ss; ss <<'\t'<< m_expand[i] <<": "<< *(m_expand[i]) <<" (l="<< m_expand[i]->getLabel() <<")"<< endl; myprint(ss.str()); )
       }
     }
     if (pick != NONE) {
-      m_stack.push(chi[pick]);
-      DIAG(oss ss; ss <<'\t'<< chi[pick] <<": "<< *(chi[pick]) <<" (l="<< chi[pick]->getLabel() <<")"<< endl; myprint(ss.str()); )
+      m_stack.push(m_expand[pick]);
+      DIAG(oss ss; ss <<'\t'<< m_expand[pick] <<": "<< *(m_expand[pick]) <<" (l="<< m_expand[pick]->getLabel() <<")"<< endl; myprint(ss.str()); )
     }
 
     DIAG (oss ss; ss << "\tGenerated " << n->getChildCountFull() <<  " child AND nodes" << endl; myprint(ss.str()); )
