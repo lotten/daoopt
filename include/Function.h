@@ -29,6 +29,8 @@
 
 #include "_base.h"
 #include "utils.h"
+#include "mex/VarSet.h"
+#include "mex/Factor.h"
 //#include "Problem.h"
 
 class Problem;
@@ -88,6 +90,10 @@ public:
 
   /* returns the function value for the tuple (which is pointered function scope) */
   double getValuePtr(const vector<val_t*>& tuple) const;
+
+	/* ATI: convert between mex/Factor and daoopt/Function representations */
+	mex::Factor asFactor();
+	void fromFactor(const mex::Factor&);
 
 protected:
   /* main work for substitution: computes new scope, new table and table size
