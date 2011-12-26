@@ -71,7 +71,8 @@ public:
 			_mbe.setProperties("DoMatch=1,DoFill=0,DoMplp=0,DoJG=0");  // final pass => matching only
 			if (_memlimit) this->limitSize(_memlimit,_options,NULL);   // re-check ibound limit
 		} else if (_options!=NULL && _options->mplp>0) {
-			_mbe.setProperties("DoMatch=1,DoFill=0,DoMplp=1,DoJG=0");  // OR, mplp only
+			char mplpIt[6]; sprintf(mplpIt,"%d",_options->mplp);
+			_mbe.setProperties(std::string("DoMatch=1,DoFill=0,DoJG=0,DoMplp=").append(mplpIt));  // OR, mplp only
 		} else if (_options!=NULL && _options->match>0) {
 			std::cout<<"Using moment-matching only\n";
 			_mbe.setProperties("DoMatch=1,DoFill=0,DoMplp=0,DoJG=0");  // OR, matching only
