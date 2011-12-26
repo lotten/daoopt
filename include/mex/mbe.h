@@ -100,7 +100,7 @@ public:
   ElimOp elimOp;
 	bool    _byScope;
 	bool		_doMatch;
-	bool		_doMplp;
+	int 		_doMplp;
 	bool		_doFill;
 	bool		_doJG;
   Factor::Distance distMethod;
@@ -256,8 +256,11 @@ public:
     _logZ = 0.0;
 
 		if (_doMplp) {
-		  mplp _mplp(_gmo.factors()); 
-		  _mplp.setProperties("Schedule=Fixed,Update=Var,StopIter=10.0,StopObj=-1.0,StopMsg=-1.0");
+		  mplp _mplp(_gmo.factors());
+			char niter[6]; sprintf(niter,"%d",_doMplp);
+		  _mplp.setProperties(
+				std::string("Schedule=Fixed,Update=Var,StopIter=").append(niter).append(",StopObj=-1.0,StopMsg=-1.0")
+				);
 		  _mplp.init(); 
 		  _mplp.run();
 			//std::cout<<"After Mplp: "<<_mplp.ub()<<"\n";
@@ -428,9 +431,9 @@ public:
 		//std::cout<<"Bound "<<_logZ<<"\n";
 	}
 
-  void tighten() {
+  void tighten(int nIter) {
     const mex::vector<EdgeID>& elist = edges();
-		for (size_t it=0; it<10; ++it) {
+		for (int it=0; it<nIter; ++it) {
 			for (size_t i=0;i<elist.size();++i) {
      	 	findex a,b; a=elist[i].first; b=elist[i].second; 
 				if (a>b) continue;

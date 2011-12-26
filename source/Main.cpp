@@ -266,7 +266,7 @@ bool Main::initDataStructs() {
 #ifdef NO_HEURISTIC
   m_heuristic.reset(new Unheuristic);
 #else
-  if (m_options->mplp) {
+  if (m_options->match >= 0 || m_options->mplp >= 0 || m_options->jglp >= 0) {
     m_heuristic.reset(new MiniBucketElimNew(m_problem.get(), m_pseudotree.get(),
 					    m_options->ibound) );
   } else {

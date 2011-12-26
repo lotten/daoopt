@@ -41,7 +41,9 @@ public:
   bool par_preOnly; // static parallel: preprocessing only (generate subproblems)
   bool par_postOnly; // static parallel: postprocessing only (read solution files)
   bool rotate; // enables breadth-rotating AOBB
-  bool mplp;  // enables Alex Ihler's MPLP library
+  int match;  // enables Alex Ihler's MBE library (moment-matching flag)
+  int mplp;  // enables MPLP in Alex Ihler's MBE library (# iters)
+  int jglp;  // enables JGLP tightening in Alex Ihler's MBE library (# iters)
   int ibound; // bucket elim. i-bound
   int cbound; // cache context size bound
   int cbound_worker; // cache bound for worker processes
