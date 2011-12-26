@@ -7,7 +7,7 @@
 #include <cstring>
 #include <map>
 
-#include "graphmodel.h"
+#include "mex/graphmodel.h"
 
 /*
 */

@@ -7,7 +7,7 @@
 #include <queue>
 #include <stack>
 
-#include "factorgraph.h"
+#include "mex/factorgraph.h"
 
 namespace mex {
 

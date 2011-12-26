@@ -16,13 +16,13 @@
 #include <float.h>
 #include <vector>
 
-#include "mxUtil.h"
-#include "VarSet.h"
-#include "subindex.h"
-#include "index.h"
-#include "vector.h"
+#include "mex/mxUtil.h"
+#include "mex/VarSet.h"
+#include "mex/subindex.h"
+#include "mex/index.h"
+#include "mex/vector.h"
 
-#include "Factor.h"
+#include "mex/Factor.h"
 
 namespace mex {
 
