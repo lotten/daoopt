@@ -50,6 +50,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("cbound-worker,k", po::value<int>()->default_value(1000), "context size bound for caching in worker nodes")
 #else
       ("rotate,y", "use breadth-rotating AOBB")
+      ("mplp", "use MPLP mini buckets")
       ("rotatelimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
 #endif
       ("orderIter,t", po::value<int>()->default_value(25), "iterations for finding ordering")
@@ -212,6 +213,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       opt->rotate = true;
     if (vm.count("rotatelimit"))
       opt->rotateLimit = vm["rotatelimit"].as<int>();
+
+    if (vm.count("mplp"))
+	opt->mplp = true;
 
     if (vm.count("seed"))
       opt->seed = vm["seed"].as<int>();

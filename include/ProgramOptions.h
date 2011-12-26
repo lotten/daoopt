@@ -41,6 +41,7 @@ public:
   bool par_preOnly; // static parallel: preprocessing only (generate subproblems)
   bool par_postOnly; // static parallel: postprocessing only (read solution files)
   bool rotate; // enables breadth-rotating AOBB
+  bool mplp;  // enables Alex Ihler's MPLP library
   int ibound; // bucket elim. i-bound
   int cbound; // cache context size bound
   int cbound_worker; // cache bound for worker processes
@@ -90,7 +91,7 @@ ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),
-		      par_preOnly(false), par_postOnly(false), rotate(false),
+		      par_preOnly(false), par_postOnly(false), rotate(false), mplp(false),
 		      ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), order_timelimit(0),
 		      cutoff_depth(NONE), cutoff_width(NONE),

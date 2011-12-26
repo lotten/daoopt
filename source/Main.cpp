@@ -266,8 +266,13 @@ bool Main::initDataStructs() {
 #ifdef NO_HEURISTIC
   m_heuristic.reset(new Unheuristic);
 #else
-  m_heuristic.reset(new MiniBucketElimNew(m_problem.get(), m_pseudotree.get(), m_options->ibound) );
-  //m_heuristic.reset(new MiniBucketElim(m_problem.get(), m_pseudotree.get(), m_options->ibound) );
+  if (m_options->mplp) {
+    m_heuristic.reset(new MiniBucketElimNew(m_problem.get(), m_pseudotree.get(),
+					    m_options->ibound) );
+  } else {
+    m_heuristic.reset(new MiniBucketElim(m_problem.get(), m_pseudotree.get(),
+					 m_options->ibound) );
+  }
 #endif
 
   // Main search engine
