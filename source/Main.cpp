@@ -268,10 +268,10 @@ bool Main::initDataStructs() {
 #else
   if (m_options->match >= 0 || m_options->mplp >= 0 || m_options->jglp >= 0) {
     m_heuristic.reset(new MiniBucketElimNew(m_problem.get(), m_pseudotree.get(),
-					    m_options->ibound) );
+					    m_options.get(), m_options->ibound) );
   } else {
     m_heuristic.reset(new MiniBucketElim(m_problem.get(), m_pseudotree.get(),
-					 m_options->ibound) );
+					 m_options.get(), m_options->ibound) );
   }
 #endif
 
@@ -342,7 +342,7 @@ bool Main::compileHeuristic() {
   m_options->ibound = min(m_options->ibound, m_pseudotree->getWidthCond());
   size_t sz = 0;
   if (m_options->memlimit != NONE) {
-    sz = m_heuristic->limitSize(m_options->memlimit, m_options.get(),
+    sz = m_heuristic->limitSize(m_options->memlimit,
                                 & m_search->getAssignment() );
     sz *= sizeof(double) / (1024*1024.0);
     cout << "Enforcing memory limit resulted in i-bound " << m_options->ibound

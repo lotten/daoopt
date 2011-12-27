@@ -27,10 +27,9 @@ public:
   // checks if the given i-bound would exceed the memlimit, in that
   // case compute highest possible i-bound that 'fits'
   //int limitIbound(int ibound, size_t memlimit, const vector<val_t> * assignment=NULL) {
-  size_t limitSize(size_t memlimit, ProgramOptions* options, const vector<val_t> *assignment) {
-		size_t ibound = options->ibound;
+  size_t limitSize(size_t memlimit, const vector<val_t> *assignment) {
+		size_t ibound = m_options->ibound;
 		_memlimit = memlimit;
-		_options  = options;
 		memlimit *= 1024 *1024 / sizeof(double);						// convert to # of table entries
 		cout<<"Adjusting mini-bucket i-bound (ati)...\n";
 		this->setIbound(ibound);                            // try initial ibound
@@ -41,7 +40,7 @@ public:
 			mem = _mbe.simulateMemory();
 		  cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) ) << " MBytes\n";
 		}
-		options->ibound = ibound; 
+		m_options->ibound = ibound; 
 		return mem;
 	}
 
@@ -69,7 +68,7 @@ public:
 			//if (_memlimit) _memlimit -= 2*_mbe.memory()*sizeof(double)/1024/1024;
 			mbe2 = mex::mbe();                                         // clear joingraph mbe structure
 			_mbe.setProperties("DoMatch=1,DoFill=0,DoMplp=0,DoJG=0");  // final pass => matching only
-			if (_memlimit) this->limitSize(_memlimit,_options,NULL);   // re-check ibound limit
+			if (_memlimit) this->limitSize(_memlimit,NULL);   // re-check ibound limit
 		} else if (_options!=NULL && _options->mplp>0) {
 			char mplpIt[6]; sprintf(mplpIt,"%d",_options->mplp);
 			_mbe.setProperties(std::string("DoMatch=1,DoFill=0,DoJG=0,DoMplp=").append(mplpIt));  // OR, mplp only
@@ -127,8 +126,8 @@ public:
   bool readFromFile(string fn)			{ return false; }
 
 public:
-  MiniBucketElimNew(Problem* p, Pseudotree* pt, int ib) : Heuristic(p,pt), _p(p), _pt(pt), 
-		_mbe(), _memlimit(0), _options(NULL) {
+  MiniBucketElimNew(Problem* p, Pseudotree* pt, ProgramOptions* po, int ib) : Heuristic(p,pt,po), _p(p), _pt(pt), 
+		_mbe(), _memlimit(0), _options(po) {
 		mex::vector<mex::Factor> orig(p->getC());
 		for (int i=0;i<p->getC(); ++i) orig[i] = p->getFunctions()[i]->asFactor().exp();
 		mex::graphModel gm(orig);

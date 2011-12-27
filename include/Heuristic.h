@@ -47,14 +47,14 @@ class Heuristic {
 protected:
   Problem* m_problem;            // The problem instance
   Pseudotree* m_pseudotree;      // The underlying pseudotree
+  ProgramOptions* m_options;     // Program options instance
 
 public:
 
   /* Limits the memory size of the heuristic (e.g. through lowering
    * the mini bucket i-bound)
    */
-  virtual size_t limitSize(size_t limit, ProgramOptions* options,
-                           const std::vector<val_t> * assignment) = 0;
+  virtual size_t limitSize(size_t limit, const std::vector<val_t> * assignment) = 0;
 
   /* Returns the memory size of the heuristic
    */
@@ -93,10 +93,10 @@ public:
    * override in child class.
    */
   virtual bool isAccurate() { return false; }
-
+  
 protected:
-  Heuristic(Problem* p, Pseudotree* pt) :
-      m_problem(p), m_pseudotree(pt) { /* nothing */ }
+  Heuristic(Problem* p, Pseudotree* pt, ProgramOptions* po) :
+      m_problem(p), m_pseudotree(pt), m_options(po) { /* nothing */ }
 public:
   virtual ~Heuristic() { /* nothing */ }
 };
@@ -113,7 +113,7 @@ public:
   double getGlobalUB() const { assert(false); return 0; }
   double getHeur(int, const std::vector<val_t>&) const { assert(false); return 0; }
   bool isAccurate() { return false; }
-  UnHeuristic() : Heuristic(NULL, NULL) {}
+  UnHeuristic() : Heuristic(NULL, NULL, NULL) {}
   virtual ~UnHeuristic() {}
 };
 
