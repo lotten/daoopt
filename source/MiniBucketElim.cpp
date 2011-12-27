@@ -210,12 +210,12 @@ void MiniBucketElim::findDfsOrder(vector<int>& order) const {
 }
 
 
-size_t MiniBucketElim::limitSize(size_t memlimit, ProgramOptions* options, const vector<val_t> * assignment) {
+size_t MiniBucketElim::limitSize(size_t memlimit, const vector<val_t> * assignment) {
 
   // convert to bits
   memlimit *= 1024 *1024 / sizeof(double);
 
-  int ibound = options->ibound;
+  int ibound = m_options->ibound;
 
   cout << "Adjusting mini bucket i-bound..." << endl;
   this->setIbound(ibound);
@@ -230,7 +230,7 @@ size_t MiniBucketElim::limitSize(size_t memlimit, ProgramOptions* options, const
          << " MBytes" << endl;
   }
 
-  options->ibound = ibound;
+  m_options->ibound = ibound;
   return mem;
 }
 

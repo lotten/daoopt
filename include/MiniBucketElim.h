@@ -64,7 +64,7 @@ public:
 
   // checks if the given i-bound would exceed the memlimit and lowers
   // it accordingly.
-  size_t limitSize(size_t memlimit, ProgramOptions* options, const vector<val_t> * assignment);
+  size_t limitSize(size_t memlimit, const vector<val_t> * assignment);
 
   // builds the heuristic, limited to the relevant subproblem, if applicable.
   // if computeTables=false, only returns size estimate (no tables computed)
@@ -90,7 +90,7 @@ public:
   bool isAccurate();
 
 public:
-  MiniBucketElim(Problem* p, Pseudotree* pt, int ib);
+  MiniBucketElim(Problem* p, Pseudotree* pt, ProgramOptions* po, int ib);
   virtual ~MiniBucketElim();
 
 };
@@ -102,8 +102,9 @@ inline bool MiniBucketElim::isAccurate() {
   return (m_pseudotree->getWidthCond() <= m_ibound);
 }
 
-inline MiniBucketElim::MiniBucketElim(Problem* p, Pseudotree* pt, int ib) :
-    Heuristic(p, pt), m_ibound(ib), m_globalUB(ELEM_ONE)
+inline MiniBucketElim::MiniBucketElim(Problem* p, Pseudotree* pt,
+				      ProgramOptions* po, int ib) :
+    Heuristic(p, pt, po), m_ibound(ib), m_globalUB(ELEM_ONE)
 // , m_augmented(p->getN()), m_intermediate(p->getN())
   { }
 
