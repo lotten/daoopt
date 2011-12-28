@@ -21,7 +21,7 @@ fi
 echo "Found time limit ${INF_TIME} and memory limit ${INF_MEMORY}."
 
 # Determine memory limit for mini buckets (to leave space for search)  
-MEMLIMIT=$((${INF_MEMORY}-250))
+MEMLIMIT=$((${INF_MEMORY}*1000-250))
 
 # set/unset to enable/disable breadth-rotate AOBB 
 ROTATE=" --rotate"
