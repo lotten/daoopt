@@ -5,7 +5,7 @@
 
 if [ "$4" != "MPE" ] ; then
   echo "Expecting MPE task as fourth argument"
-  exit 1  
+  exit 1
 fi
 
 if [ "${INF_TIME}" == "" ] ; then
@@ -35,11 +35,11 @@ if [ ${INF_TIME} -eq 20 ] ; then
 
 # 20 minute timelimit
 elif [ ${INF_TIME} -eq 1200 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 10 --slsT 6 -t300 --orderTime 60 -m${MEMLIMIT} -i20 -a2 ${ROTATE}
+  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 10 --slsT 6 -t300 --orderTime 60 -m${MEMLIMIT} -i25 -a2 ${ROTATE}
 
 # 1 hour timelimit
 elif [ ${INF_TIME} -eq 3600 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 20 --slsT 10 -t500 --orderTime 180 -m${MEMLIMIT} -i25 -a2 ${ROTATE}
+  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 20 --slsT 10 -t1000 --orderTime 180 -m${MEMLIMIT} -i35 -a2 ${ROTATE}
 
 # unknown timelimit
 else
