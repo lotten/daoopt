@@ -357,6 +357,7 @@ int ARE::ComputeVariableEliminationOrder(
 	// eliminate singleton-domain variables; do this before ordering is computed; this is easy and should be done by any algorithm processing the network
 	p.EliminateSingletonDomainVariables() ;
 
+#if false  // TODO: disabled by Lars
 	// prune domains of variables by checking which values participate in no complete assignment with probability>0.
 	// basically, we compute a minimal domain for each variable.
 	if (PerformSingletonConsistencyChecking) {
@@ -383,6 +384,7 @@ int ARE::ComputeVariableEliminationOrder(
 		if (NULL != ARE::fpLOG) 
 			fprintf(ARE::fpLOG, "\nSingleton-Consistency check not requested ...") ;
 		}
+#endif
 
 	BestOrder_Order = new int[p.N()] ;
 	if (NULL == BestOrder_Order) {

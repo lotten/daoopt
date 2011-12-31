@@ -1948,7 +1948,7 @@ done :
 	return return_value ;
 }
 
-
+#if false  // TODO: disabled by Lars
 int ARE::ARP::ComputeSingletonConsistency(int & nNewSingletonDomainVariables)
 {
 	nNewSingletonDomainVariables = 0 ;
@@ -2074,4 +2074,4 @@ void ARE::ARP::SingletonConsistencyHelper(vector<vector<bool> > & is_consistent)
 
 	// done
 }
-
+#endif
