@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <float.h>
 
-#include <Globals.hxx>
+#include "Globals.hxx"
 
 #include "Sort.hxx"
 #include "AVLtreeSimple.hxx"
@@ -358,7 +358,7 @@ move_on :
 }
 
 
-int ARE::Graph::Create(int nNodes, std::vector<std::set<int>> & fn_signatures) 
+int ARE::Graph::Create(int nNodes, std::vector<std::set<int> > & fn_signatures)
 {
 	Destroy() ;
 

@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <Globals.hxx>
-#include <Function.hxx>
-#include <Problem.hxx>
+#include "Globals.hxx"
+#include "Function.hxx"
+#include "Problem.hxx"
 
 FILE *ARE::fpLOG = NULL ;
 ARE::utils::RecursiveMutex ARE::LOGMutex ;

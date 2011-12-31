@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <memory.h>
 
-#include <Function.hxx>
-#include <Bucket.hxx>
-#include <BEworkspace.hxx>
+#include "Function.hxx"
+#include "Bucket.hxx"
+#include "BEworkspace.hxx"
 
 
 BucketElimination::Bucket::Bucket(void)

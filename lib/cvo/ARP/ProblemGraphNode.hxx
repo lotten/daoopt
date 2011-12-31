@@ -1,7 +1,7 @@
 #ifndef ProblemGraphNode_HXX_INCLUDED
 #define ProblemGraphNode_HXX_INCLUDED
 
-#include <Function.hxx>
+#include "Function.hxx"
 
 namespace ARE
 {

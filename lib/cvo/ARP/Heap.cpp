@@ -16,7 +16,7 @@
 #include <malloc.h>
 #include <math.h>
 
-#include "HEAP.HXX"
+#include "Heap.hxx"
 
 /*
 	Local definitions.

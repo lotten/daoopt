@@ -1,7 +1,7 @@
 #ifndef BUCKET_HXX_INCLUDED
 #define BUCKET_HXX_INCLUDED
 
-#include <Function.hxx>
+#include "Function.hxx"
 
 namespace BucketElimination
 {

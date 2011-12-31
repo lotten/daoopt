@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <string>
 
-#include <Mutex.h>
-#include <Globals.hxx>
-#include <Workspace.hxx>
-#include <FunctionTableBlock.hxx>
+#include "Mutex.h"
+#include "Globals.hxx"
+#include "Workspace.hxx"
+#include "FunctionTableBlock.hxx"
 
 namespace BucketElimination { class Bucket ; }
 namespace ARE { class FunctionTableBlock ; }

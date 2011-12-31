@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 // Added by Vibhav for domain pruning implementation
-#include "Solver.h"
+//#include "Solver.h"  // TODO: disabled by Lars
 
 
 #include "MersenneTwister.h"

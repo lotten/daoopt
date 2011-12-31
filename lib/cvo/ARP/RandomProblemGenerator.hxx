@@ -1,7 +1,7 @@
 #ifndef RandomProblemGenerator_HXX_INCLUDED
 #define RandomProblemGenerator_HXX_INCLUDED
 
-#include <Function.hxx>
+#include "Function.hxx"
 
 namespace RandomProblemGenerator
 {

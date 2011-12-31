@@ -7,8 +7,8 @@
 #include <windows.h>
 #endif // WINDOWS
 
-#include <Explanation.hxx>
-#include <Function.hxx>
+#include "Explanation.hxx"
+#include "Function.hxx"
 
 namespace ARE { class ARP ; }
 namespace ARE { class Function ; }

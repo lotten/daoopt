@@ -3,10 +3,10 @@
 
 #include <stdlib.h>
 #include <string>
-
-#include <Function.hxx>
-#include <ProblemGraphNode.hxx>
 #include <vector>
+
+#include "Function.hxx"
+#include "ProblemGraphNode.hxx"
 using namespace std ;
 
 namespace ARE // Automated Reasoning Engine
