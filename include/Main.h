@@ -32,6 +32,7 @@
 #include "Pseudotree.h"
 #include "ProgramOptions.h"
 #include "MiniBucketElim.h"
+#include "MiniBucketElimMplp.h"
 #ifdef ENABLE_SLS
 #include "SLSWrapper.h"
 #endif

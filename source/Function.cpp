@@ -40,6 +40,26 @@ Function::Function(const int& id, Problem* p, const set<int>& scope, double* T, 
 #endif
 }
 
+/* ATI: convert between mex/Factor representation and daoopt Function representation */
+mex::Factor Function::asFactor() {
+  mex::VarSet vs;
+  for (set<int>::iterator it=m_scope.begin();it!=m_scope.end();++it) vs+=mex::Var(*it,m_problem->getDomainSize(*it));
+  mex::Factor F(vs, 0.0); //m_table);
+  std::vector<mex::Var> ord(vs.begin(),vs.end());
+  mex::Permute pi(ord,true);
+  for (size_t j=0;j<F.numel();j++) F[pi.convertLinearIndex(j)]=m_table[j];
+  return F;
+}
+void Function::fromFactor(const mex::Factor& F) {
+  mex::VarSet vs;
+  for (set<int>::iterator it=m_scope.begin();it!=m_scope.end();++it) vs+=mex::Var(*it,m_problem->getDomainSize(*it));
+  assert( vs == F.vars() );
+
+  std::vector<mex::Var> ord(F.vars().begin(),F.vars().end());
+  mex::Permute pi(ord,true);
+  for (size_t j=0;j<F.numel();j++) m_table[j] = F[pi.convertLinearIndex(j)];
+}
+
 
 /* returns the table entry for the assignment (input is vector of val_t) */
 double Function::getValue(const vector<val_t>& assignment) const {
