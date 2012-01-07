@@ -44,6 +44,8 @@ int main(int argc, char** argv) {
     exit(0);
   if (!main.initDataStructs())
     exit(0);
+  if (!main.preprocessHeuristic())
+    exit(0);
   if (!main.compileHeuristic())
     exit(0);
   if (!main.runLDS())

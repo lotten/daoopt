@@ -70,7 +70,7 @@ size_t MiniBucketElimMplp::build(const vector<val_t>* assignment, bool computeTa
     newFunctions[f]->fromFactor( log(factors[f]) );
   }
   _p->replaceFunctions( newFunctions );      // replace them in the problem definition
-  _pt->addFunctionInfo(_p->getFunctions());   // re-compute function assignments in pseudotree
+  _pt->resetFunctionInfo(_p->getFunctions());   // re-compute function assignments in pseudotree
 
   return this->getSize();
 }

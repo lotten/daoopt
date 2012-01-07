@@ -60,6 +60,13 @@ public:
    */
   virtual size_t getSize() const = 0;
 
+  /* Allows the heuristic to apply preprocessing to the problem instance, if
+   * applicable. Returns true if any changes were made to original problem,
+   * false otherwise. Optional argument used to specify partial assignment in
+   * case of conditioned subproblem.
+   */
+  virtual bool preprocess(const std::vector<val_t>* = NULL) { return false; }
+
   /* Builds the heuristic. The first optional parameter can be used to specify
    * a partial assignment (when solving a conditioned subproblem,for instance),
    * the second optional parameter signals simulation-only mode (i.e. the
