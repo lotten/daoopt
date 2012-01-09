@@ -99,7 +99,7 @@ public:
 	virtual void init() { 
 		_beliefs=vector<Factor>(_factors);                            // copy initial beliefs from factors
 		_msg=vector<Factor>(); _msg.resize(2*nEdges());               // initialize messages to the identity
-		for (size_t e=0;e<2*nEdges();++i) if (edge(e)!=EdgeID::NO_EDGE) {  // f'n of the right variables
+		for (size_t e=0;e<2*nEdges();++e) if (edge(e)!=EdgeID::NO_EDGE) {  // f'n of the right variables
 			_msg[e]=Factor( factor(edge(e).first).vars() & factor(edge(e).second).vars(), 1.0 );
 		}
 		_msgNew=vector<Factor>(_msg);                                 // copy that as "updated" message list
@@ -110,11 +110,12 @@ public:
 			_lnZ += (belief(f)*log(factor(f))).sum() + objEntropy(f);   // and compute the free energy estimate
 		}
 
-		if (_sched==Schedule::Priority)                               // for priority scheduling
+		if (_sched==Schedule::Priority) {                             // for priority scheduling
 			for (size_t e=0;e<2*nEdges();++e)                           //  initialize all edges to infinity
        if (edge(e)!=EdgeID::NO_EDGE) priority.insert( std::numeric_limits<double>::infinity() , e);
-		else
+		 } else {
 			for (size_t f=0;f<nFactors();++f) forder.push_back(f);      // for fixed scheduling, get a default order
+     }
 	}
 
 

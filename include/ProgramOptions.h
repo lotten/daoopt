@@ -43,7 +43,9 @@ public:
   bool rotate; // enables breadth-rotating AOBB
   int match;  // enables Alex Ihler's MBE library (moment-matching flag)
   int mplp;  // enables MPLP in Alex Ihler's MBE library (# iters)
+  double mplps;  // enables MPLP in Alex Ihler's MBE library (# sec)
   int jglp;  // enables JGLP tightening in Alex Ihler's MBE library (# iters)
+  double jglps;  // enables JGLP tightening in Alex Ihler's MBE library (# sec)
   int ibound; // bucket elim. i-bound
   int cbound; // cache context size bound
   int cbound_worker; // cache bound for worker processes
@@ -93,7 +95,8 @@ ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),
-		      par_preOnly(false), par_postOnly(false), rotate(false), mplp(false),
+		      par_preOnly(false), par_postOnly(false), rotate(false), 
+          mplp(-1), mplps(-1), jglp(-1), jglps(-1),
 		      ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), order_timelimit(0),
 		      cutoff_depth(NONE), cutoff_width(NONE),

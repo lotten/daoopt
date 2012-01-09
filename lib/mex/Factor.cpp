@@ -19,9 +19,7 @@
 #include "mex/mxUtil.h"
 #include "mex/VarSet.h"
 #include "mex/subindex.h"
-#include "mex/index.h"
 #include "mex/vector.h"
-
 #include "mex/Factor.h"
 
 namespace mex {
@@ -97,8 +95,7 @@ vector<Factor> Factor::readUai10(std::istream& is) {
   for (size_t i=0;i<nvar;i++) is>>dims[i];
   
   is >> ncliques;
-  //vector<vector<uint32_t> > cliques(ncliques);
-	std::vector<std::vector<Var> > cliques(ncliques);
+	std::vector<mex::vector<Var> > cliques(ncliques);
 	std::vector<VarSet > sets(ncliques);
   for (size_t i=0;i<ncliques;i++) {
     is >> csize;
@@ -115,9 +112,9 @@ vector<Factor> Factor::readUai10(std::istream& is) {
   for (size_t i=0;i<ncliques;i++) {
     is >> nval;
     assert(nval == sets[i].nrStates());
-    tables[i] = Factor(sets[i],0.0);
-    Permute pi( cliques[i] , true);  // !! use DAI permutation routine, reverse order
-    for (size_t j=0;j<nval;j++) is>>tables[i][pi.convertLinearIndex(j)];
+    tables[i] = Factor(sets[i],0.0);        // preallocate memory and convert from given order, bigEndian
+    permuteIndex pi( cliques[i], true); pi=pi.inverse();   // to our order
+    for (size_t j=0;j<nval;j++) is>>tables[i][pi.convert(j)];
   }
 
 	delete[] st;

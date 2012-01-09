@@ -1,94 +1,34 @@
-/*  This file is modified from source libDAI - http://www.libdai.org/
- *
- *  libDAI is licensed under the terms of the GNU General Public License version
- *  2, or (at your option) any later version. libDAI is distributed without any
- *  warranty. See the file COPYING for more details.
- *
- *  Copyright (C) 2006-2009  Joris Mooij  [joris dot mooij at libdai dot org]
- *  Copyright (C) 2006-2007  Radboud University Nijmegen, The Netherlands
- */
-
-#ifndef __defined_mex_enum_h
-#define __defined_mex_enum_h
+#ifndef __MEX_ENUM_H
+#define __MEX_ENUM_H
 
 #include <cstring>
 #include <iostream>
 
+/* Type-safe enumeration class with stringize functions */
 
-/// Extends the C++ \c enum type by supporting input/output streaming and conversion to and from <tt>const char*</tt> and \c size_t
-/** For more details see the source code.
- *
- *  \par Example:
- *  \code
- *  DAI_ENUM(colors,RED,GREEN,BLUE)
- *  \endcode
- *  defines a class \a colors encapsulating an
- *  \code
- *  enum {RED, GREEN, BLUE};
- *  \endcode
- *  which offers additional functionality over the plain \c enum keyword.
- */
-#define MEX_ENUM(x,val0,...) class x {\
-    public:\
-        enum value {val0,__VA_ARGS__};\
-\
-        x() : v(val0) {}\
-\
-        x(value w) : v(w) {}\
-\
-        x(char const *w) {\
-            static char labelstring[] = #val0 "," #__VA_ARGS__;\
-            size_t pos_begin = 0;\
-            size_t i = 0;\
-            for( size_t pos_end = 0; ; pos_end++ ) {\
-                if( (labelstring[pos_end] == ',') || (labelstring[pos_end] == '\0') ) {\
-										if( (strlen( w ) == pos_end - pos_begin) && (strncmp( labelstring + pos_begin, w, pos_end - pos_begin ) == 0) ) {\
-                        v = (value)i;\
-                        return;\
-                    } else {\
-                        i++;\
-                        pos_begin = pos_end + 1;\
-                    }\
-                }\
-                if( labelstring[pos_end] == '\0' )\
-                    break;\
-            }\
-						throw std::runtime_error("Unknown enum value '"+std::string(w)+"' is not in ["+std::string(labelstring)+"]"); \
-        }\
-\
-        operator value() const { return v; }\
-\
-        operator char const*() const {\
-            static char labelstring[] = #val0 "," #__VA_ARGS__;\
-            size_t pos_begin = 0;\
-            size_t i = 0;\
-            for( size_t pos_end = 0; ; pos_end++ )\
-                if( (labelstring[pos_end] == ',') || (labelstring[pos_end] == '\0') ) {\
-                    if( (size_t)v == i ) {\
-                        labelstring[pos_end] = '\0';\
-                        return labelstring + pos_begin;\
-                    } else {\
-                        i++;\
-                        pos_begin = pos_end + 1;\
-                    }\
-                }\
-        }\
-\
-        friend std::istream& operator >> (std::istream& is, x& y) {\
-            std::string s;\
-            is >> s;\
-            y = x(s.c_str());\
-            return is;\
-        }\
-\
-        friend std::ostream& operator << (std::ostream& os, const x& y) {\
-            os << (const char *)y;\
-            return os;\
-        }\
-\
-    protected:\
-        value v;\
-};
+#define MEX_ENUM(EnumName, v0, ...) \
+  struct EnumName {                   \
+    enum Type { v0, __VA_ARGS__ };    \
+    Type t_;                          \
+    EnumName(Type t=v0) : t_(t) {} \
+    EnumName(const char* s) : t_() {  \
+      /*for (int i=0;i<nType;++i) if (strcasecmp(names()[i],s)==0) { t_=Type(i); return; } */ \
+      for (int i=0;names(i)[0]!=0;++i) if (strncmp(names(i),s,strlen(s))==0) { t_=Type(i); return; } \
+      throw std::runtime_error("Unknown type string");                                   \
+    }                                 \
+    operator Type () const { return t_; }                    \
+    operator char const* () const { return names(t_); }    \
+		friend std::istream& operator >> (std::istream& is, Type& t) {    \
+			std::string str; is >> str; t = EnumName(str.c_str()); return is; } \
+		friend std::ostream& operator << (std::ostream& os, Type& t) { os << (const char*)t; return os; } \
+  private:                                                   \
+    template<typename T> operator T() const;                 \
+    static char const* names(unsigned int i) {        \
+      static char const str[] = { #v0 "," #__VA_ARGS__ ",\0" }; \
+			char const* s=str; while (*s!=0 && i!=0) if (*(s++)==',') --i; \
+      return s;                                              \
+    }                                 \
+  };                               
 
 
 #endif

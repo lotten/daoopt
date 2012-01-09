@@ -3,6 +3,7 @@
 
 #include<cmath>
 #include<ctime>
+#include<sys/time.h>
 #include<cassert>
 #include<cstdlib>
 #include<stdint.h>
@@ -52,21 +53,28 @@ namespace mex {
 #endif
 
 
-// Returns user+system time in seconds  (from libDAI)
-/*
-double toc() {
+// Returns system (wall clock) time in seconds
+inline double timeSystem() {
 #ifdef WINDOWS
     SYSTEMTIME tbuf;
     GetSystemTime(&tbuf);
     return( (double)(tbuf.wSecond + (double)tbuf.wMilliseconds / 1000.0) );
 #else
     struct timeval tv;
-    struct timezone tz;
-    gettimeofday( &tv, &tz );
+    gettimeofday( &tv, NULL );
     return( (double)(tv.tv_sec + (double)tv.tv_usec / 1000000.0) );
 #endif
 }
-*/
+
+inline double timeProcess() {
+#ifdef WINDOWS
+    throw std::runtime_error("No process time implemented for Windows");
+#else
+    clock_t tv( clock() );
+    return( (double)tv );
+#endif
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // String splitting functions

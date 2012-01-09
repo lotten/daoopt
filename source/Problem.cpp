@@ -626,6 +626,8 @@ void Problem::replaceFunctions(const vector<Function*>& newFunctions) {
   }
   // store new functions
   m_functions = newFunctions;
+  m_c = m_functions.size();
+  // update function scopes???
 }
 
 
