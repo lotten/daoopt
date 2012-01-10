@@ -251,6 +251,19 @@ void allocateVarsAndPTs(bool name){
 	}
 }
 
+void deallocateVarsAndPTs(bool name) {
+  for(int pot=0; pot < num_pots; pot++){
+      if (probTables[pot]) delete probTables[pot];
+  }
+  for(int var=0; var < num_vars; var++){
+    if (variables[var]) {
+      if (name && variables[var]->name)
+        delete[] variables[var]->name;
+      delete variables[var];
+    }
+  }
+}
+
 void runAlgorithm(int **outBestAssignment, double *outLogLikelihood){	
 	if(preprocessingSizeBound > 0) outputBestMPE = false;
 	first_init();
