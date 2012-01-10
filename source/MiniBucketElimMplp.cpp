@@ -50,13 +50,12 @@ void MiniBucketElimMplp::rewriteFactors( const vector<mex::Factor>& factors) {
     newFunctions[f]->fromFactor( log(factors[f]) );    // write in log factor functions
   }
   _p->replaceFunctions( newFunctions );                // replace them in the problem definition
-  if (_pt) _pt->resetFunctionInfo(_p->getFunctions()); // re-compute function assignments in pseudotree
 }
 
 
 bool MiniBucketElimMplp::preprocess(const vector<val_t>* assignment) {
   bool changedFunctions = doMPLP();
-  _mbe.setProperties("doMplp=0");  // disable MPLP in subsequent build()
+  _options->mplp = -1; _options->mplps = -1;  // disable MPLP in subsequent build()
   return changedFunctions;
 }
 
