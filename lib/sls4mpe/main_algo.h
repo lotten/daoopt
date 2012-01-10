@@ -35,6 +35,7 @@ void update_ils_count();
 
 void exampleProblemDefition();
 void allocateVarsAndPTs(bool name);
+void deallocateVarsAndPTs(bool name);
 void allocateMemoryForDataStructures();
 void tearDown();
 void first_init();
