@@ -131,8 +131,6 @@ void Problem::removeEvidence() {
 
   // update function information
   m_c = m_functions.size();
-
-  return;
 }
 
 
@@ -267,7 +265,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
     if (inTemp.fail()) { // file not existent yet
       cerr << "Error reading problem file " << prob << ", aborting." << endl;
-      exit(1);
+      return false;
     }
   }
   if (!evid.empty()) {
@@ -276,7 +274,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
     if (inTemp.fail()) { // file not existent yet
       cerr << "Error reading evidence file " << evid << ", aborting." << endl;
-      exit(1);
+      return false;
     }
   }
 
@@ -314,8 +312,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
     m_prob = PROB_MULT;
   } else {
     cerr << "Unsupported problem type \"" << s << "\", aborting." << endl;
-    in.close();
-    exit(0);
+    in.close(); return false;
   }
 
   in >> x; // No. of variables
@@ -330,8 +327,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
     if (x > numeric_limits<val_t>::max()) {
       cerr << "Domain size " << x << " out of range for internal representation.\n"
            << "(Recompile with different type for variable values.)" << endl;
-      in.close();
-      exit(0);
+      in.close(); return false;
     }
     xs = (val_t)x;
     m_domains[i] = xs;
@@ -354,7 +350,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
       in >> y; // the actual variables in the scope
       if(y>=m_n) {
         cerr << "Variable index " << y << " out of range." << endl;
-        exit(EXIT_FAILURE);
+        in.close(); return false;
       }
       scope.push_back(y); // preserve order from file
     }
@@ -431,9 +427,8 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   in >> x;  // Number of evidence samples
   if (x > 1) {
     myerror("Warning: Ignoring all but one evidence sample.\n");
-  }
 
-  if (x == 1) {
+  if (x > 0) {
     in >> x;
     m_e = x; // Number of evidence variables
 
@@ -441,14 +436,17 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
       in >> x; // Variable index
       in >> y; // Variable value
       xs = (val_t) y;
+      if (xs >= m_domains[x]) {
+	cout << "Variable " << x << " has domain size " << (int) m_domains[x]
+	     << ", evidence value " << y << " out of range." << endl;
+	in.close(); return false;
+      }
       m_evidence.insert(make_pair(x,xs));
     }
   }  // else: x == 0, no evidence
 
   in.close();
-
   return true;
-
 }
 
 

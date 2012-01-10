@@ -59,7 +59,8 @@ bool Main::loadProblem() {
   m_problem.reset(new Problem);
 
   // load problem file
-  m_problem->parseUAI(m_options->in_problemFile, m_options->in_evidenceFile);
+  if (!m_problem->parseUAI(m_options->in_problemFile, m_options->in_evidenceFile))
+    return false;
   cout << "Created problem with " << m_problem->getN()
        << " variables and " << m_problem->getC() << " functions." << endl;
 
