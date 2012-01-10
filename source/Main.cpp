@@ -298,6 +298,7 @@ bool Main::initDataStructs() {
       err_txt("Subproblem specified but no ordering given.");
       return false;
     }else {
+      m_problem->setSubprobOnly();
       m_options->order_iterations = 0;
       cout << "Reading subproblem from file " << m_options->in_subproblemFile << '.' << endl;
       if (!m_search->restrictSubproblem(m_options->in_subproblemFile) ) {
@@ -318,20 +319,6 @@ bool Main::initDataStructs() {
 
 #ifdef MEMDEBUG
   malloc_stats();
-#endif
-
-#ifdef ENABLE_SLS
-  // pull solution from SLS, if applicable
-  if (m_options->slsIter > 0) {
-    vector<val_t> slsTup;
-    double slsSol = m_slsWrapper->getSolution(&slsTup);
-    m_search->setInitialSolution(slsSol
-#ifndef NO_ASSIGNMENT
-        ,slsTup
-#endif
-    );
-    cout << "Passed SLS solution to search: " << slsSol << endl;
-  }
 #endif
 
   return true;
@@ -449,7 +436,7 @@ bool Main::runLDS() {
           ,slsTup
 #endif
       );
-      cout << "LDS: Solution from SLS loaded." << endl;
+      cout << "LDS: Solution from SLS loaded: " << slsSol << endl;
     }
 #endif
 
@@ -483,6 +470,21 @@ bool Main::runLDS() {
 
 
 bool Main::finishPreproc() {
+
+#ifdef ENABLE_SLS
+  // pull solution from SLS, if applicable
+  if (m_options->slsIter > 0) {
+    vector<val_t> slsTup;
+    double slsSol = m_slsWrapper->getSolution(&slsTup);
+    m_search->setInitialSolution(slsSol
+#ifndef NO_ASSIGNMENT
+        ,slsTup
+#endif
+    );
+    cout << "Passed SLS solution to search: " << slsSol << endl;
+  }
+#endif
+
   // output (sub)problem lower bound, mostly makes sense for conditioned subproblems
   // in parallelized setting
   double lb = m_search->curLowerBound();

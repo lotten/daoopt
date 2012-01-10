@@ -460,14 +460,13 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     }
   }
 
+  cout << "s " << SCALE_LOG(m_curCost);
+#ifndef NO_ASSIGNMENT
   int32_t assigSize = UNKNOWN;
   if (subprobOnly)
     assigSize = (int32_t) m_curSolution.size() - 1; // -1 for dummy var
   else
     assigSize = (int32_t) m_nOrg;
-
-  cout << "s " << SCALE_LOG(m_curCost);
-#ifndef NO_ASSIGNMENT
   cout << ' ' << assigSize;
 #endif
 
@@ -531,10 +530,12 @@ void Problem::updateSolution(double cost,
     ss << "u " << nodes.first << ' ' <<  nodes.second << ' ' << SCALE_LOG(cost) ;
 
 #ifndef NO_ASSIGNMENT
-  bool subprob = ((int) sol.size() != m_n) ? true : false;
-  bool fullProb = ((int) sol.size() == m_nOrg) ? true : false;
 
-  if (fullProb || subprob) {
+  bool copyAssig = false;
+  if (m_subprobOnly || (int) sol.size() == m_nOrg)
+    copyAssig = true;
+
+  if (copyAssig) {  // simply copy given assignment
     m_curSolution = sol;
   } else {  // reconstruct full solution
     m_curSolution.resize(m_nOrg, UNKNOWN);
