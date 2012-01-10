@@ -103,7 +103,7 @@ public:
   const vector<int>& getElimOrder() const { return m_elimOrder; }
 
   /* augments the pseudo tree with function information */
-  void addFunctionInfo(const vector<Function*>& fns);
+  void resetFunctionInfo(const vector<Function*>& fns);
 
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
   /* computes the subproblem complexity parameters for all subtrees */

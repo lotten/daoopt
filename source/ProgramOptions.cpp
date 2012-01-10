@@ -52,8 +52,10 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("rotate,y", "use breadth-rotating AOBB")
       ("rotatelimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
       ("match", po::value<int>()->default_value(-1), "use mini bucket moment matching")
-      ("mplp", po::value<int>()->default_value(-1), "use MPLP mini buckets")
-      ("jglp", po::value<int>()->default_value(-1), "use Join-Graph reparameterization")
+      ("mplp", po::value<int>()->default_value(-1), "use MPLP mini buckets (#iter)")
+      ("mplps", po::value<double>()->default_value(-1), "use MPLP mini buckets (sec)")
+      ("jglp", po::value<int>()->default_value(-1), "use Join-Graph reparameterization (#iter)")
+      ("jglps", po::value<double>()->default_value(-1), "use Join-Graph reparameterization (sec)")
 #endif
       ("orderIter,t", po::value<int>()->default_value(25), "iterations for finding ordering")
       ("orderTime", po::value<int>()->default_value(-1), "maximum time for finding ordering")
@@ -220,9 +222,13 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 			opt->match = vm["match"].as<int>();
     if (vm.count("mplp"))
 			opt->mplp = vm["mplp"].as<int>();
+    if (vm.count("mplps"))
+			opt->mplps = vm["mplps"].as<double>();
 	//opt->mplp = true;
     if (vm.count("jglp"))
 			opt->jglp = vm["jglp"].as<int>();
+    if (vm.count("jglps"))
+			opt->jglps = vm["jglps"].as<double>();
 
     if (vm.count("seed"))
       opt->seed = vm["seed"].as<int>();

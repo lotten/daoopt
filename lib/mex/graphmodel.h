@@ -84,8 +84,13 @@ public:
 
 	/// Basic variable-based manipulations
 	const flist&  withVariable(const Var&  v) const { return _vAdj[_vindex(v)]; }	// factors depending on variable v
-	flist         withVarSet(const VarSet& vs) const;															//   or on a set of variables
-	VarSet        markovBlanket(const Var& v) const;                              // variables that v may depend on
+	flist         withVarSet(const VarSet& vs) const;															//   or on all of a set of variables
+  flist         intersects(const VarSet& vs) const;
+  flist         contains(const Var& v)       const { return withVariable(v); }
+  flist         contains(const VarSet& vs)   const { return withVarSet(vs); }
+  flist         containedBy(const VarSet& vs) const;
+	VarSet        markovBlanket(const Var& v)  const;                              // variables that v may depend on
+  VarSet        markovBlanket(const VarSet& vs) const;
 	vector<VarSet> mrf() const;																										//   full variable-to-var adjacency
 
 	/// Factor ("node") manipulation operations
@@ -99,7 +104,7 @@ public:
 
 	/// Distribution-based operators
 	Factor joint(size_t maxsize=0) const;                           // directly calculate joint distribution function
-	void   consolidate();																						// merge factors into maximal sets
+	void   consolidate(VarOrder ord=VarOrder());										// merge factors into maximal sets
 
 	/// Ordering: variable (elimination) orders and factor orders
 	size_t inducedWidth(const VarOrder&) const;          	// find induced width (complexity) of elimination order

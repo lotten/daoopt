@@ -157,28 +157,52 @@ public:
 };
 
 
+class permuteIndex {
+  public:
+    // Construct permutation mapping from VarSet -> Order  (bigEndian: is 1st variable largest stride?)
+    permuteIndex( const vector<Var>& order, bool bigEndian=false ) {
+      _i = 0;
+      VarSet _vs = VarSet(order.begin(),order.end(),order.size());   // compute implicit source order (VarSet)
+      _pi.resize(order.size()); _dim.resize(order.size());
+      for (size_t j=0;j<order.size();++j) _dim[j]=_vs[j].states();   // save dimensions in source order (VarSet)
+      for (size_t j=0;j<order.size();++j) {                          // compute mapping from target order to source
+        size_t jj = bigEndian ? order.size()-1-j : j;
+        for (size_t k=0;k<order.size();++k)
+          if (_vs[k] == order[j]) { _pi[jj]=k; break; }
+      }
+    }
 
-/*
-class permute {
-	public:
-		permute(const VarSet& vars, const vector<size_t> pi) {
-			idx_=0;
-			end_=0;
-			Nd=vars.nvar();
-			dims = vars.dims();
-			state = new vsize[Nd]; pi_=new vindex[Nd];
-			for (size_t i=0;i<Nd;++i) { state[i]=0; pi_[i]=pi[i]; }
-		}
-		permute& operator++ (void) {
+    // get target index corresponding to current or specified source index
+    operator      size_t()       { return convert(_i); }
+    permuteIndex& set(size_t i)  { _i=i; return *this; };
 
-			for (size_t i=0;i<Nd;i++) {
-				state[i]++; if (state[i]==
+    // convert a source index into a target index
+    size_t convert(size_t i) {
+      vector<size_t> I(_dim.size());
+      size_t r=0, m=1;
+      for (size_t v=0; v<_dim.size(); ++v) { I[v] = i%_dim[v]; i-=I[v]; i/=_dim[v]; }
+      for (size_t j=0; j<_dim.size(); ++j) { r += m*I[_pi[j]]; m*=_dim[_pi[j]]; }
+      return r;
+    }
 
+    // invert mapping from Order -> VarSet
+    permuteIndex inverse() {
+      permuteIndex inv(*this);
+      for (size_t i=0;i<_pi.size();++i) { inv._pi[_pi[i]]=i; inv._dim[i]=_dim[_pi[i]]; }
+      inv._i  = (size_t) *this;
+      return inv;
+    }
 
-}
-}
-}
-*/
+    // can be used as an iterator as well
+    permuteIndex& operator++ (void) { ++_i; return *this; }
+    permuteIndex  operator++ (int)  { permuteIndex r(*this); ++_i; return r; }
+    permuteIndex& operator-- (void) { --_i; return *this; }
+    permuteIndex  operator-- (int)  { permuteIndex r(*this); --_i; return r; }
+  private:
+    size_t _i;
+    vector<size_t> _pi;
+    vector<size_t> _dim;
+};
 
 } // end namespace mex
 #endif

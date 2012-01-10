@@ -28,6 +28,9 @@ public:
   // case compute highest possible i-bound that 'fits'
   size_t limitSize(size_t memlimit, const vector<val_t> *assignment);
 
+  // Model pre-processing step, if any  (here, run mplp)
+  bool preprocess(const vector<val_t>* assignment);
+
   // builds the heuristic, limited to the relevant subproblem, if applicable.
   // if computeTables=false, only returns size estimate (no tables computed)
   size_t build(const vector<val_t>* assignment = NULL, bool computeTables = true);
@@ -59,6 +62,11 @@ public:
   bool writeToFile(string fn) const { return true; }
   bool readFromFile(string fn)			{ return false; }
 
+
+  // added functionality
+  bool doJGLP();
+  bool doMPLP();
+
 public:
   MiniBucketElimMplp(Problem* p, Pseudotree* pt, ProgramOptions* po, int ib);
   ~MiniBucketElimMplp() { }
@@ -66,9 +74,14 @@ public:
 protected:
 	Problem* _p;
 	Pseudotree* _pt;
-	mex::mbe _mbe;
+  //mex::mplp _mplp;
+	mex::mbe  _mbe;
 	size_t _memlimit;
 	ProgramOptions* _options;
+
+  // Helper functions to move between DAO & mex factor formats
+  mex::vector<mex::Factor> copyFactors( void );
+  void rewriteFactors( const vector<mex::Factor>& factors);
 
 };
 

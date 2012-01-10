@@ -123,8 +123,14 @@ class VarSet : public virtual mxObject {
   //void setDimsFromGlobal(const vsize* dGlobal);         // set dims from a global vector (!!!)
   //void setDimsFromGlobal(const VarSet& Global);       // set dims from a global object
 
-	bool operator== (const VarSet& B) const { return (size()==B.size())&&std::equal(v_.begin(),v_.end(),B.v_.begin()); }
-  bool operator!= (const VarSet& B) const { return !(*this==B); }
+   // Tests for equality and lexicographical order ///
+	bool operator==(const VarSet& B) const { return (size()==B.size())&&std::equal(v_.begin(),v_.end(),B.v_.begin()); }
+  bool operator!=(const VarSet& B) const { return !(*this==B); }
+  bool operator< (const VarSet& t) const { return std::lexicographical_compare(this->begin(),this->end(),t.begin(),t.end()); }
+  bool operator<=(const VarSet& t) const { return (*this==t || *this<t); }
+  bool operator> (const VarSet& t) const { return !(*this<=t); }
+  bool operator>=(const VarSet& t) const { return !(*this>t); }
+	
 
 	const_iterator         begin()  const { return const_iterator(this,0); };
 	const_iterator         end()    const { return const_iterator(this,size()); };
@@ -257,7 +263,7 @@ class VarSet : public virtual mxObject {
 	bool operator>> (const VarSet& S) const { return std::includes( v_.begin(),v_.end(), S.v_.begin(),S.v_.end() ); }
 	bool intersects(const VarSet& S) const { return (*this & S).size() > 0; }
 	bool contains(const Var& v) const { return std::binary_search( v_.begin(),v_.end(), v.label() ); }
-	
+
 
   friend std::ostream& operator<< (std::ostream &os, mex::VarSet const& v) { 
     os<<"{";

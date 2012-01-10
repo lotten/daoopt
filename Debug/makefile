@@ -11,6 +11,7 @@ RM := rm -rf
 -include source/subdir.mk
 -include lib/zlib/subdir.mk
 -include lib/sls4mpe/subdir.mk
+-include lib/mex/subdir.mk
 -include lib/boost.src/thread/src/pthread/subdir.mk
 -include lib/boost.src/thread/src/subdir.mk
 -include lib/boost.src/program_options/src/subdir.mk

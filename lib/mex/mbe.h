@@ -76,26 +76,9 @@ public:
 	virtual void run() { }	// !!! init? or run?
 
 
-	MEX_ENUM(  ElimOp , MaxUpper,SumUpper,SumLower );
-	/*
-  struct ElimOp {
-    enum Type { MaxPlus, SumPlus, SumMinus, nType };
-    Type t_;
-    ElimOp(Type t) : t_(t) {}
-    ElimOp(const char* s) : t_() {
-      for (int i=0;i<nType;++i) if (strcasecmp(names()[i],s)==0) { t_=Type(i); return; }
-      throw std::runtime_error("Unknown type string");
-    }
-    operator Type () const { return t_; }
-    operator char const* () const { return names()[t_]; }
-  private:
-    template<typename T> operator T() const;
-    static char const* const* names() {
-      static char const* const str[] = {"Max+","Sum+","Sum-",0};
-      return str;
-    }
-  };
-	*/
+	MEX_ENUM( ElimOp , MaxUpper,SumUpper,SumLower );
+
+	MEX_ENUM( Property , ElimOp,iBound,sBound,Order,Distance,DoMatch,DoMplp,DoFill,DoJG );
 
   ElimOp elimOp;
 	bool    _byScope;
@@ -112,36 +95,17 @@ public:
 	vector<flist> atElim;
 	vector<double> atElimNorm;
 
+  /////////////////////////////////////////////////////////////////
+  // Setting properties (directly or through property string)
+  /////////////////////////////////////////////////////////////////
 
-	void setIBound(size_t i) { _iBound=i ? i : std::numeric_limits<size_t>::max(); }
-	size_t getIBound() const { return _iBound; }
-	void setSBound(size_t s) { _sBound=s ? s : std::numeric_limits<size_t>::max(); }
-	size_t getSBound() const { return _sBound; }
-	void setOrder(const VarOrder& ord) { _order=ord; }
-	const VarOrder& getOrder() { return _order; }
+	void   setIBound(size_t i) { _iBound=i ? i : std::numeric_limits<size_t>::max(); }
+	size_t getIBound() const   { return _iBound; }
+	void   setSBound(size_t s) { _sBound=s ? s : std::numeric_limits<size_t>::max(); }
+	size_t getSBound() const   { return _sBound; }
+	void            setOrder(const VarOrder& ord) { _order=ord; }
+	const VarOrder& getOrder()                    { return _order; }
 
-
-	/*
-  struct Property {
-    enum Type { ElimOp, iBound, sBound, Order, Distance, DoMatch, DoMplp, nType };
-    Type t_;
-    Property(Type t) : t_(t) {}
-    Property(const char* s) : t_() {
-      for (int i=0;i<nType;++i) if (strcasecmp(names()[i],s)==0) { t_=Type(i); return; }
-      throw std::runtime_error("Unknown type string");
-    }
-    operator Type () const { return t_; }
-    operator char const* () const { return names()[t_]; }
-  private:
-    template<typename T> operator T() const;
-    static char const* const* names() {
-      static char const* const str[] = {"ElimOp","iBound","sBound","Order","Distance","DoMatch","DoMplp",0};
-      return str;
-    }
-  };
-	*/
-
-	MEX_ENUM( Property , ElimOp,iBound,sBound,Order,Distance,DoMatch,DoMplp,DoFill,DoJG );
 
   virtual void setProperties(std::string opt=std::string()) {
     if (opt.length()==0) {
@@ -256,11 +220,10 @@ public:
     _logZ = 0.0;
 
 		if (_doMplp) {
-		  mplp _mplp(_gmo.factors());
-			char niter[6]; sprintf(niter,"%d",_doMplp);
-		  _mplp.setProperties(
-				std::string("Schedule=Fixed,Update=Var,StopIter=").append(niter).append(",StopObj=-1.0,StopMsg=-1.0")
-				);
+		  mplp _mplp(_gmo.factors()); 
+      char niter[16]; sprintf(niter,"StopIter=%d",_doMplp);
+		  _mplp.setProperties("Schedule=Fixed,Update=Var,StopObj=-1.0,StopMsg=-1.0");
+      _mplp.setProperties(niter);
 		  _mplp.init(); 
 		  _mplp.run();
 			//std::cout<<"After Mplp: "<<_mplp.ub()<<"\n";
@@ -431,10 +394,13 @@ public:
 		//std::cout<<"Bound "<<_logZ<<"\n";
 	}
 
-  void tighten(int nIter) {
+  void tighten(int nIter, double stopTime=-1) {
     const mex::vector<EdgeID>& elist = edges();
-		for (int it=0; it<nIter; ++it) {
+    double startTime=timeSystem();
+    size_t iter;
+		for (iter=0; iter<nIter; ++iter) {
 			for (size_t i=0;i<elist.size();++i) {
+        if (stopTime > 0 && stopTime <= (timeSystem()-startTime)) break;
      	 	findex a,b; a=elist[i].first; b=elist[i].second; 
 				if (a>b) continue;
 				VarSet both = _factors[a].vars() & _factors[b].vars();
@@ -449,12 +415,13 @@ public:
 		}
 		double Zdist=std::exp(_logZ/nFactors());
 		for (size_t f=0;f<nFactors();++f) _factors[f]*=Zdist;  // !!!! WEIRD; FOR GLOBAL CONSTANT TRANFER
+    printf("JGLP (%d iter, %0.1f sec): %f\n",(int)iter,(timeSystem()-startTime),_logZ);
 	}
 
 
 	// Simulate for memory size info.  Cannot use dynamic decision-making. //////////////////////////////////////////
 	// Also return largest function table size???  Might re-enable dynamic decisions...
-	size_t simulateMemory() {
+	size_t simulateMemory( vector<VarSet>* cliques = NULL ) {
 
 		vector<VarSet> fin; for (size_t f=0;f<_gmo.nFactors();++f) fin.push_back(_gmo.factor(f).vars());
 		vector<flist>  vin; for (size_t i=0;i<_gmo.nvar();++i)     vin.push_back(_gmo.withVariable(var(i)));
@@ -537,6 +504,8 @@ public:
 
     	//// Eliminate individually within buckets /////////////////////////////////
 	  	for (flistIt i=ids.begin();i!=ids.end();++i) {
+
+        if (cliques!=NULL) cliques->push_back(fin[*i]);  // save clique if desired
 
 				//MemUsed += fin[*i].nrStates();        // create cluster alpha
 				double tmp = fin[*i].nrStates();        // Remove the old incoming function,

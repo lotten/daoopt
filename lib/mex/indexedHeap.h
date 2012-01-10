@@ -1,3 +1,5 @@
+#ifndef __MEX_INDEXEDHEAP
+#define __MEX_INDEXEDHEAP
 
 #include <stdexcept>
 #include "assert.h"
@@ -169,3 +171,5 @@ private:
 };
 
 }
+
+#endif

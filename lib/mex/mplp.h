@@ -16,6 +16,8 @@ namespace mex {
 
 // Factor graph algorithm specialization to MPLP-like optimization
 // 
+// derived factorGraph contains original factors
+// beliefs form a reparameterization of the same distribution
 
 class mplp : public factorGraph, public gmAlg, virtual public mxObject {
 public:
@@ -27,7 +29,7 @@ public:
 public:
 	mplp() : factorGraph() { setProperties(); }
 	mplp(const factorGraph& fg) : factorGraph(fg) { setProperties(); }
-	mplp(vector<Factor> fs) : factorGraph(fs) { setProperties(); }
+	mplp(vector<Factor> fs)     : factorGraph(fs) { setProperties(); }
 	template <class InputIterator>
 	mplp(InputIterator f, InputIterator l) : factorGraph(f,l) { setProperties(); }
 
@@ -63,68 +65,12 @@ public:
 
   MEX_ENUM( Update   , Var,Factor,Edge,Tree);
 	MEX_ENUM( Schedule , Fixed,Random,Flood,Priority); 
-	//enum UpdateMethod { BY_VAR, BY_FACTOR, BY_EDGE, BY_TREE };
-	//enum SchedMethod  { FIXED, RANDOM, PRIORITY };
-/*
-  struct Update {
-    enum Type { Var, Factor, Edge, Tree, nType };
-    Type t_;
-    Update(Type t=nType) : t_(t) {}
-    Update(const char* s) : t_() { 
-      for (int i=0;i<nType;++i) if (strcasecmp(names()[i],s)==0) { t_=Type(i); return; }
-      throw std::runtime_error("Unknown type string");
-    }
-    operator Type () const { return t_; }
-    operator char const* () const { return names()[t_]; }
-  private:
-    template<typename T> operator T() const;
-    static char const* const* names() {
-      static char const* const str[] = {"Var","Factor","Edge","Tree",0};
-      return str;
-    }
-  };
-  struct Schedule {
-    enum Type { Fixed, Random, Flood, Priority, nType };
-    Type t_;
-    Schedule(Type t=nType) : t_(t) {}
-    Schedule(const char* s) : t_() { 
-      for (int i=0;i<nType;++i) if (strcasecmp(names()[i],s)==0) { t_=Type(i); return; }
-      throw std::runtime_error("Unknown type string");
-    }
-    operator Type () const { return t_; }
-    operator char const* () const { return names()[t_]; }
-  private:
-    template<typename T> operator T() const;
-    static char const* const* names() {
-      static char const* const str[] = {"Fixed","Random","Flood","Priority",0};
-      return str;
-    }
-  };
-*/
 
-  MEX_ENUM( Property , Schedule,Update,StopIter,StopObj,StopMsg);
-/*
-  struct Property {
-    enum Type { Schedule, Update, StopIter, StopObj, StopMsg, nType };
-    Type t_;
-    Property(Type t) : t_(t) {}
-    Property(const char* s) : t_() {
-      for (int i=0;i<nType;++i) if (strcasecmp(names()[i],s)==0) { t_=Type(i); return; }
-      throw std::runtime_error("Unknown type string");
-    }
-    operator Type () const { return t_; }
-    operator char const* () const { return names()[t_]; }
-  private:
-    template<typename T> operator T() const;
-    static char const* const* names() {
-      static char const* const str[] = {"Schedule","Update","StopIter","StopObj","StopMsg",0};
-      return str;
-    }
-  };
-*/
+  MEX_ENUM( Property , Schedule,Update,StopIter,StopObj,StopMsg,StopTime);
+
   virtual void setProperties(std::string opt=std::string()) {
     if (opt.length()==0) {
-      setProperties("Schedule=Fixed,Update=Var,StopIter=10,StopObj=-1,StopMsg=-1");
+      setProperties("Schedule=Fixed,Update=Var,StopIter=10,StopObj=-1,StopMsg=-1,StopTime=-1");
       return;
     }
     std::vector<std::string> strs = mex::split(opt,',');
@@ -136,6 +82,7 @@ public:
 				case Property::StopIter: _stopIter     = strtod(asgn[1].c_str(),NULL); break;
 				case Property::StopObj:  _stopObj      = strtod(asgn[1].c_str(),NULL); break;
 				case Property::StopMsg:  _stopMsg      = strtod(asgn[1].c_str(),NULL); break;
+				case Property::StopTime: _stopTime     = strtod(asgn[1].c_str(),NULL); break;
 				default: break;
       }
     }
@@ -152,12 +99,14 @@ public:
 
 	void run() {
 		size_t stopIter = _stopIter * nFactors();											// easier to count updates than "iterations"
+    double startTime = timeSystem();
 
 		double dObj=_stopObj+1.0, dMsg=_stopMsg+1.0;									// initialize termination values
 		size_t iter=0, print=1;
 		Var nextVar; findex nextFactor; mex::vector<Edge> nextTree;		// temporary storage for updates
 
 		for (; dMsg>=_stopMsg && iter<stopIter && dObj>=_stopObj; ) {
+      if (_stopTime > 0 && _stopTime <= (timeSystem()-startTime)) break;       // time-out check
 
 		// If we're using a random ordering scheme, generate a random (var,factor,tree)
 		// If we're using a fixed scheme, point to the next (var,factor,tree)
@@ -194,6 +143,7 @@ public:
 		if (iter>print*nFactors()) { print++; std::cout<<"UB: "<<_UB<<"\n"; }
 
 		}
+    printf("MPLP (%d iter, %0.1f sec): %f\n",(int)(iter/nFactors()),(timeSystem()-startTime),_UB);
 	}
 
 protected:	// Contained objects
@@ -202,7 +152,7 @@ protected:	// Contained objects
 
 	Update    _UpdateMethod;
 	Schedule  _SchedMethod;
-	double _stopIter, _stopObj, _stopMsg;	
+	double _stopIter, _stopObj, _stopMsg, _stopTime;
 
 
 

@@ -398,7 +398,7 @@ template <class T>
 void vector<T,false>::insert(iterator pos, size_t n, const T& t) {
 	size_t N2 = end() - pos;
 	resize(size()+n,t);
-	reverse_iterator e2 = rbegin(), e1=e2-n;
+	iterator e2 = end()-1, e1=e2-n;
 	for (size_t i=0;i<N2;i++) std::swap(*e1--,*e2--); 		// ok because T is a native type
 }
 template <class T>
@@ -416,7 +416,7 @@ template <class T>
 void vector<T,true>::insert(iterator pos, size_t n, const T& t) {
   size_t N2 = end() - pos;
   resize(size()+n,t);
-  reverse_iterator e2 = rbegin(), e1=e2-n;
+  iterator e2 = end()-1, e1=e2-n;
   for (size_t i=0;i<N2;i++,--e1,--e2) swap(*e1,*e2);    // assumes swap() implemented
 }
 template <class T> void vector<T,true>::insert(iterator pos, const T& t) { insert(pos,(size_t)1,t); }

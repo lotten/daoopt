@@ -215,7 +215,7 @@ bool Main::findOrLoadOrdering() {
 
   // Pseudo tree has dummy node after build(), add to problem
   m_problem->addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
-  m_pseudotree->addFunctionInfo(m_problem->getFunctions());
+  m_pseudotree->resetFunctionInfo(m_problem->getFunctions());
 #if defined PARALLEL_DYNAMIC //or defined PARALLEL_STATIC
   int cutoff = m_pseudotree->computeComplexities(m_options->threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
@@ -305,6 +305,7 @@ bool Main::initDataStructs() {
       err_txt("Subproblem specified but no ordering given.");
       return false;
     }else {
+      m_problem->setSubprobOnly();
       m_options->order_iterations = 0;
       cout << "Reading subproblem from file " << m_options->in_subproblemFile << '.' << endl;
       if (!m_search->restrictSubproblem(m_options->in_subproblemFile) ) {
@@ -327,25 +328,11 @@ bool Main::initDataStructs() {
   malloc_stats();
 #endif
 
-#ifdef ENABLE_SLS
-  // pull solution from SLS, if applicable
-  if (m_options->slsIter > 0) {
-    vector<val_t> slsTup;
-    double slsSol = m_slsWrapper->getSolution(&slsTup);
-    m_search->setInitialSolution(slsSol
-#ifndef NO_ASSIGNMENT
-        ,slsTup
-#endif
-    );
-    cout << "Passed SLS solution to search: " << slsSol << endl;
-  }
-#endif
-
   return true;
 }
 
 
-bool Main::compileHeuristic() {
+bool Main::preprocessHeuristic() {
   m_options->ibound = min(m_options->ibound, m_pseudotree->getWidthCond());
   size_t sz = 0;
   if (m_options->memlimit != NONE) {
@@ -355,12 +342,24 @@ bool Main::compileHeuristic() {
     cout << "Enforcing memory limit resulted in i-bound " << m_options->ibound
          << " with " << sz << " MByte." << endl;
   }
+  if (m_options->nosearch) {
+    cout << "Skipping heuristic preprocessing..." << endl;
+    return false;
+  }
 
+  if (m_heuristic->preprocess(& m_search->getAssignment()))
+    m_pseudotree->resetFunctionInfo(m_problem->getFunctions());
+
+  return true;
+}
+
+
+bool Main::compileHeuristic() {
+  size_t sz = 0;
   if (m_options->nosearch) {
     cout << "Simulating mini bucket heuristic..." << endl;
     sz = m_heuristic->build(& m_search->getAssignment(), false); // false = just compute memory estimate
-  }
-  else {
+  } else {
     time(&_time_pre);
     bool mbFromFile = false;
     if (m_options->in_minibucketFile.empty()) {
@@ -384,7 +383,7 @@ bool Main::compileHeuristic() {
   cout << '\t' << (sz / (1024*1024.0)) * sizeof(double) << " MBytes" << endl;
 
   // heuristic might have changed problem functions, pseudotree needs remapping
-  m_pseudotree->addFunctionInfo(m_problem->getFunctions());
+  m_pseudotree->resetFunctionInfo(m_problem->getFunctions());
 
   // set initial lower bound if provided (but only if no subproblem was specified)
   if (m_options->in_subproblemFile.empty() ) {
@@ -444,7 +443,7 @@ bool Main::runLDS() {
           ,slsTup
 #endif
       );
-      cout << "LDS: Solution from SLS loaded." << endl;
+      cout << "LDS: Solution from SLS loaded: " << slsSol << endl;
     }
 #endif
 
@@ -478,6 +477,21 @@ bool Main::runLDS() {
 
 
 bool Main::finishPreproc() {
+
+#ifdef ENABLE_SLS
+  // pull solution from SLS, if applicable
+  if (m_options->slsIter > 0) {
+    vector<val_t> slsTup;
+    double slsSol = m_slsWrapper->getSolution(&slsTup);
+    m_search->setInitialSolution(slsSol
+#ifndef NO_ASSIGNMENT
+        ,slsTup
+#endif
+    );
+    cout << "Passed SLS solution to search: " << slsSol << endl;
+  }
+#endif
+
   // output (sub)problem lower bound, mostly makes sense for conditioned subproblems
   // in parallelized setting
   double lb = m_search->curLowerBound();

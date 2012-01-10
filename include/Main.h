@@ -91,6 +91,7 @@ public:
   bool findOrLoadOrdering();
   bool runSLS();
   bool initDataStructs();
+  bool preprocessHeuristic();
   bool compileHeuristic();
   bool runLDS();
   bool finishPreproc();
