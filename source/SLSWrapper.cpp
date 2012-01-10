@@ -111,6 +111,7 @@ bool SLSWrapper::run() {
   m_assignment = new int[sls4mpe::num_vars];
   sls4mpe::start_timer();
   sls4mpe::runAlgorithm(&m_assignment, &m_likelihood);
+  sls4mpe::deallocateVarsAndPTs(false);
   return true;
 }
 
