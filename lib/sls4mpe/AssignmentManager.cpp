@@ -211,6 +211,32 @@ double AssignmentManager::get_log_score(){
 	return get_log_score(tmpAssignment);
 }
 
+void AssignmentManager::setNumberOfVariables(int newNumberOfVariables, bool newOutputLM){
+  bool deleteFirst = (numVars == -1) ? false : true ;
+  numVars = newNumberOfVariables;
+  outputLM = newOutputLM;
+  for(int i=0; i<M; i++){
+    if (deleteFirst) delete[] runBestAssignments[i];
+    runBestAssignments[i] = new int[newNumberOfVariables];
+    if (deleteFirst) delete[] globalBestAssignments[i];
+    globalBestAssignments[i] = new int[newNumberOfVariables];
+  }
+  if (deleteFirst) delete[] tmpAssignment;
+  tmpAssignment = new int[newNumberOfVariables];
+}
+
+
+AssignmentManager::~AssignmentManager() {
+  delete[] runBestLogProbs;
+  for (int i=0; i<M; ++i) {
+    delete[] runBestAssignments[i];
+    delete[] globalBestAssignments[i];
+  }
+  delete[] runBestAssignments;
+  delete[] globalBestAssignments;
+  delete[] tmpAssignment;
+}
+
 }  // sls4mpe
 
 #endif

@@ -17,7 +17,7 @@
 namespace sls4mpe {
 
 void ProbabilityTable::defaultInitialization(){
-	highestLogProb = -BIG;	
+	highestLogProb = -BIG;
 	ptVars = NULL;
 	factorOfVar = NULL;
 	logCPT = NULL;
@@ -49,7 +49,7 @@ ProbabilityTable::ProbabilityTable(const ProbabilityTable &old){
 
 ProbabilityTable::ProbabilityTable(int newNumVars, int* newVars){
 	defaultInitialization();
-		
+
 	int i;
 	//=== Allocate and initialize variables.
 	init(newNumVars);
@@ -88,8 +88,10 @@ int ProbabilityTable::getFactorOfGlobalVar(int globalVar){
 void ProbabilityTable::init(int newNumPTVars){
 	assert(newNumPTVars >= 0);
 	numPTVars = newNumPTVars;
+	if (ptVars) delete[] ptVars;
 	ptVars = new int[numPTVars];
 	assert(ptVars);
+	if (factorOfVar) delete[] factorOfVar;
 	factorOfVar = new int[numPTVars];
 	assert(factorOfVar);
 }
@@ -115,12 +117,14 @@ void ProbabilityTable::setNumEntries(int newNumEntries){
 //	printf("setNumEntries(%d)\n",newNumEntries);
 	numEntries = newNumEntries;
 
+	if (logCPT) delete[] logCPT;
 	logCPT = new (std::nothrow) double[numEntries];
 //	printf("%x\n", logCPT);
 	if(logCPT == 0){
 		printf("Out of memory - died.\n");
 		exit(-1);
 	}	
+	if (penalty) delete[] penalty;
 	penalty = new (std::nothrow) double[numEntries];
 //	penalty = (double*) malloc( sizeof(double) * numEntries );
 	if(penalty == 0){
@@ -275,7 +279,7 @@ ProbabilityTable* ProbabilityTable::maximized(int var){
 //	printf(" - maximizing out %d\n", var);
 	int factorOfMaxVar = getFactorOfGlobalVar(var);
 	int domSize = variables[var]->domSize;
-	ProbabilityTable* result = new ProbabilityTable;
+	ProbabilityTable* result = new ProbabilityTable();
 	result->init(numPTVars-1);
 	result->setNumEntries(numEntries/domSize);
 
@@ -385,7 +389,7 @@ ProbabilityTable* ProbabilityTable::instantiated(bool fakeEvidence){
 	}
 	
 	int* valuesOfNewVars = new int[newVars.size()];
-	for(i=0;i<newVars.size(); i++) valuesOfNewVars[i] = 0;
+	for(i=0;i<(int) newVars.size(); i++) valuesOfNewVars[i] = 0;
 //assert(numNewVars == numPTVars);
 //assert(result->numEntries == numEntries);
 

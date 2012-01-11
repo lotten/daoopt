@@ -34,6 +34,8 @@ public:
 	Variable **mbVariables;
 
 	void createOrder(int numFakeEvidenceVars, int* fakeEvidenceVars, int* outInducedWidth, double* outInducedWeight);
+
+	~MiniBucketElimination();
 private:
 	double process();
 };
