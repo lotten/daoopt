@@ -23,10 +23,18 @@ void Bucket::defaultInitialization(){
 	bucketVars.clear();
 	varsInPartition.clear();
 	partition.clear();
+	for (vector<ProbabilityTable*>::iterator it=bucketPTs.begin(); it!=bucketPTs.end(); ++it)
+	  delete *it;
 	bucketPTs.clear();
 }
 
 Bucket::Bucket(){}
+
+Bucket::~Bucket() {
+  for (vector<ProbabilityTable*>::iterator it = bucketPTs.begin(); it != bucketPTs.end(); ++it) {
+    delete *it;
+  }
+}
 
 void Bucket::add(ProbabilityTable* pProbTable){
 	bucketPTs.push_back(pProbTable);
@@ -96,12 +104,12 @@ int Bucket::getBestAssignmentForBucket(const int* mpeAssignmentSoFar){
 //	printf("Bucket %i, domain %i\n", num, domSize);
 	double* wholeMarginal = new double[domSize];
 	double* singleMarginal = new double[domSize];
-	int i,j;
-	for(i=0; i<domSize; i++) wholeMarginal[i]=0;
-	for(i=0; i<bucketPTs.size(); i++){
+//	int i,j;
+	for(int i=0; i<domSize; i++) wholeMarginal[i]=0;
+	for(size_t i=0; i<bucketPTs.size(); i++){
 		if(bucketPTs[i]->numPTVars != 0){ // PTs w/o vars are constants.
 			bucketPTs[i]->getMarginal(mpeAssignmentSoFar, num, singleMarginal);
-			for(j=0; j<domSize; j++) wholeMarginal[j] += singleMarginal[j];
+			for(int j=0; j<domSize; j++) wholeMarginal[j] += singleMarginal[j];
 		}
 	}
 //	printf("  Whole Marginals: ");
@@ -151,11 +159,11 @@ int Bucket::constructPartititons(int ib, double weightBound){
 	for(i=0; i<bucketPTs.size(); i++){
 		if(subPTs[i] == -1){ // not subsumed
 			addAllToFrom(&varsInPartition, bucketPTs[i]->ptVars, bucketPTs[i]->numPTVars);
-			if (varsInPartition.size() > ib || sizeOfVariableSet(varsInPartition) > weightBound){
+			if ((int) varsInPartition.size() > ib || sizeOfVariableSet(varsInPartition) > weightBound){
 			//=== Start next partition.
 			//=== (unless there are only the new vars in the partition. In that case,
 			//=== it was empty before. But at least one PT has to be in the partition.)
-				if(varsInPartition.size() != bucketPTs[i]->numPTVars){
+				if((int) varsInPartition.size() != bucketPTs[i]->numPTVars){
 					numPartitions++; 
 				}
 				varsInPartition.clear();

@@ -37,6 +37,9 @@ public:
 	ProbabilityTable* processPartition(int partitionNumber);
 	int constructPartititons(int ib, double weightBound);
 	int getBestAssignmentForBucket(const int* mpeAssignmentSoFar);
+
+	~Bucket();
+
 };
 
 }  // sls4mpe

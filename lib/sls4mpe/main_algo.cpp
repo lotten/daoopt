@@ -26,9 +26,9 @@ int num_vars;
 int num_pots;
 int numVarValCombos;
 
-AssignmentManager assignmentManager;
-ProblemReader pR;
-MiniBucketElimination mbElim;
+AssignmentManager* assignmentManager;
+ProblemReader* pR;
+MiniBucketElimination* mbeElim;
 ProbabilityTable** probTables;
 Variable** variables;
 int* mbAssignment;
@@ -217,12 +217,12 @@ void first_init(){
 	preprocessingTime = 0;
 	overall_time_so_far = 0;
 	time(&timestamp_start);
-	assignmentManager.init();
+	assignmentManager->init();
 	num_run = 0;
 }
 
 void read_problem(int argc,char *argv[]){
-	pR.parse_parameters(argc, argv);
+	pR->parse_parameters(argc, argv);
 	if(verbose) {
 		fprintf(outfile, "begin call\n");
 		for (int i=0;i < argc;i++){
@@ -230,7 +230,7 @@ void read_problem(int argc,char *argv[]){
 		}
 		fprintf(outfile, "\nend call\n\n");
 	}
-	pR.readNetwork();
+	pR->readNetwork();
 }
 
 void allocateVarsAndPTs(bool name){
@@ -262,10 +262,18 @@ void deallocateVarsAndPTs(bool name) {
       delete variables[var];
     }
   }
+
+  delete assignmentManager;
+  delete mbeElim;
 }
 
 void runAlgorithm(int **outBestAssignment, double *outLogLikelihood){	
 	if(preprocessingSizeBound > 0) outputBestMPE = false;
+
+//	assignmentManager = new AssignmentManager();
+//	pR = new ProblemReader();
+	mbeElim = new MiniBucketElimination();
+
 	first_init();
 	initFromVarsAndProbTables();
 
@@ -274,10 +282,10 @@ void runAlgorithm(int **outBestAssignment, double *outLogLikelihood){
 
 	time_t now; time(&now);
 	double elapsed = difftime(now, timestamp_start);
-	fprintf(stdout, "Preprocessing complete: %i seconds\n\n", int(elapsed));
+	fprintf(stdout, "Preprocessing for SLS complete: %i seconds\n", int(elapsed));
 
 	if(algo == ALGO_MB){
-		assignmentManager.newRun();
+		assignmentManager->newRun();
 		anytime_mb();
 		end_run();
 	} else {
@@ -303,7 +311,7 @@ void runAlgorithm(int **outBestAssignment, double *outLogLikelihood){
 					tabu();			
 					break;
 			}
-//last sol taken to be the best! assignmentManager.recordNewBestSolution();
+//last sol taken to be the best! assignmentManager->recordNewBestSolution();
 			end_run();
 		}
 	}
@@ -311,9 +319,9 @@ void runAlgorithm(int **outBestAssignment, double *outLogLikelihood){
 
 	int var;
 	for(var=0; var<num_vars; var++){
-		(*outBestAssignment)[var] = assignmentManager.globalBestAssignments[0][var];
+		(*outBestAssignment)[var] = assignmentManager->globalBestAssignments[0][var];
 	}
-	(*outLogLikelihood) = assignmentManager.overallBestLogProb;
+	(*outLogLikelihood) = assignmentManager->overallBestLogProb;
 	tearDown();
 }
 
@@ -330,7 +338,7 @@ void runAlgorithm(int **outBestAssignment, double *outLogLikelihood){
 
 void end_run(){
 	print_end_run();
-	assignmentManager.endRun();
+	assignmentManager->endRun();
 
 	run_time_so_far += elapsed_seconds();
 	overall_time_so_far += run_time_so_far;
@@ -340,9 +348,9 @@ void update_if_new_best_in_run(){
 	run_time_so_far += elapsed_seconds();
 
 	//=== Updates time only if new best in run.
-	if( assignmentManager.updateIfNewBest(log_prob)){
+	if( assignmentManager->updateIfNewBest(log_prob)){
 		print_new_best_in_run();
-		assignmentManager.runBestTime = run_time_so_far;
+		assignmentManager->runBestTime = run_time_so_far;
 	}
 }
 
@@ -359,8 +367,8 @@ void anytime_mb(){
 	if(verbose) printf("DETAILS\n");
 	do{
 		ib++;
-		double thisUpper = mbElim.solve(ib, DOUBLE_BIG, mbAssignment);
-		double thisLower = assignmentManager.get_log_score(mbAssignment);
+		double thisUpper = mbeElim->solve(ib, DOUBLE_BIG, mbAssignment);
+		double thisLower = assignmentManager->get_log_score(mbAssignment);
 		if(verbose) fprintf(outfile,"          MB(%d) -> [%lf, %lf]\n", ib, thisLower, thisUpper);
 
 		if(thisLower > lowerBound){
@@ -372,7 +380,7 @@ void anytime_mb(){
 		update_if_new_best_in_run();
 		lowerBound = MAX(lowerBound, thisLower);
 		upperBound = MIN(thisUpper, upperBound);
-		assignmentManager.optimalLogMPEValue = MIN(assignmentManager.optimalLogMPEValue, thisUpper);
+		assignmentManager->optimalLogMPEValue = MIN(assignmentManager->optimalLogMPEValue, thisUpper);
 	
 		run_time_so_far += elapsed_seconds();
 		if(verbose) fprintf(outfile, "time %lf \t cost %lf \t upper %lf\n", run_time_so_far, lowerBound, upperBound);
@@ -388,14 +396,14 @@ void anytime_mb(){
 		fprintf(outfile, "CPU time (search): %lf\n", run_time_so_far);
 		if( preprocessingSizeBound == 0 ){
 			fprintf(outfile, "Best MB assignment: ");
-			assignmentManager.outputCurrentAssignment(outfile);
+			assignmentManager->outputCurrentAssignment(outfile);
 		}
 		if (!noout) printf("Done. Wrote to %s. Exiting.\n", sls_filename);
 	}
 }
 
 bool hybrid_continue(double realMaxTime){
-	return run_time_so_far < realMaxTime && !assignmentManager.foundOptimalThisRun();
+	return run_time_so_far < realMaxTime && !assignmentManager->foundOptimalThisRun();
 }
 
 void runILS(double singleRunTime, double realMaxTime){
@@ -441,19 +449,19 @@ void mb_ils_hybrid(){
 	double upperBound = DOUBLE_BIG;
 	double realMaxTime = maxTime;
 	double mbRuntime;
-	int realInit = init_algo;
+//	int realInit = init_algo;
 	int var;
 	instantiation inst;
 	double weightBound;
 	for(weightBound = mbInitWeightForHybrid; weightBound <= maxMBWeight && hybrid_continue(realMaxTime); weightBound*=2){
 		if(verbose) printf("Running MB with weight bound %g\n", weightBound);
 		mbRuntime = run_time_so_far;
-		double thisUpper = mbElim.solve(BIG, weightBound, mbAssignment);
+		double thisUpper = mbeElim->solve(BIG, weightBound, mbAssignment);
 		upperBound = MIN(thisUpper, upperBound);
 
 		//=== Set the upper bound as optimal MPE such that the algo terminates if it finds it.
-		if(upperBound < assignmentManager.optimalLogMPEValue){
-			assignmentManager.optimalLogMPEValue = upperBound;
+		if(upperBound < assignmentManager->optimalLogMPEValue){
+			assignmentManager->optimalLogMPEValue = upperBound;
 		}
 
 		for(var=0; var<num_vars; var++){
@@ -463,18 +471,18 @@ void mb_ils_hybrid(){
 		}
 		update_if_new_best_in_run();
 		mbRuntime = run_time_so_far - mbRuntime;
-		if(verbose) printf("MB ==> [%lf, %lf] (in time %lf)   -----    TOTAL: [%lf, %lf]\n",log_prob, thisUpper, mbRuntime, MAX(assignmentManager.runBestLogProb, log_prob), upperBound);
-//		printf("best: %lf, upper: %lf\n",assignmentManager.runBestLogProb, upperBound);
-		if( upperBound - assignmentManager.runBestLogProb < EPS ){
-			if(verbose) fprintf(outfile, "Proofed optimality of logprob %lf with Mini Bucktets.\n", assignmentManager.runBestLogProb);
+		if(verbose) printf("MB ==> [%lf, %lf] (in time %lf)   -----    TOTAL: [%lf, %lf]\n",log_prob, thisUpper, mbRuntime, MAX(assignmentManager->runBestLogProb, log_prob), upperBound);
+//		printf("best: %lf, upper: %lf\n",assignmentManager->runBestLogProb, upperBound);
+		if( upperBound - assignmentManager->runBestLogProb < EPS ){
+			if(verbose) fprintf(outfile, "Proofed optimality of logprob %lf with Mini Bucktets.\n", assignmentManager->runBestLogProb);
 		} else {
 			runILS(mbRuntime, realMaxTime);
 			runGLS(mbRuntime, realMaxTime);
 		}
 	}
 	
-	if(assignmentManager.foundOptimalThisRun()){
-		if(verbose) fprintf(outfile, "MB/ILS/GLS combo proofed optimality of solution quality: %lf\n", assignmentManager.runBestLogProb);
+	if(assignmentManager->foundOptimalThisRun()){
+		if(verbose) fprintf(outfile, "MB/ILS/GLS combo proofed optimality of solution quality: %lf\n", assignmentManager->runBestLogProb);
 	} else{
 		for(; hybrid_continue(realMaxTime); mbRuntime*=2){
 			runILS(mbRuntime, realMaxTime);
@@ -489,7 +497,7 @@ void mb_ils_hybrid(){
 bool lsContinue(){
 	return run_time_so_far < maxTime 
 		  && num_flip < maxSteps 
-			&& assignmentManager.runBestLogProb+EPS < assignmentManager.optimalLogMPEValue;
+			&& assignmentManager->runBestLogProb+EPS < assignmentManager->optimalLogMPEValue;
 }
 
 bool ilsContinue(){
@@ -524,7 +532,7 @@ void ils(){
 }
 
 void randomRestart(){
-	if(verbose) fprintf(outfile, "Random restart at time %lf and iteration %d\n", run_time_so_far, num_iteration);
+	if(verbose) fprintf(outfile, "Random restart at time %lf and iteration %ld\n", run_time_so_far, num_iteration);
 	computeInitValues(); // random restart.
 	instantiation inst;
 	for(int var=0; var<num_vars; var++){
@@ -533,7 +541,7 @@ void randomRestart(){
 		flip_var_to(inst, false);
 	}
 //	printf("Restart:\n");
-//	assignmentManager.outputCurrentAssignment(outfile);
+//	assignmentManager->outputCurrentAssignment(outfile);
 }
 
 void tabu(){
@@ -673,11 +681,12 @@ void computeInitValues(){
 			break;
 		case INIT_EXTERNAL:
 			int var;
-			for(var=0; var<num_vars; var++){
+			for(var=0; var<num_vars; var++)
 				initValues[var] = externalInitValues[var];
-			}
+			break;
 		default:
 			if(verbose) printf("... using given values for initialization\n");
+			break;
 	}
 }
 
@@ -691,7 +700,7 @@ void random_init(){
 void mb_init(){
 	int var;
 	for(var=0; var<num_vars; var++) variables[var]->fakeEvidenceForMB = false;
-	mbElim.solve(BIG, mbInitWeight, mbAssignment);	
+	mbeElim->solve(BIG, mbInitWeight, mbAssignment);
 
 	for(var=0; var<num_vars; var++){
 		initValues[var] = mbAssignment[var];
@@ -713,7 +722,7 @@ void basic_local_search(){
 		if( inst.var == NOVALUE ) break; // this is for the case w/o tabu.
 		flip_var_to(inst, false);
 		if( output_trajectory )
-			fprintf(traj_fl_file,"%ld %d %lf bls\n",num_flip, num_iteration, log_prob);
+			fprintf(traj_fl_file,"%ld %ld %lf bls\n",num_flip, num_iteration, log_prob);
 		update_if_new_best_in_run();
 		if(log_prob > currentBestSolution){
 			currentBestSolution = log_prob;
@@ -776,7 +785,7 @@ void permuteVarTo(int var, int val){
 	flip_var_to(inst, false);
 	insert(vars_permuted, &num_vars_permuted, inst.var);
 	if( output_trajectory )
-		fprintf(traj_fl_file,"permut: %d %d %lf T=%lf\n",num_flip, num_iteration, log_prob, T);
+		fprintf(traj_fl_file,"permut: %ld %ld %lf T=%lf\n",num_flip, num_iteration, log_prob, T);
 }
 
 void permuteVar(int var){
@@ -804,7 +813,7 @@ void permutePotVarsToIndex(int pot, int best_ind){
 
 void pertubation(int strength, int pertub){
 //	printf("iteration %d, pert. strength = %d\n", num_iteration, strength);
-	int i,pot=-1, best_ind=-1;
+	int i; //,pot=-1, best_ind=-1; // Lars: unused
 	num_vars_permuted = 0;
 	num_pots_flipped=0;
 	numFakeEvidenceForMB = 0;
@@ -865,6 +874,7 @@ void pertubation(int strength, int pertub){
 //				num_vars_permuted++;
 				increasePenalties();
 				algo = ALGO_ILS;
+				break;
 			}
 		}
 	}
@@ -896,11 +906,11 @@ void pertubation(int strength, int pertub){
 		int inducedWidthWithEv;
 		double inducedWeightWithEv;
 
-		mbElim.createOrder(numFakeEvidenceForMB, fakeEvidenceForMB, &inducedWidthWithEv, &inducedWeightWithEv);
+		mbeElim->createOrder(numFakeEvidenceForMB, fakeEvidenceForMB, &inducedWidthWithEv, &inducedWeightWithEv);
 //		printf("calling MB with %lf to reinstantiate %d variables\n",maxMBWeight, numMBPert);
 
 //=== The remaining variables (numMBPert many) are determined with Mini Buckets.
-		mbElim.solve(BIG, maxMBWeight, mbAssignment);
+		mbeElim->solve(BIG, maxMBWeight, mbAssignment);
 //					printf("done\n");
 
 		for(i=0; i<numFakeEvidenceForMB; i++){
@@ -915,7 +925,7 @@ void pertubation(int strength, int pertub){
 			if(variables[inst.var]->fakeEvidenceForMB) assert(inst.value == variables[inst.var]->value);
 			flip_var_to(inst, false);
 			if( output_trajectory )
-				fprintf(traj_fl_file,"%d %d %lf p_b MB, T=%lf\n",num_flip, num_iteration, log_prob, T);
+				fprintf(traj_fl_file,"%ld %ld %lf p_b MB, T=%lf\n",num_flip, num_iteration, log_prob, T);
 		}
 //		printf("logprob: %lf\n", log_prob);
 		//		printf("... to sol. qual %lf\n",log_prob);
@@ -969,8 +979,8 @@ void new_ils_base_solution(){
 	}
 
 	if( output_trajectory ){
-		fprintf(traj_it_file, "New ILS base solution: %lf at iteration %d. Last iproving: %d\n",log_prob, num_iteration, lastImprovingIteration);
-		fprintf(traj_fl_file, "New ILS base solution: %lf at iteration %d. Last iproving: %d\n",log_prob, num_iteration, lastImprovingIteration);
+		fprintf(traj_it_file, "New ILS base solution: %lf at iteration %ld. Last improving: %ld\n",log_prob, num_iteration, lastImprovingIteration);
+		fprintf(traj_fl_file, "New ILS base solution: %lf at iteration %ld. Last improving: %ld\n",log_prob, num_iteration, lastImprovingIteration);
 	}
 }
 
@@ -981,8 +991,8 @@ void improved_ils(){
   }
 
 	if( output_trajectory ){
-		fprintf(traj_fl_file, "accepted improving move at iteration %d to %lf, T=%lf\n",num_iteration, log_prob, T);
-		fprintf(traj_it_file, "accepted improving move at iteration %d to %lf, T=%lf\n",num_iteration, log_prob, T);
+		fprintf(traj_fl_file, "accepted improving move at iteration %ld to %lf, T=%lf\n",num_iteration, log_prob, T);
+		fprintf(traj_it_file, "accepted improving move at iteration %ld to %lf, T=%lf\n",num_iteration, log_prob, T);
 	}
 	new_ils_base_solution();
 //	T/=tdiv;
@@ -1118,15 +1128,15 @@ void acceptance_criterion(){
 			//printf("prob= %lf\n",prob);
 			if( ran01(&seed) < prob ) {
 				if(output_trajectory){
-					fprintf(traj_fl_file, "accepting worsening move at iteration %d to %lf, T=%lf\n",num_iteration, log_prob, T);
-					fprintf(traj_it_file, "accepting worsening move at iteration %d to %lf, T=%lf\n",num_iteration, log_prob, T);
+					fprintf(traj_fl_file, "accepting worsening move at iteration %ld to %lf, T=%lf\n",num_iteration, log_prob, T);
+					fprintf(traj_it_file, "accepting worsening move at iteration %ld to %lf, T=%lf\n",num_iteration, log_prob, T);
 				}
 				new_ils_base_solution();
 			}	else{
 //				T = MAX(tmin, T*tmult);
 				if(output_trajectory){
-					fprintf(traj_fl_file, "not accepting worsening move at iteration %d to %lf, T=%lf\n",num_iteration, log_prob, T);
-					fprintf(traj_it_file, "not accepting worsening move at iteration %d to %lf, T=%lf\n",num_iteration, log_prob, T);
+					fprintf(traj_fl_file, "not accepting worsening move at iteration %ld to %lf, T=%lf\n",num_iteration, log_prob, T);
+					fprintf(traj_it_file, "not accepting worsening move at iteration %ld to %lf, T=%lf\n",num_iteration, log_prob, T);
 				}
 				flip_back();
 			}
@@ -1198,7 +1208,7 @@ int sampled_new_val(int var){
 			int initialValue = variables[var]->value;
 			for(int value=0; value<variables[var]->domSize; value++){
 				variables[var]->value = value;
-				score[value] = assignmentManager.get_log_score();
+				score[value] = assignmentManager->get_log_score();
 			}
 			variables[var]->value = initialValue;
 			break;
@@ -1244,7 +1254,7 @@ struct instantiation best_new_inst(bool best_even_if_not_improving){
 	result.var = NOVALUE;
 	result.value = NOVALUE;
 	int num_best=0;
-	double aspirationImprovement = assignmentManager.runBestLogProb - log_prob + EPS;
+	double aspirationImprovement = assignmentManager->runBestLogProb - log_prob + EPS;
 	if(algo == ALGO_GLS && (!glsReal || !glsAspiration)) aspirationImprovement = DOUBLE_BIG; // don't look at scores
 
 	switch(caching){
@@ -1252,7 +1262,7 @@ struct instantiation best_new_inst(bool best_even_if_not_improving){
 		{
 			if((num_flip+1) % 1000000 == 0){
 			  setPotentialIndicesScoresAndGoodvars(true); // to avoid numerical problems due to errors adding up
-			  log_prob = assignmentManager.get_log_score();
+			  log_prob = assignmentManager->get_log_score();
 			}
 			if(heapOfGoodVars->n == 0){
 				return result; // heap empty => no improving step. should't have to do
@@ -1276,7 +1286,7 @@ struct instantiation best_new_inst(bool best_even_if_not_improving){
 		case CACHING_GOOD_VARS:
 			if(num_flip % 100000 == 0){
 			  setPotentialIndicesScoresAndGoodvars(true);
-			  log_prob = assignmentManager.get_log_score();
+			  log_prob = assignmentManager->get_log_score();
 			}
 
 		{
@@ -1451,9 +1461,9 @@ struct instantiation best_new_inst(bool best_even_if_not_improving){
 				initial_value = variables[var]->value;
 				for(value=0; value<variables[var]->domSize; value++){
 					variables[var]->value = value;
-					score = assignmentManager.get_log_score();
+					score = assignmentManager->get_log_score();
 					if(FORBIDDEN(var, value)){
-						if(score <= assignmentManager.runBestLogProb + EPS)	continue;
+						if(score <= assignmentManager->runBestLogProb + EPS)	continue;
 						if(verbose) fprintf(outfile, "Aspiration step to score %lf possible\n", score);
 					}
 					if( score > best_score - EPS ){ 
@@ -1467,7 +1477,7 @@ struct instantiation best_new_inst(bool best_even_if_not_improving){
 				}
 				variables[var]->value = initial_value;
 			}
-			best_score -= assignmentManager.get_log_score(); // Such that it is > EPS in case of an improvement.
+			best_score -= assignmentManager->get_log_score(); // Such that it is > EPS in case of an improvement.
 		}
 		break;
 	}
@@ -1528,8 +1538,8 @@ void initializeAllDataStructuresFromVarsAndPots(){
 		probTables[pot]->initFactorsOfVars(); //redo with new vars.
 	}
 
-	assignmentManager.setProbTables(probTables); 
-	assignmentManager.setNumberOfVariables(num_vars,output_lm?true:false);
+	assignmentManager->setProbTables(probTables);
+	assignmentManager->setNumberOfVariables(num_vars,output_lm?true:false);
 
 	//==== Determine #variable-value combinations.
 	numVarValCombos = 0;
@@ -1639,9 +1649,9 @@ void preprocessStructuredParts(){
 
 	start_timer();
 	//=== Prepare Mini-Buckets elimination.
-	mbElim.initOnce(); // MB
+	mbeElim->initOnce(); // MB
 	if(verbose) printf("... creating Mini-Buckets elimination order.\n");
-	mbElim.createOrder(0, fakeEvidenceForMB, &inducedWidth, &inducedWeight); // empty evidence array.
+	mbeElim->createOrder(0, fakeEvidenceForMB, &inducedWidth, &inducedWeight); // empty evidence array.
 	printStats();
 	if( justStats ) exit(0);
 
@@ -1650,14 +1660,14 @@ void preprocessStructuredParts(){
 		Variable** vars;
 		ProbabilityTable** pots;
 		int* leftVarIndices;
-		mbElim.preprocess(preprocessingSizeBound, &numVars, &leftVarIndices, &vars, &numPots, &pots);
+		mbeElim->preprocess(preprocessingSizeBound, &numVars, &leftVarIndices, &vars, &numPots, &pots);
 		if (numVars == 0){
 			assert(pots[0]->numEntries==1);
 			assert(pots[0]->numPTVars==0);
 			if(verbose) printf("Optimal MPE found in preprocessing: %lf\n", pots[0]->logCPT[0]);
 			preprocessingTime = elapsed_seconds();
 			if(verbose) printf("Used bound: %lf, required time: %lf\n\n", preprocessingSizeBound, preprocessingTime);
-			assignmentManager.optimalLogMPEValue = pots[0]->logCPT[0];
+			assignmentManager->optimalLogMPEValue = pots[0]->logCPT[0];
 			//		exit(1);
 		}
 
@@ -1706,16 +1716,22 @@ void preprocessStructuredParts(){
 	preprocessingTime += elapsed_seconds();
 	if(verbose) printf("Preprocessing time for bound %lf: %lf\n", preprocessingSizeBound, preprocessingTime);
 
-	mbElim.initOnce(); // MB
+	delete mbeElim;
+	mbeElim = new MiniBucketElimination();
+
+	mbeElim->initOnce(); // MB
 	if(verbose) printf("... creating Mini-Buckets elimination order for reduced network.\n");
-	mbElim.createOrder(0, fakeEvidenceForMB, &inducedWidth, &inducedWeight); // empty evidence array.
+	mbeElim->createOrder(0, fakeEvidenceForMB, &inducedWidth, &inducedWeight); // empty evidence array.
 }
 
 /*************************************************************
    Allocate memory for 1-dim arrays indexed by vars or pots.
 *************************************************************/
-void allocateMemoryForDataStructures(){
-	isgoodvar			   = new bool[num_vars];
+void allocateMemoryForDataStructures(bool deleteFirst){
+
+  if (deleteFirst) tearDown();
+
+	isgoodvar              = new bool[num_vars];
 	good_vars              = new int[num_vars];
 	vars_permuted          = new int[num_vars];
 	fakeEvidenceForMB      = new int[num_vars];
@@ -1741,7 +1757,7 @@ void allocateMemoryForDataStructures(){
    Free memory again.
 *************************************************************/
 void tearDown(){
-	delete[] isgoodvar;
+  delete[] isgoodvar;
 	delete[] good_vars;
 	delete[] vars_permuted;
 	delete[] fakeEvidenceForMB;
@@ -1780,7 +1796,7 @@ void initFromVarsAndProbTables(){
 	//=== In the current implementation, I also need to do
 	// this initialization twice, before the reduction of observed variables,
 	// after the reduction, and after the preprocessing.
-	allocateMemoryForDataStructures();
+	allocateMemoryForDataStructures(false);
 	initializeAllDataStructuresFromVarsAndPots();
 
 	if(verbose) printf("... removeObservedVariables\n");
@@ -1791,7 +1807,7 @@ void initFromVarsAndProbTables(){
 	}
 
 	if(verbose) printf("... allocate memory for data structures\n");
-	allocateMemoryForDataStructures();
+	allocateMemoryForDataStructures(true);
 
 	if(verbose) printf("... initializeAllDataStructuresFromVarsAndPots\n");
 	initializeAllDataStructuresFromVarsAndPots();
@@ -1815,7 +1831,7 @@ void initFromVarsAndProbTables(){
 void printStats(){
 	if(verbose) {
 		fprintf(outfile, "========================================\n        BASIC INSTANCE STATS\n========================================\n");
-		if(network_filename) fprintf(outfile, "Instance: %s\n", network_filename);
+		if (network_filename) fprintf(outfile, "Instance: %s\n", network_filename);
 		else fprintf(outfile, "Dealing with manually defined instance.\n");
 		fprintf(outfile, "Number of free variables: %d\n", num_vars);
 		fprintf(outfile, "Number of factors: %d\n", num_pots);
@@ -1837,7 +1853,7 @@ void setPotentialIndicesScoresAndGoodvars(bool keepPenalties){
 //	printf("in setPotentialIndicesScoresAndGoodvars\n");
 	int var;
 	init_potIndices();
-	log_prob = assignmentManager.get_log_score();
+	log_prob = assignmentManager->get_log_score();
 
 	//=== Initialize good_vars.
 	num_good_vars = 0;
@@ -1888,7 +1904,7 @@ void initComputingChangingCachedStructures(bool keepPenalties){
 void init_run(){
 	start_timer();
 	num_run++;
-	assignmentManager.newRun();
+	assignmentManager->newRun();
 	seedThisRun = seed;
 	print_start_run();
 
@@ -2076,7 +2092,7 @@ void print_curr_state(){
 		for(var=0; var <num_vars-1; var++){
 			fprintf(outfile, "%3d ", variables[var]->value);
 		}
-		fprintf(outfile, "%3d %lf %d %d %lf\n", variables[var]->value, log_prob, num_flip, num_iteration, run_time_so_far);
+		fprintf(outfile, "%3d %lf %ld %ld %lf\n", variables[var]->value, log_prob, num_flip, num_iteration, run_time_so_far);
 	}
 }
 
@@ -2086,12 +2102,12 @@ void print_parameters(){
 		fprintf(outfile, "begin parameters\n");
 		fprintf(outfile, "  preprocessingBound %lf\n", preprocessingSizeBound);	
 		fprintf(outfile, "  =====================\n");	
-		fprintf(outfile, "  optimalLogMPE %lf\n", assignmentManager.optimalLogMPEValue);	
+		fprintf(outfile, "  optimalLogMPE %lf\n", assignmentManager->optimalLogMPEValue);
 		fprintf(outfile, "  maxRuns %d\n", maxRuns);
-		fprintf(outfile, "  seed %d\n", seed);
+		fprintf(outfile, "  seed %ld\n", seed);
 		fprintf(outfile, "  maxTime %lf\n", maxTime);
 		fprintf(outfile, "  maxSteps %ld\n", maxSteps);
-		fprintf(outfile, "  maxIterations %ld\n", maxIterations);
+		fprintf(outfile, "  maxIterations %d\n", maxIterations);
 		fprintf(outfile, "  caching %d\n", caching);
 		fprintf(outfile, "  init %d\n", init_algo);
 		switch(algo){
@@ -2144,11 +2160,11 @@ void print_start_run(){
 //  fprintf(outfile, "\n===============================================\n");
 //  fprintf(outfile, "Run %d/%d\n", num_run, maxRuns);
 //  fprintf(outfile, "===============================================\n");
-	if(verbose) fprintf(outfile, "begin try %d\nseed: %d\n",num_run, seed);
+	if(verbose) fprintf(outfile, "begin try %d\nseed: %ld\n",num_run, seed);
 }
 
 void print_new_best_in_run(){
-//	if(verbose) fprintf(outfile, "  best %12.6lf    %dth %12.6lf    flip %8d    it %8d    time %5.2lf    p.str %d   #goodV %d \n", assignmentManager.runBestLogProb, assignmentManager.M, assignmentManager.getMthBestSolQual(), num_flip, num_iteration, run_time_so_far, pertubation_strength, (caching==CACHING_GOOD_PQ)? heapOfGoodVars->n : num_good_vars);
+//	if(verbose) fprintf(outfile, "  best %12.6lf    %dth %12.6lf    flip %8d    it %8d    time %5.2lf    p.str %d   #goodV %d \n", assignmentManager->runBestLogProb, assignmentManager->M, assignmentManager->getMthBestSolQual(), num_flip, num_iteration, run_time_so_far, pertubation_strength, (caching==CACHING_GOOD_PQ)? heapOfGoodVars->n : num_good_vars);
 }
 
 void print_end_run(){
@@ -2156,12 +2172,12 @@ void print_end_run(){
 		fprintf(outfile, "end try %d\n\n",num_run);
 
 		fprintf(outfile, "begin solution %d\n",num_run);
-		fprintf(outfile, "  best %lf\n", assignmentManager.runBestLogProb);
+		fprintf(outfile, "  best %lf\n", assignmentManager->runBestLogProb);
 		fprintf(outfile, "  time %lf\n", run_time_so_far);
-		fprintf(outfile, "  iteration %d\n", num_iteration);
-		fprintf(outfile, "  flip %d\n", num_flip);
+		fprintf(outfile, "  iteration %ld\n", num_iteration);
+		fprintf(outfile, "  flip %ld\n", num_flip);
 		fprintf(outfile, "  seed %d\n", seedThisRun);	
-		assignmentManager.outputRunLMs(outfile);
+		assignmentManager->outputRunLMs(outfile);
 		fprintf(outfile, "end solution %d\n\n",num_run);
 
 		fprintf(outfile, "begin solutiondata %d\n",num_run);
@@ -2171,10 +2187,10 @@ void print_end_run(){
 		fprintf(outfile, "  Preprocessing time (same each run): %lf\n",preprocessingTime);
 		fprintf(outfile, "  Init time for run: %lf\n",runInitTime);
 		fprintf(outfile, "  Total time for run: %lf\n",run_time_so_far);
-		fprintf(outfile, "  Total #(steps) and #(iterations) this run: %d, %d\n",num_flip, num_iteration);
+		fprintf(outfile, "  Total #(steps) and #(iterations) this run: %ld, %ld\n",num_flip, num_iteration);
 		fprintf(outfile, "end further_infos%d\n\n",num_run);
 
-		if( output_res ) assignmentManager.outputResult(resfile);
+		if( output_res ) assignmentManager->outputResult(resfile);
 	}
 }
 
@@ -2186,11 +2202,11 @@ void print_end_problem(){
 		fprintf(outfile, "begin further_global_infos 1\n");
 		fprintf(outfile, "	Instance contains %d variables\n", num_vars);
 		fprintf(outfile, "	Read in and init took %lf seconds\n", init_time);
-		assignmentManager.outputGlobalLMs(outfile);
+		assignmentManager->outputGlobalLMs(outfile);
 		if(output_runstats) print_run_stats(outfile);
 
-		fprintf(outfile, "  Best found log probability: %lf, prob: %e\n", assignmentManager.overallBestLogProb, pow(10.0,assignmentManager.overallBestLogProb));
-		fprintf(outfile, "  Experiment took %lf seconds of CPU time, best solution was found after %lf seconds of run %d.\n", overall_time_so_far, assignmentManager.bestTime, assignmentManager.bestRun);
+		fprintf(outfile, "  Best found log probability: %lf, prob: %e\n", assignmentManager->overallBestLogProb, pow(10.0,assignmentManager->overallBestLogProb));
+		fprintf(outfile, "  Experiment took %lf seconds of CPU time, best solution was found after %lf seconds of run %d.\n", overall_time_so_far, assignmentManager->bestTime, assignmentManager->bestRun);
 		fprintf(outfile, "end further_global_infos 1\n\n");
 		
 		fprintf(outfile, "begin system 1\n");
@@ -2233,7 +2249,7 @@ void print_run_stats(FILE *out){
 }
 
 void print_ils_stats(){
-	if(verbose) fprintf(outfile, "ils %d: %d %lf %d\n", num_iteration, assignmentManager.hammingDistFromLastLM(), log_prob-last_log_prob, num_flip-last_steps);
+	if(verbose) fprintf(outfile, "ils %ld: %d %lf %ld\n", num_iteration, assignmentManager->hammingDistFromLastLM(), log_prob-last_log_prob, num_flip-last_steps);
 }
 
 void update_lm_count(){
@@ -2262,7 +2278,7 @@ double sizeOfVariableSet(int numVars, int* vars){
 
 double sizeOfVariableSet(vector<int> vars){
 	double result = 1;
-	for(int i=0; i<vars.size(); i++) result *= variables[vars[i]]->domSize;
+	for(size_t i=0; i<vars.size(); i++) result *= variables[vars[i]]->domSize;
 	return result;
 }
 

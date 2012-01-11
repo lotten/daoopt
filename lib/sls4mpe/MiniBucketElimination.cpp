@@ -357,19 +357,19 @@ void MiniBucketElimination::outputBuckets(){
 
 double MiniBucketElimination::process(){
 //=== Processing all buckets according to the order.
-	int i,j;
+//	int i; size_t j;
 	double result;
 	ProbabilityTable* pTable;
 	maxTakenWeight = 0;
 	inducedWidth = 0;
-	for(i=numOfBuckets-1; i>=0; i--){
+	for(int i=numOfBuckets-1; i>=0; i--){
 //		printf("Mini-Buckets::processing - bucket %d\n", i);
 		int bucketNum = order[i];
 
 		if( variables[bucketNum]->fakeEvidenceForMB ){
 //			printf("fake ev %d=%d\n",bucketNum, variables[bucketNum]->value);
 			if(i!=0) 	assert(buckets[bucketNum].bucketPTs.size() == 0);
-			for(j=0; j<buckets[bucketNum].bucketPTs.size(); j++){
+			for(size_t j=0; j<buckets[bucketNum].bucketPTs.size(); j++){
 				//pTable = buckets[bucketNum].bucketPTs[j]->instantiated(false);
 				pTable = buckets[bucketNum].bucketPTs[j];
 				if( i==0 ){
@@ -454,7 +454,9 @@ void MiniBucketElimination::preprocess(double weightBoundToStopExecution, int *o
 	initRun(false);
 
 	//=== Processing all buckets according to the order.
-	int i,j,k;
+	int i;
+//	int j;
+//	int k;
 	ProbabilityTable* pTable;
 	maxTakenWeight = 0;
 	inducedWidth = 0;
@@ -504,7 +506,7 @@ void MiniBucketElimination::preprocess(double weightBoundToStopExecution, int *o
 	int* varIndices = new int[i+1];
 	Variable** vars = new Variable*[i+1];
 	int numPots = 0;
-	for(j=0; j<i+1; j++){
+	for(int j=0; j<i+1; j++){
 		varIndices[j] = order[j];
 		vars[j] = variables[order[j]];
 		numPots += buckets[order[j]].bucketPTs.size();
@@ -517,13 +519,23 @@ void MiniBucketElimination::preprocess(double weightBoundToStopExecution, int *o
 	ProbabilityTable** pt = new ProbabilityTable*[numPots];
 
 	numPots=0;
-	for(j=0; j<i+1; j++){
-		for(k=0; k<buckets[order[j]].bucketPTs.size(); k++){
+	for(int j=0; j<i+1; j++){
+		for(size_t k=0; k<buckets[order[j]].bucketPTs.size(); k++){
 			pt[numPots++] = buckets[order[j]].bucketPTs[k];
 		}
 	}
 	(*outPots) = pt;
 	if(verbose) printf("Removed %d/%d variables in the preprocessing\n%d vars and %d factors remaining.\n\nWidth & weight processed: (%d,%lf)\n\n", (numOfBuckets-1)-i, numOfBuckets, i+1, numPots, inducedWidth, maxTakenWeight);
+}
+
+MiniBucketElimination::~MiniBucketElimination() {
+  delete[] buckets;
+  delete[] order;
+  delete[] optimalVars;
+  for (int i=0; i<numOfBuckets; ++i) {
+    delete mbVariables[i];
+  }
+  delete[] mbVariables;
 }
 
 }  // sls4mpe
