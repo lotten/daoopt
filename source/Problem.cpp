@@ -427,6 +427,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   in >> x;  // Number of evidence samples
   if (x > 1) {
     myerror("Warning: Ignoring all but one evidence sample.\n");
+  }
 
   if (x > 0) {
     in >> x;
@@ -437,9 +438,9 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
       in >> y; // Variable value
       xs = (val_t) y;
       if (xs >= m_domains[x]) {
-	cout << "Variable " << x << " has domain size " << (int) m_domains[x]
-	     << ", evidence value " << y << " out of range." << endl;
-	in.close(); return false;
+        cout << "Variable " << x << " has domain size " << (int) m_domains[x]
+             << ", evidence value " << y << " out of range." << endl;
+        in.close(); return false;
       }
       m_evidence.insert(make_pair(x,xs));
     }
