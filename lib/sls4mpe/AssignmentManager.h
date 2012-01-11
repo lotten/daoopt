@@ -45,7 +45,8 @@ public:
 	//globalBestAssignments[i][var]=value <=> in the i'th 
 								                //best explanation found at all, variable var is set to val
 
-	AssignmentManager(){}
+	AssignmentManager(){ numVars = -1; }
+	~AssignmentManager();
 	bool newGoodAssignment();
 
 	double getMthBestSolQual(){
@@ -72,15 +73,7 @@ public:
 		localProbTables = probTables;	
 	} 
 
-	void setNumberOfVariables(int newNumberOfVariables, bool newOutputLM){
-		numVars = newNumberOfVariables;
-		outputLM = newOutputLM;
-		for(int i=0; i<M; i++){
-			runBestAssignments[i] = new int[newNumberOfVariables];
-			globalBestAssignments[i] = new int[newNumberOfVariables];
-		}
-		tmpAssignment = new int[newNumberOfVariables];
-	}
+	void setNumberOfVariables(int newNumberOfVariables, bool newOutputLM);
 
 	double get_log_score();
 	double get_log_score(int* values);

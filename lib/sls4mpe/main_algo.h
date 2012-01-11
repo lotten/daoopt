@@ -36,7 +36,7 @@ void update_ils_count();
 void exampleProblemDefition();
 void allocateVarsAndPTs(bool name);
 void deallocateVarsAndPTs(bool name);
-void allocateMemoryForDataStructures();
+void allocateMemoryForDataStructures(bool deleteFirst);
 void tearDown();
 void first_init();
 void read_problem(int argc,char *argv[]);

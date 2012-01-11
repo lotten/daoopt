@@ -163,7 +163,7 @@ extern double cutoff;
 extern double run_time_so_far;
 
 extern bool outputBestMPE;
-extern AssignmentManager assignmentManager;
+extern AssignmentManager* assignmentManager;
 extern double log_prob;
 extern int num_vars;
 extern int num_pots;
@@ -175,7 +175,7 @@ extern double glsPenaltyMultFactor;
 
 extern ProbabilityTable** probTables;
 extern Variable** variables;
-extern AssignmentManager assignmentManager;
+//extern AssignmentManager* assignmentManager;
 
 const int NUM_BP_VARS = 100000;
 extern int externalInitValues[NUM_BP_VARS];
