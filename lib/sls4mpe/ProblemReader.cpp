@@ -442,8 +442,8 @@ void ProblemReader::scandouble(int argc, char *argv[], int i, double *varptr){
 
 void ProblemReader::parse_parameters(int argc,char *argv[]){
   int i,tmp;
-  assignmentManager.M_MPE = false;
-  assignmentManager.optimalLogMPEValue = DOUBLE_BIG;
+  assignmentManager->M_MPE = false;
+  assignmentManager->optimalLogMPEValue = DOUBLE_BIG;
 
   network_filename[0] = '\0';
 	sls_filename[0] = '\0';
@@ -487,8 +487,8 @@ void ProblemReader::parse_parameters(int argc,char *argv[]){
 		else if (strcmp(argv[i],"-T") == 0)
 		  scandouble(argc,argv,++i,&T);
 		else if (strcmp(argv[i],"-mmpe") == 0){
-			assignmentManager.M_MPE = true;
-			scanone(argc,argv,++i,&assignmentManager.M);
+			assignmentManager->M_MPE = true;
+			scanone(argc,argv,++i,&assignmentManager->M);
 		}
 
 		else if (strcmp(argv[i],"-onlyConvertToBNT") == 0){
@@ -560,7 +560,7 @@ void ProblemReader::parse_parameters(int argc,char *argv[]){
 			strncpy( res_filename, argv[i], strlen( argv[i] ) );
 		}
 		else if (strcmp(argv[i],"-opt") == 0 || strcmp(argv[i],"--optimalLogMPE") == 0)	
-		  scandouble(argc,argv,++i,&assignmentManager.optimalLogMPEValue);
+		  scandouble(argc,argv,++i,&assignmentManager->optimalLogMPEValue);
 		else if (strcmp(argv[i],"-n") == 0 || strcmp(argv[i],"--noise") == 0)	
 		  scanone(argc,argv,++i,&noise);
 		else if (strcmp(argv[i],"-cf") == 0 || strcmp(argv[i],"--cutoff") == 0)	

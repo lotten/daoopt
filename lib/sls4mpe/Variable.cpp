@@ -20,7 +20,11 @@ void Variable::setName(char* newName){
 	strcpy(name, newName);
 }
 
-Variable::Variable(){
+Variable::Variable()
+    : name(NULL), logProbScores(NULL), penaltyScores(NULL), tabuValues(NULL),
+      mb(NULL), occ(NULL), numInOcc(NULL),
+      numTimesValues(NULL), numTimesValuesInLM(NULL), numTimesValuesAtEndOfRun(NULL)
+{
 	mb = new int[INITIAL_MBSET_SIZE];  // this is an upper bound.
 	reservedMemForMB = INITIAL_MBSET_SIZE;
 	weightOfMB = 1;
@@ -207,7 +211,7 @@ bool Variable::flipTo(int newValue, int numFlip, int* good_vars, int* num_good_v
 	tabuValues[value] = numFlip;
 	value = newValue;
 	if(caching==CACHING_NONE){
-		(*log_prob) = assignmentManager.get_log_score();
+		(*log_prob) = assignmentManager->get_log_score();
 /*		// Updating the time is necessary in this case since even one 
 		// basic local search can be super-slow and we might want to stop it.
 		// For the other cases, we don't do this to prevent updating the
@@ -230,7 +234,9 @@ void Variable::addVarToMB(int var){
 }
 
 void Variable::allocateOcc(){
+  if (numInOcc) delete[] numInOcc;
 	numInOcc = new int[numOcc];
+	if (occ) delete[] occ;
 	occ = new int[numOcc];
 }
 
@@ -329,7 +335,20 @@ Variable* Variable::clone(){
 }*/
 
 Variable::~Variable(){
-	delete[] mb;
+
+  if (name) delete[] name;
+  if (logProbScores) delete[] logProbScores;
+  if (penaltyScores) delete[] penaltyScores;
+  if (tabuValues) delete[] tabuValues;
+  if (mb) delete[] mb;
+  if (occ) delete[] occ;
+  if (numInOcc) delete[] numInOcc;
+  if (numTimesValues) delete[] numTimesValues;
+  if (numTimesValuesInLM) delete[] numTimesValuesInLM;
+  if (numTimesValuesAtEndOfRun) delete[] numTimesValuesAtEndOfRun;
+
+  /*
+ 	delete[] mb;
 	delete[] logProbScores;
 	delete[] tabuValues;
 	delete[] occ;
@@ -337,6 +356,7 @@ Variable::~Variable(){
 	delete[] numTimesValues;
 	delete[] numTimesValuesInLM;
 	delete[] numTimesValuesAtEndOfRun;
+	*/
 }
 
 }  // sls4mpe
