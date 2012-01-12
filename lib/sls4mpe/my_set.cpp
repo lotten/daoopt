@@ -27,7 +27,7 @@ int contains(const int *array, int size, int element){ // call by value (size)
 }
 
 bool contains(vector<int> vec, int element){
-	for(int i=0; i<vec.size(); i++){
+	for(size_t i=0; i<vec.size(); i++){
 		if(vec[i] == element) return true;
 	}
 	return false;
@@ -105,7 +105,7 @@ void insertAndExtend(int new_element, int **array, int *size, int *reservedMemor
 		int* newArray = new int[(*reservedMemory)*2];
 		for(i=0; i<(*size); i++) newArray[i] = (*array)[i];
 // one should delete the old array. Throws error, though!
-//	delete[] (*array);
+		delete[] (*array);
 		(*array) = newArray;
 		(*reservedMemory) *= 2;
 	}
@@ -200,7 +200,7 @@ void addAllToFrom(int* array1, int* size1, const int* array2, const int size2){
 }
 
 void addAllToFrom(int* array, int* size, vector<int> vec){
-	for(int i=0; i<vec.size(); i++) insert(array, size, vec[i]);
+	for(size_t i=0; i<vec.size(); i++) insert(array, size, vec[i]);
 }
 
 void addAllToFrom(vector<int> *vec, int* array, int size){

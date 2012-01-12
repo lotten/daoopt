@@ -26,6 +26,7 @@ SUBDIRS := \
 source \
 lib/zlib \
 lib/sls4mpe \
+lib/mex \
 lib \
 lib/boost.src/thread/src \
 lib/boost.src/thread/src/pthread \

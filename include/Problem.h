@@ -35,6 +35,8 @@ class Problem {
 
 protected:
 
+  bool m_subprobOnly;    // Solving only a conditioned subproblem
+
   int m_prob;            // Problem class (multiplication or summation of costs)
   int m_task;            // Type of problem (Minim. or maxim. task)
 
@@ -74,6 +76,7 @@ public:
   int getC() const { return m_c; }
   int getR() const { return m_r; }
 
+  void setSubprobOnly() { m_subprobOnly = true; }
   const string& getName() const { return m_name; }
 
   const vector<Function*>& getFunctions() const { return m_functions; }
@@ -151,6 +154,7 @@ inline void Problem::addDummy() {
 
 
 inline Problem::Problem() :
+    m_subprobOnly(false),
     m_prob(UNKNOWN),
     m_task(UNKNOWN),
     m_n(UNKNOWN),

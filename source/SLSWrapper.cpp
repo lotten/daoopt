@@ -32,8 +32,10 @@ bool SLSWrapper::init(Problem* prob, int iter, int time) {
   sls4mpe::verbose = false;
   sls4mpe::start_timer();
 
-  sls4mpe::assignmentManager.M_MPE = false;
-  sls4mpe::assignmentManager.optimalLogMPEValue = DOUBLE_BIG;
+  sls4mpe::assignmentManager = new sls4mpe::AssignmentManager();
+
+  sls4mpe::assignmentManager->M_MPE = false;
+  sls4mpe::assignmentManager->optimalLogMPEValue = DOUBLE_BIG;
 
   sls4mpe::network_filename[0] = '\0';
   sls4mpe::sls_filename[0] = '\0';
@@ -46,17 +48,12 @@ bool SLSWrapper::init(Problem* prob, int iter, int time) {
 
   sls4mpe::slsWrapper = this;
 
-  /*
-  sls4mpe::ProblemReader pReader;
-  pReader.readNetwork();
-   */
-
   // load network directly into SLS from Problem*
-  sls4mpe::num_vars = prob->getN();
+  sls4mpe::num_vars = prob->getN() - 1; // for dummy variable
   sls4mpe::num_pots = prob->getC() + 1; // for global constant dummy function
   sls4mpe::allocateVarsAndPTs(false);
 
-  for (int i=0; i < prob->getN(); ++i)
+  for (int i=0; i < sls4mpe::num_vars; ++i)
     sls4mpe::variables[i]->setDomainSize(prob->getDomainSize(i));
 
   for (int i=0; i < prob->getC(); ++i) {
@@ -110,6 +107,7 @@ bool SLSWrapper::run() {
   m_assignment = new int[sls4mpe::num_vars];
   sls4mpe::start_timer();
   sls4mpe::runAlgorithm(&m_assignment, &m_likelihood);
+  sls4mpe::deallocateVarsAndPTs(false);
   return true;
 }
 

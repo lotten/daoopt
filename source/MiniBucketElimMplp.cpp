@@ -50,12 +50,13 @@ void MiniBucketElimMplp::rewriteFactors( const vector<mex::Factor>& factors) {
     newFunctions[f]->fromFactor( log(factors[f]) );    // write in log factor functions
   }
   _p->replaceFunctions( newFunctions );                // replace them in the problem definition
-  if (_pt) _pt->resetFunctionInfo(_p->getFunctions()); // re-compute function assignments in pseudotree
 }
 
 
 bool MiniBucketElimMplp::preprocess(const vector<val_t>* assignment) {
-  doMPLP();
+  bool changedFunctions = doMPLP();
+  _options->mplp = -1; _options->mplps = -1;  // disable MPLP in subsequent build()
+  return changedFunctions;
 }
 
 
@@ -131,6 +132,7 @@ MiniBucketElimMplp::MiniBucketElimMplp(Problem* p, Pseudotree* pt, ProgramOption
 
   _mbe = mex::mbe( copyFactors() );
   _mbe.setProperties("DoMatch=0,DoFill=0,DoMplp=0,DoJG=0");  // MPLP / JGLP done separately if needed
+  if (_options->match > 0)  { _mbe.setProperties("DoMatch=1"); }
   mex::VarOrder ord(pt->getElimOrder().begin(),--pt->getElimOrder().end());   // -- to remove dummy root
   _mbe.setOrder(ord); _mbe.setIBound(ib);
 }

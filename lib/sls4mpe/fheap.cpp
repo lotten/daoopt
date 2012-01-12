@@ -19,7 +19,7 @@ namespace sls4mpe {
 
 
 /*** Prototypes of functions only visible within this file. ***/
-void fh_dump_nodes(fheap_node_t *ptr, int level);
+//void fh_dump_nodes(fheap_node_t *ptr, int level);
 void fh_meld(fheap_t *h, fheap_node_t *tree_list);
 
 
