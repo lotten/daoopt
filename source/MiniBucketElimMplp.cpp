@@ -114,7 +114,7 @@ size_t MiniBucketElimMplp::build(const vector<val_t>* assignment, bool computeTa
   doMPLP();
 
   int ib=_mbe.getIBound();
-  _mbe.setIBound(ib/2);
+  _mbe.setIBound(ib/2);     // !!! should check that this results in an OK memory size...
   bool sizeChanged = doJGLP();  
   _mbe.setIBound(ib);
 

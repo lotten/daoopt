@@ -54,7 +54,7 @@ public:
   // gets sum of tables sizes
   size_t getSize() const {  
 		size_t sz=0;
-	  const mex::vector<mex::Factor> flist = _mbe.factors();
+	  const mex::vector<mex::Factor>& flist = _mbe.factors();
 		for (size_t i=0;i<flist.size();++i) sz += flist[i].numel();
 		return sz;
 	}

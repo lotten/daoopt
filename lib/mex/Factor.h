@@ -39,26 +39,48 @@ class Factor : public virtual mxObject {
 
   // Constructors //////////////////////////////////////////////////////////////////////////
 
-  Factor(Factor const& f) : v_(f.v_), t_(f.t_) { } 				// copy ctor
-  Factor(const value s=1.0) : v_(),   t_(1,s)  { }  			// scalar constructor
+  Factor(Factor const& f) : v_(f.v_), t_(f.t_) { 
+//    memused += t_.capacity()*sizeof(double);
+//    mmax = std::max(mmax,memused);
+  } 				// copy ctor
+  Factor(const value s=1.0) : v_(),   t_(1,s)  { 
+//    memused += t_.capacity()*sizeof(double);
+//    mmax = std::max(mmax,memused);
+  }  			// scalar constructor
   Factor(VarSet const& vs, value s=1.0) : v_(vs),t_() { 	// constant factor over given vars
     t_.resize(vs.nrStates()); setDims(); fill(s);
+//    memused += t_.capacity()*sizeof(double);
+//    mmax = std::max(mmax,memused);
   }
 	Factor(VarSet const& vs, value* T) : v_(vs),t_() { 
 		t_.resize(v_.nrStates()); setDims(); std::copy(T,T+t_.size(),t_.begin()); 
+//    memused += t_.capacity()*sizeof(double);
+//    mmax = std::max(mmax,memused);
 	}
   // Factor( from Vars and a vector of values)  !!
 	// Factor( from Vars and a value* )           !!
 	// Factor( from permuted vector of Var and vector of values) !!
 
-  ~Factor() { }                                    // destructor
+  ~Factor() { 
+//    memused -= t_.capacity()*sizeof(double); 
+   }                                    // destructor
 
   // Assignments & copy constructors //////////////////////////////////////////////////////
 	
   Factor& operator=(Factor const& rhs) {									// assignment (deep copy)
-   if (this!=&rhs) { v_ = rhs.v_; t_ = rhs.t_; setDims(); }
-   return *this;
+    if (this!=&rhs) { 
+//      memused -= t_.capacity()*sizeof(double);
+      vector<double> tmp; t_.swap(tmp);                    // force vector to release memory
+      v_ = rhs.v_; t_ = rhs.t_; setDims();                 // then reassign
+//      memused += t_.capacity()*sizeof(double);
+//      mmax = std::max(mmax,memused);
+    }
+    return *this;
   }
+
+//  static size_t memused;
+//  static size_t mmax;
+//  static size_t mem() { return memused; };
 
 	void swap(Factor& F) {                                  // object contents exchange
 		if (&F!=this) { v_.swap(F.v_); t_.swap(F.t_); }
@@ -151,7 +173,7 @@ class Factor : public virtual mxObject {
   // Above operators use the following internal definitions:
 	
   // Binary operations (eg A + B); returns new object
-  template<typename Function> Factor binaryOp( const Factor B, Function Op) const {
+  template<typename Function> Factor binaryOp( const Factor& B, Function Op) const {
     VarSet v = v_ + B.v_;  						// expand scope to union
     Factor F(v);             						//  and create target factor
     subindex s1(v,v_), s2(v,B.v_); 					// index over A and B & do the op
@@ -162,7 +184,7 @@ class Factor : public virtual mxObject {
     Factor F=*this; F.binaryOpIP(B,Op); return F; // for scalar args, define with an in-place operator
   }
   // Binary in-place operations (eg A += B); returns reference to modified A
-  template<typename Function> Factor& binaryOpIP( const Factor B, Function Op) {
+  template<typename Function> Factor& binaryOpIP( const Factor& B, Function Op) {
     VarSet v = v_ + B.v_;  								// expand scope to union
     if (v != v_) *this = binaryOp(B,Op); 					// if A's scope is too small, call binary op
     else {                         

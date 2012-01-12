@@ -136,7 +136,7 @@ public:
 	Factor elim(const Factor& F, const VarSet& vs) {
 		switch (elimOp) {
 			case ElimOp::SumUpper:
-			case ElimOp::SumLower:  return F.sum(vs);    break;
+			case ElimOp::SumLower:  return F.sum(vs); break;
 			case ElimOp::MaxUpper:  return F.max(vs); break;
 		}
 		throw std::runtime_error("Unknown elim op");
@@ -146,7 +146,7 @@ public:
 		switch (elimOp) {
 			case ElimOp::SumUpper:
 			case ElimOp::SumLower: return F.marginal(vs);    break;
-			case ElimOp::MaxUpper:  return F.maxmarginal(vs); break;
+			case ElimOp::MaxUpper: return F.maxmarginal(vs); break;
 		}
 		throw std::runtime_error("Unknown elim op");
 	}
@@ -208,6 +208,13 @@ public:
 		return err;
 	}
 
+  size_t SizeOf( const vector<Factor>& fs ) {
+		size_t MemUsed=0; for (size_t f=0;f<fs.size();++f) MemUsed+=fs[f].nrStates(); return MemUsed;
+  }
+  size_t SizeOf( const vector<VarSet>& fs ) {
+		size_t MemUsed=0; for (size_t f=0;f<fs.size();++f) MemUsed+=fs[f].nrStates(); return MemUsed;
+  }
+
 
 	// helper class for pairs of sorted indices
 	struct sPair : public std::pair<size_t,size_t> {
@@ -241,10 +248,11 @@ public:
 		for (size_t i=0;i<_gmo.nvar();++i) vin.push_back(_gmo.withVariable(var(i)));
 		atElim.clear(); atElim.resize(_gmo.nvar()); 
 		atElimNorm.clear(); atElimNorm.resize(_gmo.nvar(),0.0); 
-		vector<Factor> tmp(_gmo.nFactors());							// temporary factors used in score heuristics
+		vector<Factor> tmp; if (!_byScope) tmp.resize(_gmo.nFactors());	// temporary factors used in score heuristics
 		vector<flist> Orig(_gmo.nFactors());							// origination info: which original factors are
 		for (size_t i=0;i<Orig.size();++i) Orig[i]|=i;		//   included for the first time, and which newly
 		vector<flist> New(_gmo.nFactors());								//   created clusters feed into this cluster
+
 
 		//// Eliminate each variable in the sequence given: /////////////////////////////////
 		for (VarOrder::const_iterator x=_order.begin();x!=_order.end();++x) {
@@ -308,12 +316,13 @@ public:
 		  	}
 	  	}
 
+
     	//// Perform any matching? /////////////////////////////////////////////////
 			//    "Matching" here is: compute the largest overlap of all buckets, and ensure that the
 			//    moments on that subset of variables are identical in all buckets.
 			//    !!! also, add extra variables if we can afford them?
 			//size_t beta=0;
-	  	if (_doMatch) {
+	  	if (_doMatch && ids.size()>1) {
 
 				// Possibly we should first extend the scopes of the buckets to be larger
 				if (_doFill) {
@@ -333,7 +342,10 @@ public:
 				vector<Factor> ftmp(ids.size());						// compute geometric mean
 		  	VarSet var = fin[ids[0]].vars();						// on all mutual variables
 				for (size_t i=1;i<ids.size();i++) var &= fin[ids[i]].vars();
-				for (size_t i=0;i<ids.size();i++) fmatch *= (ftmp[i] = marg(fin[ids[i]],var));
+				for (size_t i=0;i<ids.size();i++) {
+          ftmp[i] = marg(fin[ids[i]],var);
+          fmatch *= ftmp[i];
+        }
 				fmatch ^= (1.0/ids.size());									// and match each bucket to it
 				for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= fmatch/ftmp[i];
 				
@@ -360,14 +372,13 @@ public:
 		
 				if (*i==select) fin[*i] = elim     (fin[*i],VX);
 			  else            fin[*i] = elimBound(fin[*i],VX);	
-
+        
 				if (_doJG) _factors[alpha] /= fin[*i];
 	
 			  double maxf = fin[*i].max(); fin[*i]/=maxf;       // normalize for numerical stability	
 				maxf=std::log(maxf); _logZ+=maxf; Norm[*i]+=maxf; // save normalization for overall bound
 
 				if (!_doJG) alpha2 = addFactor(fin[*i]);          /// !!! change to adding a message not a factor?
-				//alpha2 = addFactor(fin[*i]);          /// !!! change to adding a message not a factor?
 				
 				//if (_doJG && _doMatch && ids.size()>1) addEdge(alpha,beta);
 				if (_doJG) for (size_t j=0;j<alphas.size()-1;++j) addEdge(alpha,alphas[j]);
@@ -382,7 +393,7 @@ public:
 				insert(vin,*i,fin[*i].vars());              // recompute and update adjacency
 	  	}
 			//std::cout<<"\n";
-		
+
 		}
 		/// end for: variable elim order /////////////////////////////////////////////////////////
 
@@ -394,11 +405,12 @@ public:
 		//std::cout<<"Bound "<<_logZ<<"\n";
 	}
 
-  void tighten(int nIter, double stopTime=-1) {
+  void tighten(int nIter, double stopTime=-1, double stopObj=-1) {
     const mex::vector<EdgeID>& elist = edges();
-    double startTime=timeSystem();
+    double startTime=timeSystem(), dObj=infty();
     size_t iter;
 		for (iter=0; iter<nIter; ++iter) {
+      if (dObj < stopObj) break; else dObj=0.0;
 			for (size_t i=0;i<elist.size();++i) {
         if (stopTime > 0 && stopTime <= (timeSystem()-startTime)) break;
      	 	findex a,b; a=elist[i].first; b=elist[i].second; 
@@ -409,9 +421,10 @@ public:
 				_factors[b] *= fratio; _factors[a] /= fratio;
 			}
 			for (size_t i=0;i<nFactors();++i) {
-      	double maxf = _factors[i].max(); _factors[i]/=maxf; _logZ += std::log(maxf);
+      	double maxf = _factors[i].max(); _factors[i]/=maxf; 
+        double lnmaxf=std::log(maxf); _logZ+=lnmaxf; dObj+=lnmaxf;
 			}
-		std::cout<<"Tightening "<<_logZ<<"\n";
+		std::cout<<"Tightening "<<_logZ<<"; d="<<dObj<<"\n";
 		}
 		double Zdist=std::exp(_logZ/nFactors());
 		for (size_t f=0;f<nFactors();++f) _factors[f]*=Zdist;  // !!!! WEIRD; FOR GLOBAL CONSTANT TRANFER
@@ -425,7 +438,8 @@ public:
 
 		vector<VarSet> fin; for (size_t f=0;f<_gmo.nFactors();++f) fin.push_back(_gmo.factor(f).vars());
 		vector<flist>  vin; for (size_t i=0;i<_gmo.nvar();++i)     vin.push_back(_gmo.withVariable(var(i)));
-		size_t MemUsed=0;   for (size_t f=0;f<fin.size();++f)      MemUsed += fin[f].nrStates();
+    vector<VarSet> _factors;
+		size_t MemUsed=0;   for (size_t f=0;f<fin.size();++f)      MemUsed += fin[f].nrStates(); 
 		size_t MemMax = MemUsed;
 
 		//// Eliminate each variable in the sequence given: /////////////////////////////////
@@ -478,7 +492,7 @@ public:
 	  	}
 
 			//// If matching, we usually create another clique in the graph
-			if (_doMatch) {
+			if (_doMatch && ids.size()>1) {
 				if (_doFill) {  // if filling, we increase the size of the buckets
 					VarSet all=fin[ids[0]]; for (size_t i=1;i<ids.size();i++) all|=fin[ids[i]];
 					for (size_t i=0;i<ids.size();i++) { 
@@ -499,7 +513,9 @@ public:
 				// matching step:
 				VarSet var = fin[ids[0]]; 
         for (size_t i=1;i<ids.size();i++) var &= fin[ids[i]];
-				//MemUsed += var.nrStates();           // create cluster beta
+				MemUsed += var.nrStates() * (ids.size()+2);           // temporary storage (+1 for possible temp var)
+				MemMax   = std::max(MemMax,MemUsed);
+				MemUsed -= var.nrStates() * (ids.size()+2);           // !!! don't keep cluster?
 			}
 
     	//// Eliminate individually within buckets /////////////////////////////////
@@ -509,11 +525,14 @@ public:
 
 				//MemUsed += fin[*i].nrStates();        // create cluster alpha
 				double tmp = fin[*i].nrStates();        // Remove the old incoming function,
+        if (_doJG) { _factors.push_back( fin[*i] ); MemUsed += fin[*i].nrStates(); }
 				fin[*i] -= VX;												//   eliminate the variable
 				MemUsed += fin[*i].nrStates();				//   and put back into list of factors
 				MemMax   = std::max(MemMax,MemUsed);
 				MemUsed -= tmp;
+        if (!_doJG) { _factors.push_back( fin[*i] );
 				MemUsed += fin[*i].nrStates();        // create cluster alpha2
+        }
 				MemMax   = std::max(MemMax,MemUsed);
 
 				insert(vin,*i,fin[*i]);              	// recompute and update adjacency
@@ -525,7 +544,6 @@ public:
 		return MemMax;
 		//return MemUsed;
 	}
-
 
 
 /*
