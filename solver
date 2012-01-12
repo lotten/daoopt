@@ -29,20 +29,25 @@ ROTATE=" --rotate"
 # set/unset to enable/disable Alex's mini buckets with moment matching
 MATCH=" --match 1"
 
+# MPLP/JGLP settings for different time limits
+MPLP20S="--mplps 2 --jglps 2"
+MPLP20M="--mplps 30 --jglps 30 --mplp 500 --jglp 250"
+MPLP60M="--mplps 60 --jglps 60 --mplp 2000 --jglp 1000"
+
 # fixed random seed (use $3 for competition one)
 SEED=4242
 
 # 20 second timelimit
 if [ ${INF_TIME} -eq 20 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 3 --slsT 2 -t50 --orderTime 3 -m150 -i12 -a1 ${ROTATE} ${MATCH}
+  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 2 --slsT 2 -t50 --orderTime 3 -m125 -i15 -a1 ${ROTATE} ${MATCH} ${MPLP20S}
 
 # 20 minute timelimit
 elif [ ${INF_TIME} -eq 1200 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 10 --slsT 6 -t300 --orderTime 60 -m${MEMLIMIT} -i25 -a2 ${ROTATE} ${MATCH}
+  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 10 --slsT 6 -t300 --orderTime 60 -m${MEMLIMIT} -i25 -a2 ${ROTATE} ${MATCH} ${MPLP20M}
 
 # 1 hour timelimit
 elif [ ${INF_TIME} -eq 3600 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 20 --slsT 10 -t1000 --orderTime 180 -m${MEMLIMIT} -i35 -a2 ${ROTATE} ${MATCH}
+  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 20 --slsT 10 -t1000 --orderTime 180 -m${MEMLIMIT} -i35 -a2 ${ROTATE} ${MATCH} ${MPLP60M}
 
 # unknown timelimit
 else
