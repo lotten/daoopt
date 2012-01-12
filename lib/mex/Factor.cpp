@@ -16,14 +16,17 @@
 #include <float.h>
 #include <vector>
 
-#include "mex/mxUtil.h"
-#include "mex/VarSet.h"
-#include "mex/subindex.h"
-#include "mex/vector.h"
-#include "mex/Factor.h"
+#include "mxUtil.h"
+#include "VarSet.h"
+#include "subindex.h"
+#include "vector.h"
+
+#include "Factor.h"
 
 namespace mex {
 
+
+//size_t Factor::memused = 0;
 
 /************************************************************************************
  ************************************************************************************
