@@ -126,7 +126,15 @@ void graphModel::erase(vector<flist>& adj, findex idx, const VarSet& vs) {
 graphModel::findex graphModel::addFactor(const Factor& F) {
 	const VarSet& v=F.vars();
 	findex use = addNode();
-	if (use>=nFactors()) _factors.push_back(F); else _factors[use]=F;
+	if (use>=nFactors()) {
+    if (_factors.capacity()>nFactors()) _factors.push_back(F);
+    else {                                               // if we'd need to copy, do it manually
+      vector<Factor> tmp; tmp.reserve(2*nFactors()); tmp.resize(nFactors()+1);
+      for (size_t i=0;i<_factors.size();++i) tmp[i].swap(_factors[i]); tmp[nFactors()]=F;
+      _factors.swap(tmp);
+    }
+    //_factors.push_back(F); 
+  } else _factors[use]=F;
 	insert(_vAdj,use,v);
 	if (_dims.size()<_vAdj.size()) _dims.resize(_vAdj.size(),0);
 	for (VarSet::const_iterator i=v.begin();i!=v.end();++i) { 		// look up dimensions if required
@@ -162,7 +170,7 @@ VarSet graphModel::markovBlanket(const Var& v) const {
 	return vs;
 }
 vector<VarSet> graphModel::mrf() const { 
-	vector<VarSet> vvs; 
+	vector<VarSet> vvs(nvar()); 
 	for (size_t v=0;v<nvar();++v) vvs.push_back(markovBlanket(var(v))); 
 	return vvs;
 }

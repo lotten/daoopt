@@ -253,6 +253,7 @@ public:
 		for (size_t i=0;i<Orig.size();++i) Orig[i]|=i;		//   included for the first time, and which newly
 		vector<flist> New(_gmo.nFactors());								//   created clusters feed into this cluster
 
+
 		//// Eliminate each variable in the sequence given: /////////////////////////////////
 		for (VarOrder::const_iterator x=_order.begin();x!=_order.end();++x) {
 			//std::cout<<"Eliminating "<<*x<<"\n";
@@ -321,7 +322,7 @@ public:
 			//    moments on that subset of variables are identical in all buckets.
 			//    !!! also, add extra variables if we can afford them?
 			//size_t beta=0;
-	  	if (_doMatch) {
+	  	if (_doMatch && ids.size()>1) {
 
 				// Possibly we should first extend the scopes of the buckets to be larger
 				if (_doFill) {
@@ -341,7 +342,10 @@ public:
 				vector<Factor> ftmp(ids.size());						// compute geometric mean
 		  	VarSet var = fin[ids[0]].vars();						// on all mutual variables
 				for (size_t i=1;i<ids.size();i++) var &= fin[ids[i]].vars();
-				for (size_t i=0;i<ids.size();i++) fmatch *= (ftmp[i] = marg(fin[ids[i]],var));
+				for (size_t i=0;i<ids.size();i++) {
+          ftmp[i] = marg(fin[ids[i]],var);
+          fmatch *= ftmp[i];
+        }
 				fmatch ^= (1.0/ids.size());									// and match each bucket to it
 				for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= fmatch/ftmp[i];
 				
@@ -488,7 +492,7 @@ public:
 	  	}
 
 			//// If matching, we usually create another clique in the graph
-			if (_doMatch) {
+			if (_doMatch && ids.size()>1) {
 				if (_doFill) {  // if filling, we increase the size of the buckets
 					VarSet all=fin[ids[0]]; for (size_t i=1;i<ids.size();i++) all|=fin[ids[i]];
 					for (size_t i=0;i<ids.size();i++) { 
@@ -509,9 +513,9 @@ public:
 				// matching step:
 				VarSet var = fin[ids[0]]; 
         for (size_t i=1;i<ids.size();i++) var &= fin[ids[i]];
-				MemUsed += var.nrStates() * (ids.size()+1);           // temporary storage
+				MemUsed += var.nrStates() * (ids.size()+2);           // temporary storage (+1 for possible temp var)
 				MemMax   = std::max(MemMax,MemUsed);
-				MemUsed -= var.nrStates() * (ids.size()+1);           // !!! don't keep cluster?
+				MemUsed -= var.nrStates() * (ids.size()+2);           // !!! don't keep cluster?
 			}
 
     	//// Eliminate individually within buckets /////////////////////////////////
