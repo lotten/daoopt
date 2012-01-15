@@ -422,7 +422,7 @@ public:
 		for (iter=0; iter<nIter; ++iter) {
       if (dObj < stopObj) break; else dObj=0.0;
 			for (size_t i=0;i<elist.size();++i) {
-        if (stopTime > 0 && stopTime <= (timeSystem()-startTime)) break;
+        if (stopTime > 0 && stopTime <= (timeSystem()-startTime)) { iter=nIter; break; }
      	 	findex a,b; a=elist[i].first; b=elist[i].second; 
 				if (a>b) continue;
 				VarSet both = _factors[a].vars() & _factors[b].vars();
