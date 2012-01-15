@@ -203,8 +203,10 @@ class Factor : public virtual mxObject {
 	  value&         IP(value& a, const value b) { return a+=b;}; 
   };
   struct binOpMinus  { 
-	  value  operator()(value  a, const value b) { return a-b; }; 
-	  value&         IP(value& a, const value b) { return a-=b;}; 
+	  //value  operator()(value  a, const value b) { return a-b; }; 
+	  //value&         IP(value& a, const value b) { return a-=b;}; 
+	  value  operator()(value  a, const value b) { return (b!=-infty()) ? a-b : a; }; 
+	  value&         IP(value& a, const value b) { return (b!=-infty()) ? a-=b: a; }; 
   };
   struct binOpTimes  { 
 	  value  operator()(value  a, const value b) { return a*b; }; 
