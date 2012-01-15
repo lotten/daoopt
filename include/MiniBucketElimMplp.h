@@ -40,9 +40,7 @@ public:
 
   // computes the heuristic for variable var given a (partial) assignment
   double getHeur(int var, const vector<val_t>& assignment) const {
-	  //double res=std::log( _mbe.heurToGo(_mbe.var(var),assignment) ); 
 	  double res=_mbe.logHeurToGo(_mbe.var(var),assignment); 
-		//std::cout<<"Requested "<<var<<"("<<(int)assignment[var]<<"): "<<res<<"\n";
 		return res;
 	}
 
@@ -74,7 +72,6 @@ public:
 protected:
 	Problem* _p;
 	Pseudotree* _pt;
-  //mex::mplp _mplp;
 	mex::mbe  _mbe;
 	size_t _memlimit;
 	ProgramOptions* _options;

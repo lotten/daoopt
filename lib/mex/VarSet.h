@@ -147,9 +147,10 @@ class VarSet : public virtual mxObject {
   VarSet& operator|= ( const VarSet& B ) { return (*this=*this|B); } // 
 
   //VarSet  operator- (const VarSet& B) const;                         // set-diff
-  VarSet& operator-= ( const VarSet& B ) { return (*this=*this-B); } // 
+  //VarSet& operator-= ( const VarSet& B ) { return (*this=*this-B); } // 
   VarSet  operator/ ( const VarSet& B ) const	{ return *this-B; }    // set-diff (also)
-  VarSet& operator/= ( const VarSet& B ) { return (*this=*this/B); } // 
+  //VarSet& operator/= ( const VarSet& B ) { return (*this=*this/B); } // 
+  VarSet& operator/= ( const VarSet& B ) { return (*this-=B); } // 
 
   //VarSet  operator& (const VarSet& B) const;                         // intersection
   VarSet& operator&= ( const VarSet& B ) { return (*this =(*this & B)); }	// 
@@ -220,6 +221,19 @@ class VarSet : public virtual mxObject {
 
 	VarSet operator- (const VarSet& B) const {
   	VarSet dest(size());
+  	size_t i,j,k;
+  	for (i=0,j=0,k=0;i<size()&&j<B.size();) {
+    	if      (v_[i]< B.v_[j])  { dest.dLocal[k]=d_[i]; dest.v_[k++]=v_[i++]; }
+    	else if (v_[i]==B.v_[j])  { i++; j++; }
+    	else                      { j++;      }
+  	}
+  	while (i<size()) { dest.dLocal[k]=d_[i]; dest.v_[k++]=v_[i++]; }
+  	dest.v_.resize(k); dest.dLocal.resize(k);
+  	return dest;
+	}
+
+	VarSet& operator-=(const VarSet& B) {
+  	VarSet& dest = *this;
   	size_t i,j,k;
   	for (i=0,j=0,k=0;i<size()&&j<B.size();) {
     	if      (v_[i]< B.v_[j])  { dest.dLocal[k]=d_[i]; dest.v_[k++]=v_[i++]; }

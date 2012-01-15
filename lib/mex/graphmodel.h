@@ -76,27 +76,29 @@ public:
 
 
 	/// Basic accessors	
-	size_t        nvar()                      const { return _vAdj.size(); }      // # of variables 
-	Var           var(vindex i)               const { return Var(i,_dims[i]); } 	// convert index to Variable object
+	size_t        nvar()             const { return _vAdj.size(); }               // # of variables 
+	Var           var(vindex i)      const { return Var(i,_dims[i]); }          	// convert index to Variable object
 	size_t        nFactors()         const { return _factors.size(); }   					// # of factors in the model
 	const Factor& factor(findex idx) const { return _factors[idx];   }    				// accessor for factor number idx
 	const vector<Factor>& factors()  const { return _factors;        }						//   and for factor container
 
-	/// Basic variable-based manipulations
+	/// Basic variable-based queries
 	const flist&  withVariable(const Var&  v) const { return _vAdj[_vindex(v)]; }	// factors depending on variable v
 	flist         withVarSet(const VarSet& vs) const;															//   or on all of a set of variables
   flist         intersects(const VarSet& vs) const;
   flist         contains(const Var& v)       const { return withVariable(v); }
   flist         contains(const VarSet& vs)   const { return withVarSet(vs); }
   flist         containedBy(const VarSet& vs) const;
-	VarSet        markovBlanket(const Var& v)  const;                              // variables that v may depend on
+	VarSet        markovBlanket(const Var& v)  const;                             // variables that v may depend on
   VarSet        markovBlanket(const VarSet& vs) const;
-	vector<VarSet> mrf() const;																										//   full variable-to-var adjacency
+	vector<VarSet> mrf() const;																										// full variable-to-var adjacency
 
 	/// Factor ("node") manipulation operations
 	findex addFactor(const Factor& F);                              // add a factor to our collection
 	void removeFactor(findex idx);                                  // remove a factor from the collection
 	void clearFactors() { _factors.clear(); _vAdj.clear(); _vAdj.resize(nvar()); Graph::clear(); }	// remove all factors
+  findex smallest(const flist& fl);
+  findex largest(const flist& fl);
 
 	// check graphical model properties
 	bool isbinary()   const	{ for (size_t i=0;i<_dims.size();++i) { if (_dims[i]>2) return false; } return true; }
@@ -107,18 +109,30 @@ public:
 	void   consolidate(VarOrder ord=VarOrder());										// merge factors into maximal sets
 
 	/// Ordering: variable (elimination) orders and factor orders
-	size_t inducedWidth(const VarOrder&) const;          	// find induced width (complexity) of elimination order
+	size_t inducedWidth(const VarOrder&) const;              	      // find induced width (complexity) of elim order
   std::pair<size_t,size_t> pseudoTreeSize(const VarOrder&) const;	// find induced width & height of elim order
-	vector<vindex> pseudoTree(const VarOrder&) const;     // find parents for given elimination order
+	vector<vindex> pseudoTree(const VarOrder&) const;               // find parents for given elim order
 
 	MEX_ENUM( OrderMethod , MinFill,WtMinFill,MinWidth,WtMinWidth,Random );
 
-	VarOrder order(OrderMethod) const;											// find variable elimination order
-	// orderings: return score; shortcut exit if worse than score !!!
+	VarOrder order(OrderMethod) const;                              // find variable elimination order
+  void improveOrder(OrderMethod, double& oldScore, VarOrder& oldOrder) const; // look for better order; shortcut exit
 
-	/// Helpful manipulation functions for other data
+	/// Helpful manipulation functions for other data    (!!! static?)
 	void insert(vector<flist>& adj, findex i, const VarSet& vs);	// add node i, with vars vs, from adj list
 	void erase(vector<flist>& adj, findex i, const VarSet& vs);		// erase node i, with vars vs, from adj list
+
+  /// simple optimum selection routines !!!
+  // maxSimple     : find smallest factor with each variable and select its optimum
+  vector<uint32_t> maxSimple();
+  // maxSequential : in order, find "maxmarginal" for variable & select optimum given those so far
+  vector<uint32_t> maxSequential( const VarOrder& ord);
+  // logP( config ): compute the log-probability of a particular (complete) configuration
+  double logP( const vector<uint32_t>& config ) {
+    double val = 0.0;
+    for (size_t f=0;f<nFactors();++f) val += std::log( factor(f)[ sub2ind(factor(f).vars(),config) ] );
+    return val;
+  }
 
 protected:
 	size_t  _vindex(const Var& v) const { return v.label();          } // look up variable's index

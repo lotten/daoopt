@@ -87,6 +87,7 @@ public:
 	bool		_doFill;
 	bool		_doJG;
   Factor::Distance distMethod;
+  graphModel::OrderMethod ordMethod;
   size_t   _iBound;
 	size_t   _sBound;
 	double   _logZ;
@@ -94,6 +95,7 @@ public:
 	VarOrder _order;
 	vector<flist> atElim;
 	vector<double> atElimNorm;
+  vector<vindex> _parents;
 
   /////////////////////////////////////////////////////////////////
   // Setting properties (directly or through property string)
@@ -103,13 +105,17 @@ public:
 	size_t getIBound() const   { return _iBound; }
 	void   setSBound(size_t s) { _sBound=s ? s : std::numeric_limits<size_t>::max(); }
 	size_t getSBound() const   { return _sBound; }
+
 	void            setOrder(const VarOrder& ord) { _order=ord; }
+	void            setOrder(graphModel::OrderMethod method) { _order.clear(); ordMethod=method; }
 	const VarOrder& getOrder()                    { return _order; }
 
+  const vector<vindex>& getPseudotree() { return _parents; }
+  void                  setPseudotree(const vector<vindex>& p) { _parents=p; }
 
   virtual void setProperties(std::string opt=std::string()) {
     if (opt.length()==0) {
-      setProperties("ElimOp=MaxUpper,iBound=4,sBound=inf,Order=MinWidth,Distance=LInf,DoMatch=1,DoMplp=0,DoFill=0,DoJG=0");
+      setProperties("ElimOp=MaxUpper,iBound=4,sBound=inf,Order=MinWidth,DoMatch=1,DoMplp=0,DoFill=0,DoJG=0");
       _byScope = true;
       return;
     }
@@ -120,7 +126,9 @@ public:
         case Property::ElimOp:  elimOp  = ElimOp(asgn[1].c_str()); break;
         case Property::iBound:  setIBound( atol(asgn[1].c_str()) ); break;
         case Property::sBound:  setSBound( atol(asgn[1].c_str()) ); break;
-        case Property::Order:   _order=_gmo.order(graphModel::OrderMethod(asgn[1].c_str())); break;
+        //case Property::Order:   _order=_gmo.order(graphModel::OrderMethod(asgn[1].c_str())); break;
+        case Property::Order:   _order.clear(); _parents.clear(); 
+                                ordMethod=graphModel::OrderMethod(asgn[1].c_str()); break;
 				case Property::Distance: distMethod = Factor::Distance(asgn[1].c_str()); _byScope=false; break;
         case Property::DoMplp:  _doMplp  = atol(asgn[1].c_str()); break;
         case Property::DoMatch: _doMatch = atol(asgn[1].c_str()); break;
@@ -225,6 +233,8 @@ public:
 
 	void init() {
     _logZ = 0.0;
+    if (_order.size()==0) _order=_gmo.order(ordMethod);
+    if (_parents.size()==0) _parents=_gmo.pseudoTree(_order);
 
 		if (_doMplp) {
 		  mplp _mplp(_gmo.factors()); 
@@ -242,8 +252,8 @@ public:
 		vector<Factor> fin(_gmo.factors());
 		vector<double> Norm(_gmo.nFactors(),0.0);
 		vector<flist>  vin;
-		vector<vindex> parents = _gmo.pseudoTree(_order);
-		//std::cout<<"PARENTS: "; for (size_t i=0;i<parents.size();++i) std::cout<<parents[i]<<" "; std::cout<<"\n";
+		//vector<vindex> parents = _gmo.pseudoTree(_order);
+		//std::cout<<"PARENTS: "; for (size_t i=0;i<_parents.size();++i) std::cout<<_parents[i]<<" "; std::cout<<"\n";
 
 		for (size_t i=0;i<_gmo.nvar();++i) vin.push_back(_gmo.withVariable(var(i)));
 		atElim.clear(); atElim.resize(_gmo.nvar()); 
@@ -386,8 +396,8 @@ public:
 
 				Orig[*i].clear(); New[*i].clear(); New[*i]|=alpha;  // now incoming nodes to *i is just alpha
 
-				size_t k=parents[*x];                        //  mark next bucket and intermediates with msg for heuristic calc
-				for (; k!=vindex(-1) && !fin[*i].vars().contains(var(k)); k=parents[k]) { atElim[k]|=alpha2; atElimNorm[k]+=Norm[*i]; }
+				size_t k=_parents[*x];                        //  mark next bucket and intermediates with msg for heuristic calc
+				for (; k!=vindex(-1) && !fin[*i].vars().contains(var(k)); k=_parents[k]) { atElim[k]|=alpha2; atElimNorm[k]+=Norm[*i]; }
 				if (k!=vindex(-1)) { atElim[k] |= alpha2; atElimNorm[k]+=Norm[*i]; }  // need check?
 
 				insert(vin,*i,fin[*i].vars());              // recompute and update adjacency
@@ -435,6 +445,7 @@ public:
 	// Simulate for memory size info.  Cannot use dynamic decision-making. //////////////////////////////////////////
 	// Also return largest function table size???  Might re-enable dynamic decisions...
 	size_t simulateMemory( vector<VarSet>* cliques = NULL ) {
+    if (_order.size()==0) _order=_gmo.order(ordMethod);
 
 		vector<VarSet> fin; for (size_t f=0;f<_gmo.nFactors();++f) fin.push_back(_gmo.factor(f).vars());
 		vector<flist>  vin; for (size_t i=0;i<_gmo.nvar();++i)     vin.push_back(_gmo.withVariable(var(i)));

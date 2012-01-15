@@ -135,5 +135,14 @@ MiniBucketElimMplp::MiniBucketElimMplp(Problem* p, Pseudotree* pt, ProgramOption
   if (_options->match > 0)  { _mbe.setProperties("DoMatch=1"); }
   mex::VarOrder ord(pt->getElimOrder().begin(),--pt->getElimOrder().end());   // -- to remove dummy root
   _mbe.setOrder(ord); _mbe.setIBound(ib);
+
+  mex::VarOrder parents(_mbe.gmOrig().nvar());
+  for (size_t i=0;i<_mbe.gmOrig().nvar();++i) {
+    int par = _pt->getNode(i)->getParent()->getVar();
+    parents[i]= (par==_pt->getRoot()->getVar()) ? -1 : par;
+  }
+  _mbe.setPseudotree(parents);
+  //for (size_t i=0;i<_mbe.gmOrig().nvar();++i) std::cout<<parents[i]<<" "; std::cout<<"\n";
+
 }
 
