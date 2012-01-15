@@ -65,20 +65,16 @@ bool MiniBucketElimMplp::doMPLP() {
   bool changedFunctions = false;
 
   if (_options!=NULL && (_options->mplp > 0 || _options->mplps > 0)) {
-    //mex::mplp _mplp( copyFactors() );
-    mex::mplp _mplp( _mbe.gmOrig().factors() );
+    mex::mplp _mplp( _mbe.gmOrig().factors() );  // copyFactors()
     _mplp.setProperties("Schedule=Fixed,Update=Var,StopIter=100,StopObj=-1,StopMsg=-1,StopTime=-1");
     _mplp.init();
     char opt[50];
     if (_options->mplp > 0)  { sprintf(opt,"StopIter=%d",_options->mplp); _mplp.setProperties(opt); }
     if (_options->mplps > 0) { sprintf(opt,"StopTime=%f",_options->mplps); _mplp.setProperties(opt); }
+
     _mplp.run();
     rewriteFactors( _mplp.beliefs() );
-
-    mex::VarOrder ord=_mbe.getOrder(); int iBound = _mbe.getIBound();
-    _mbe = mex::mbe( _mplp.beliefs() );                         // take tightened factors back
-    //_mbe = mex::mbe( copyFactors() );                         // take tightened factors back
-    _mbe.setOrder(ord); _mbe.setIBound(iBound);
+    _mbe.setModel( _mplp.beliefs() );
 
     changedFunctions = true;
   }
@@ -91,14 +87,18 @@ bool MiniBucketElimMplp::doJGLP() {
   bool changedFunctions = false;
 
   if (_options !=NULL && (_options->jglp > 0 || _options->jglps > 0)) {
-    //mex::mbe _jglp(copyFactors()); _jglp.setOrder(_mbe.getOrder()); _jglp.setIBound(_mbe.getIBound());
-    mex::mbe _jglp(_mbe.gmOrig().factors()); _jglp.setOrder(_mbe.getOrder()); _jglp.setIBound(_mbe.getIBound());
+    mex::mbe _jglp(_mbe.gmOrig().factors());  // copyFactors()
+    _jglp.setOrder(_mbe.getOrder()); _jglp.setPseudotree(_mbe.getPseudotree()); _jglp.setIBound(_mbe.getIBound());
     _jglp.setProperties("DoMatch=1,DoFill=0,DoJG=1,DoMplp=0");
+
     _jglp.init();
+
     int iter; if (_options->jglp>0) iter=_options->jglp; else iter=100;
     _jglp.tighten(iter, _options->jglps);
+
     rewriteFactors( _jglp.factors() );
-    _mbe = mex::mbe(_jglp.factors()); _mbe.setOrder(_jglp.getOrder()); _mbe.setIBound(_jglp.getIBound());
+    _mbe.setModel( _jglp.factors() );
+
     changedFunctions = true;
   }
 
@@ -133,16 +133,16 @@ MiniBucketElimMplp::MiniBucketElimMplp(Problem* p, Pseudotree* pt, ProgramOption
   _mbe = mex::mbe( copyFactors() );
   _mbe.setProperties("DoMatch=0,DoFill=0,DoMplp=0,DoJG=0");  // MPLP / JGLP done separately if needed
   if (_options->match > 0)  { _mbe.setProperties("DoMatch=1"); }
-  mex::VarOrder ord(pt->getElimOrder().begin(),--pt->getElimOrder().end());   // -- to remove dummy root
-  _mbe.setOrder(ord); _mbe.setIBound(ib);
 
-  mex::VarOrder parents(_mbe.gmOrig().nvar());
+  mex::VarOrder ord(pt->getElimOrder().begin(),--pt->getElimOrder().end());   // -- to remove dummy root
+  _mbe.setOrder(ord); _mbe.setIBound(ib);                   // copy elimination order information
+
+  mex::VarOrder parents(_mbe.gmOrig().nvar());              // copy pseudotree information
   for (size_t i=0;i<_mbe.gmOrig().nvar();++i) {
     int par = _pt->getNode(i)->getParent()->getVar();
     parents[i]= (par==_pt->getRoot()->getVar()) ? -1 : par;
   }
   _mbe.setPseudotree(parents);
-  //for (size_t i=0;i<_mbe.gmOrig().nvar();++i) std::cout<<parents[i]<<" "; std::cout<<"\n";
 
 }
 

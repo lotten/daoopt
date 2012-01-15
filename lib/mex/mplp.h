@@ -101,8 +101,9 @@ public:
 		size_t stopIter = _stopIter * nFactors();											// easier to count updates than "iterations"
     double startTime = timeSystem();
 
-		double dObj=_stopObj+1.0, dMsg=_stopMsg+1.0;									// initialize termination values
-		size_t iter=0, print=1;
+		double dObj= infty(), dMsg=infty();									// initialize termination values
+    double Obj = infty();
+		size_t iter=0, print=1, iobj=0;
 		Var nextVar; findex nextFactor; mex::vector<Edge> nextTree;		// temporary storage for updates
 
 		for (; dMsg>=_stopMsg && iter<stopIter && dObj>=_stopObj; ) {
@@ -133,14 +134,17 @@ public:
 				break;
 			default: break;
 		}
+    size_t diter=1;
 		switch(_UpdateMethod) {
-			case (Update::Var):    updateVar(nextVar);       iter++; break;
-			case (Update::Factor): updateFactor(nextFactor); iter++; break;
-			case (Update::Tree):   updateTree(nextTree);     iter+=nextTree.size() ? nextTree.size() : 1; break;
+			case (Update::Var):    updateVarLog(nextVar);       diter=1; break;
+			case (Update::Factor): updateFactor(nextFactor); diter=1; break;
+			case (Update::Tree):   updateTree(nextTree);     diter=nextTree.size() ? nextTree.size() : 1; break;
 			default: break;
 		}	
+    iter += diter;
 
-		if (iter>print*nFactors()) { print++; std::cout<<"UB: "<<_UB<<"\n"; }
+    if ((iobj+=diter)>nFactors()) { iobj-=nFactors(); dObj = Obj-_UB; Obj=_UB; }
+		if (iter>print*nFactors()) { print++; std::cout<<"UB: "<<_UB<<"; d="<<dObj<<"\n"; }
 
 		}
     printf("MPLP (%d iter, %0.1f sec): %f\n",(int)(iter/nFactors()),(timeSystem()-startTime),_UB);
@@ -164,7 +168,7 @@ protected:	// Contained objects
 		const mex::set<EdgeID>& nbrs = neighbors(vf);		//   its neighbors
 		Factor fMatch = belief(vf); 										//   
 		_UB -= std::log(fMatch.max());									// remove their bound contributions
-		vector<Factor> fTmp; fTmp.resize(nbrs.size());	//   and compute their matched
+		vector<Factor> fTmp(nbrs.size());	              //   and compute their matched
 		int ii=0;																				//   belief about v
 		for (set<EdgeID>::const_iterator i=nbrs.begin();i!=nbrs.end();++i,++ii) {
 			fTmp[ii] = belief(i->second).maxmarginal(v);
@@ -176,6 +180,26 @@ protected:	// Contained objects
 		ii=0; belief(vf)=fMatch;												// force var and neighbors to agree
 		for (set<EdgeID>::const_iterator i=nbrs.begin();i!=nbrs.end();++i,++ii) {
 			belief(i->second) *= fMatch/fTmp[ii];
+		}
+	}
+
+	void updateVarLog(const Var& v) {
+		findex vf = localFactor(v);											// collect factors: var node + 
+		const mex::set<EdgeID>& nbrs = neighbors(vf);		//   its neighbors
+		Factor fMatch = log(belief(vf)); 										//   
+		_UB -= fMatch.max();          									// remove their bound contributions
+		vector<Factor> fTmp(nbrs.size());	              //   and compute their matched
+		int ii=0;																				//   belief about v
+		for (set<EdgeID>::const_iterator i=nbrs.begin();i!=nbrs.end();++i,++ii) {
+			fTmp[ii] = belief(i->second).maxmarginal(v).log();
+			fMatch += fTmp[ii];
+			_UB -= fTmp[ii].max();
+		}
+		_UB += fMatch.max();          									// re-add total bound contribution
+		fMatch /= (fTmp.size()+1);	      							//   and compute matched components
+		ii=0; belief(vf)=exp(fMatch);										// force var and neighbors to agree
+		for (set<EdgeID>::const_iterator i=nbrs.begin();i!=nbrs.end();++i,++ii) {
+			belief(i->second) *= (fMatch-fTmp[ii]).exp();
 		}
 	}
 
@@ -215,7 +239,8 @@ protected:	// Contained objects
 		vector<Factor> msgUp; msgUp.resize( nFactors() );			// make storage for upward messages
 		vector<Factor> msgProd( _beliefs );										//  and their products at each node
 		// only need to copy beliefs for nodes in tree (!!!)
-		
+	
+    // !!! fix for numerical stability	
 		for (int e=rootedTree.size()-1;e>=0;--e) {
 			findex p=rootedTree[e].first,i=rootedTree[e].second; 		//i=findex of node, p=findex of parent
 			N[p]+=N[i];																					// count nodes in rooted subtree
@@ -245,8 +270,11 @@ protected:	// Contained objects
 		for (size_t e=0;e!=rootedTree.size();++e) {							// now all the bound has been placed in the
 			findex i = rootedTree[e].second;												//   variable nodes; run through them and
 			if (!isVarNode(i)) continue;												//   add up the new upper bound contribution
+      //double mx = belief(i).max(); belief(i)/=mx; _UB+=std::log(mx);
 			_UB += std::log(belief(i).max());
-		} _UB += std::log(belief(rootedTree[0].first).max());
+		} 
+    _UB += std::log(belief(rootedTree[0].first).max());
+    //double mx = belief(rootedTree[0].first).max(); belief(rootedTree[0].first)/=mx; _UB+=std::log(mx);
 	}
 
 };

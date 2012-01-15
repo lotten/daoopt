@@ -113,6 +113,9 @@ public:
   const vector<vindex>& getPseudotree() { return _parents; }
   void                  setPseudotree(const vector<vindex>& p) { _parents=p; }
 
+  void setModel( const graphModel& gm ) { _gmo = gm; }
+  void setModel( const vector<Factor>& fs ) { _gmo = graphModel(fs); }
+
   virtual void setProperties(std::string opt=std::string()) {
     if (opt.length()==0) {
       setProperties("ElimOp=MaxUpper,iBound=4,sBound=inf,Order=MinWidth,DoMatch=1,DoMplp=0,DoFill=0,DoJG=0");
@@ -233,8 +236,17 @@ public:
 
 	void init() {
     _logZ = 0.0;
-    if (_order.size()==0) _order=_gmo.order(ordMethod);
-    if (_parents.size()==0) _parents=_gmo.pseudoTree(_order);
+    if (_order.size()==0) {               // if we need to construct an elimination ordering
+      double tic=timeSystem(); 
+      _order=_gmo.order(ordMethod); 
+      _parents.clear();                   // (new elim order => need new pseudotree) !!! should do together
+      std::cout<<"Order in "<<timeSystem()-tic<<" sec\n";
+    }
+    if (_parents.size()==0) {             // if we need to construct a pseudo-tree
+      double tic=timeSystem(); 
+      _parents=_gmo.pseudoTree(_order);  
+      std::cout<<"Pseudo in "<<timeSystem()-tic<<" sec\n"; 
+    }
 
 		if (_doMplp) {
 		  mplp _mplp(_gmo.factors()); 
@@ -415,7 +427,7 @@ public:
 		//std::cout<<"Bound "<<_logZ<<"\n";
 	}
 
-  void tighten(int nIter, double stopTime=-1, double stopObj=-1) {
+  void tighten(size_t nIter, double stopTime=-1, double stopObj=-1) {
     const mex::vector<EdgeID>& elist = edges();
     double startTime=timeSystem(), dObj=infty();
     size_t iter;
@@ -445,7 +457,8 @@ public:
 	// Simulate for memory size info.  Cannot use dynamic decision-making. //////////////////////////////////////////
 	// Also return largest function table size???  Might re-enable dynamic decisions...
 	size_t simulateMemory( vector<VarSet>* cliques = NULL ) {
-    if (_order.size()==0) _order=_gmo.order(ordMethod);
+    //if (_order.size()==0) _order=_gmo.order(ordMethod);
+    if (_order.size()==0) { double tic=timeSystem(); _order=_gmo.order(ordMethod); std::cout<<"Order in "<<timeSystem()-tic<<" sec\n";}
 
 		vector<VarSet> fin; for (size_t f=0;f<_gmo.nFactors();++f) fin.push_back(_gmo.factor(f).vars());
 		vector<flist>  vin; for (size_t i=0;i<_gmo.nvar();++i)     vin.push_back(_gmo.withVariable(var(i)));
