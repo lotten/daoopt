@@ -174,13 +174,13 @@ public:
 	// !!!! for Lars : lookup remaining cost given context
 	template <class MapType>
 	double logHeurToGo(Var v, MapType vals) const {
-		double s=1.0;
+		double s=0.0;
 		for (size_t i=0;i<atElim[_vindex(v)].size();++i) {
 			findex ii=atElim[_vindex(v)][i];
 			const VarSet& vs=factor(ii).vars();
-			s *= factor(ii)[sub2ind(vs,vals)];
+			s += std::log( factor(ii)[sub2ind(vs,vals)] );
 		}
-		return std::log(s)+atElimNorm[_vindex(v)];
+		return s+atElimNorm[_vindex(v)];
 	}
 
 	// Scoring function for bucket aggregation
@@ -263,9 +263,8 @@ public:
 
 		vector<Factor> fin(_gmo.factors());
 		vector<double> Norm(_gmo.nFactors(),0.0);
+    for (size_t i=0;i<_gmo.nFactors();++i) { double mx=fin[i].max(); fin[i]/=mx; Norm[i]=std::log(mx); _logZ+=Norm[i];}
 		vector<flist>  vin;
-		//vector<vindex> parents = _gmo.pseudoTree(_order);
-		//std::cout<<"PARENTS: "; for (size_t i=0;i<_parents.size();++i) std::cout<<_parents[i]<<" "; std::cout<<"\n";
 
 		for (size_t i=0;i<_gmo.nvar();++i) vin.push_back(_gmo.withVariable(var(i)));
 		atElim.clear(); atElim.resize(_gmo.nvar()); 
@@ -425,10 +424,10 @@ public:
 		}
 		/// end for: variable elim order /////////////////////////////////////////////////////////
 
-		Factor F;
-		for (size_t i=0;i<fin.size();++i) F*=fin[i];
+		Factor F(0.0);
+		for (size_t i=0;i<fin.size();++i) F+=log(fin[i]);
 		assert( F.nvar() == 0 );
-		_logZ += std::log(F.max());
+		_logZ += F.max();
 
 		//std::cout<<"Bound "<<_logZ<<"\n";
 	}
