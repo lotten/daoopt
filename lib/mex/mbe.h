@@ -434,7 +434,7 @@ public:
 
   void tighten(size_t nIter, double stopTime=-1, double stopObj=-1) {
     const mex::vector<EdgeID>& elist = edges();
-    double startTime=timeSystem(), dObj=infty();
+    double startTime=timeSystem(), dObj=stopObj+1;
     size_t iter;
 		for (iter=0; iter<nIter; ++iter) {
       if (dObj < stopObj) break; else dObj=0.0;
