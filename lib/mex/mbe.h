@@ -87,6 +87,7 @@ public:
 	bool		_doFill;
 	bool		_doJG;
   Factor::Distance distMethod;
+  graphModel::OrderMethod ordMethod;
   size_t   _iBound;
 	size_t   _sBound;
 	double   _logZ;
@@ -94,6 +95,7 @@ public:
 	VarOrder _order;
 	vector<flist> atElim;
 	vector<double> atElimNorm;
+  vector<vindex> _parents;
 
   /////////////////////////////////////////////////////////////////
   // Setting properties (directly or through property string)
@@ -103,13 +105,20 @@ public:
 	size_t getIBound() const   { return _iBound; }
 	void   setSBound(size_t s) { _sBound=s ? s : std::numeric_limits<size_t>::max(); }
 	size_t getSBound() const   { return _sBound; }
+
 	void            setOrder(const VarOrder& ord) { _order=ord; }
+	void            setOrder(graphModel::OrderMethod method) { _order.clear(); ordMethod=method; }
 	const VarOrder& getOrder()                    { return _order; }
 
+  const vector<vindex>& getPseudotree() { return _parents; }
+  void                  setPseudotree(const vector<vindex>& p) { _parents=p; }
+
+  void setModel( const graphModel& gm ) { _gmo = gm; }
+  void setModel( const vector<Factor>& fs ) { _gmo = graphModel(fs); }
 
   virtual void setProperties(std::string opt=std::string()) {
     if (opt.length()==0) {
-      setProperties("ElimOp=MaxUpper,iBound=4,sBound=inf,Order=MinWidth,Distance=LInf,DoMatch=1,DoMplp=0,DoFill=0,DoJG=0");
+      setProperties("ElimOp=MaxUpper,iBound=4,sBound=inf,Order=MinWidth,DoMatch=1,DoMplp=0,DoFill=0,DoJG=0");
       _byScope = true;
       return;
     }
@@ -120,7 +129,9 @@ public:
         case Property::ElimOp:  elimOp  = ElimOp(asgn[1].c_str()); break;
         case Property::iBound:  setIBound( atol(asgn[1].c_str()) ); break;
         case Property::sBound:  setSBound( atol(asgn[1].c_str()) ); break;
-        case Property::Order:   _order=_gmo.order(graphModel::OrderMethod(asgn[1].c_str())); break;
+        //case Property::Order:   _order=_gmo.order(graphModel::OrderMethod(asgn[1].c_str())); break;
+        case Property::Order:   _order.clear(); _parents.clear(); 
+                                ordMethod=graphModel::OrderMethod(asgn[1].c_str()); break;
 				case Property::Distance: distMethod = Factor::Distance(asgn[1].c_str()); _byScope=false; break;
         case Property::DoMplp:  _doMplp  = atol(asgn[1].c_str()); break;
         case Property::DoMatch: _doMatch = atol(asgn[1].c_str()); break;
@@ -163,13 +174,13 @@ public:
 	// !!!! for Lars : lookup remaining cost given context
 	template <class MapType>
 	double logHeurToGo(Var v, MapType vals) const {
-		double s=1.0;
+		double s=0.0;
 		for (size_t i=0;i<atElim[_vindex(v)].size();++i) {
 			findex ii=atElim[_vindex(v)][i];
 			const VarSet& vs=factor(ii).vars();
-			s *= factor(ii)[sub2ind(vs,vals)];
+			s += std::log( factor(ii)[sub2ind(vs,vals)] );
 		}
-		return std::log(s)+atElimNorm[_vindex(v)];
+		return s+atElimNorm[_vindex(v)];
 	}
 
 	// Scoring function for bucket aggregation
@@ -225,6 +236,17 @@ public:
 
 	void init() {
     _logZ = 0.0;
+    if (_order.size()==0) {               // if we need to construct an elimination ordering
+      double tic=timeSystem(); 
+      _order=_gmo.order(ordMethod); 
+      _parents.clear();                   // (new elim order => need new pseudotree) !!! should do together
+      std::cout<<"Order in "<<timeSystem()-tic<<" sec\n";
+    }
+    if (_parents.size()==0) {             // if we need to construct a pseudo-tree
+      double tic=timeSystem(); 
+      _parents=_gmo.pseudoTree(_order);  
+      std::cout<<"Pseudo in "<<timeSystem()-tic<<" sec\n"; 
+    }
 
 		if (_doMplp) {
 		  mplp _mplp(_gmo.factors()); 
@@ -241,9 +263,8 @@ public:
 
 		vector<Factor> fin(_gmo.factors());
 		vector<double> Norm(_gmo.nFactors(),0.0);
+    for (size_t i=0;i<_gmo.nFactors();++i) { double mx=fin[i].max(); fin[i]/=mx; Norm[i]=std::log(mx); _logZ+=Norm[i];}
 		vector<flist>  vin;
-		vector<vindex> parents = _gmo.pseudoTree(_order);
-		//std::cout<<"PARENTS: "; for (size_t i=0;i<parents.size();++i) std::cout<<parents[i]<<" "; std::cout<<"\n";
 
 		for (size_t i=0;i<_gmo.nvar();++i) vin.push_back(_gmo.withVariable(var(i)));
 		atElim.clear(); atElim.resize(_gmo.nvar()); 
@@ -295,6 +316,7 @@ public:
 					//std::cout<<"Joining "<<ii<<","<<jj<<"; size "<<(fin[ii].vars()+fin[jj].vars()).nrStates()<<"\n";
 			  	fin[jj] *= fin[ii]; 														// combine into j
 					Norm[jj] += Norm[ii];
+          double mx = fin[jj].max(); fin[jj]/=mx; mx=std::log(mx); _logZ+=mx; Norm[jj]+=mx;
 					erase(vin,ii,fin[ii].vars()); fin[ii]=Factor();	//   & remove i
 	
 					Orig[jj] |= Orig[ii]; Orig[ii].clear();  		// keep track of list of original factors in this cluster
@@ -338,16 +360,21 @@ public:
 					}
 				}
 
-				Factor fmatch;
 				vector<Factor> ftmp(ids.size());						// compute geometric mean
 		  	VarSet var = fin[ids[0]].vars();						// on all mutual variables
 				for (size_t i=1;i<ids.size();i++) var &= fin[ids[i]].vars();
+				//Factor fmatch(var,1.0);
+				Factor fmatch(var,0.0);
 				for (size_t i=0;i<ids.size();i++) {
-          ftmp[i] = marg(fin[ids[i]],var);
-          fmatch *= ftmp[i];
+          //ftmp[i] = marg(fin[ids[i]],var);
+          //fmatch *= ftmp[i];
+          ftmp[i] = marg(fin[ids[i]],var).log();
+          fmatch += ftmp[i];
         }
-				fmatch ^= (1.0/ids.size());									// and match each bucket to it
-				for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= fmatch/ftmp[i];
+				//fmatch ^= (1.0/ids.size());									// and match each bucket to it
+				fmatch *= (1.0/ids.size());									// and match each bucket to it
+				//for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= fmatch/ftmp[i];
+				for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= (fmatch-ftmp[i]).exp();
 				
 				//beta = addFactor( Factor(fmatch.vars(),1.0) );	// add node to new cluster graph
 				//atElim[*x] |= beta;
@@ -386,8 +413,8 @@ public:
 
 				Orig[*i].clear(); New[*i].clear(); New[*i]|=alpha;  // now incoming nodes to *i is just alpha
 
-				size_t k=parents[*x];                        //  mark next bucket and intermediates with msg for heuristic calc
-				for (; k!=vindex(-1) && !fin[*i].vars().contains(var(k)); k=parents[k]) { atElim[k]|=alpha2; atElimNorm[k]+=Norm[*i]; }
+				size_t k=_parents[*x];                        //  mark next bucket and intermediates with msg for heuristic calc
+				for (; k!=vindex(-1) && !fin[*i].vars().contains(var(k)); k=_parents[k]) { atElim[k]|=alpha2; atElimNorm[k]+=Norm[*i]; }
 				if (k!=vindex(-1)) { atElim[k] |= alpha2; atElimNorm[k]+=Norm[*i]; }  // need check?
 
 				insert(vin,*i,fin[*i].vars());              // recompute and update adjacency
@@ -397,22 +424,22 @@ public:
 		}
 		/// end for: variable elim order /////////////////////////////////////////////////////////
 
-		Factor F;
-		for (size_t i=0;i<fin.size();++i) F*=fin[i];
+		Factor F(0.0);
+		for (size_t i=0;i<fin.size();++i) F+=log(fin[i]);
 		assert( F.nvar() == 0 );
-		_logZ += std::log(F.max());
+		_logZ += F.max();
 
 		//std::cout<<"Bound "<<_logZ<<"\n";
 	}
 
-  void tighten(int nIter, double stopTime=-1, double stopObj=-1) {
+  void tighten(size_t nIter, double stopTime=-1, double stopObj=-1) {
     const mex::vector<EdgeID>& elist = edges();
     double startTime=timeSystem(), dObj=infty();
     size_t iter;
 		for (iter=0; iter<nIter; ++iter) {
-      if (dObj < stopObj) break; else dObj=0.0;
+      if (std::abs(dObj) < stopObj) break; else dObj=0.0;
 			for (size_t i=0;i<elist.size();++i) {
-        if (stopTime > 0 && stopTime <= (timeSystem()-startTime)) break;
+        if (stopTime > 0 && stopTime <= (timeSystem()-startTime)) { iter=nIter; break; }
      	 	findex a,b; a=elist[i].first; b=elist[i].second; 
 				if (a>b) continue;
 				VarSet both = _factors[a].vars() & _factors[b].vars();
@@ -422,7 +449,7 @@ public:
 			}
 			for (size_t i=0;i<nFactors();++i) {
       	double maxf = _factors[i].max(); _factors[i]/=maxf; 
-        double lnmaxf=std::log(maxf); _logZ+=lnmaxf; dObj+=lnmaxf;
+        double lnmaxf=std::log(maxf); _logZ+=lnmaxf; dObj-=lnmaxf;
 			}
 		std::cout<<"Tightening "<<_logZ<<"; d="<<dObj<<"\n";
 		}
@@ -435,6 +462,8 @@ public:
 	// Simulate for memory size info.  Cannot use dynamic decision-making. //////////////////////////////////////////
 	// Also return largest function table size???  Might re-enable dynamic decisions...
 	size_t simulateMemory( vector<VarSet>* cliques = NULL ) {
+    //if (_order.size()==0) _order=_gmo.order(ordMethod);
+    if (_order.size()==0) { double tic=timeSystem(); _order=_gmo.order(ordMethod); std::cout<<"Order in "<<timeSystem()-tic<<" sec\n";}
 
 		vector<VarSet> fin; for (size_t f=0;f<_gmo.nFactors();++f) fin.push_back(_gmo.factor(f).vars());
 		vector<flist>  vin; for (size_t i=0;i<_gmo.nvar();++i)     vin.push_back(_gmo.withVariable(var(i)));
