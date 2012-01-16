@@ -83,6 +83,11 @@ void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
   }
 }
 
+void Pseudotree::addDomainInfo(const vector<val_t>& domains) {
+  assert(domains.size() == m_nodes.size());
+  for(size_t i = 0; i < domains.size(); ++i)
+    m_nodes.at(i)->setDomain(domains.at(i));
+}
 
 /* computes an elimination order into 'elim' and returns its tree width */
 int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
@@ -377,8 +382,6 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 #endif
 
   return;
-//  cout << "Number of disconnected sub pseudo trees: " << roots.size() << endl;
-
 }
 
 
@@ -621,6 +624,75 @@ const set<int>& PseudotreeNode::updateSubprobVars(int numVars) {
   // return a const reference
   return m_subproblemVars;
 }
+
+#ifdef PARALLEL_STATIC
+
+void Pseudotree::computeSubprobStats() {
+  vector<int> bogus;
+  m_root->computeStatsCluster(bogus);
+  m_root->computeStatsDomain(bogus);
+  m_root->computeStatsLeafDepth(bogus);
+  BOOST_FOREACH( PseudotreeNode* pt, m_nodes ) {
+    pt->computeStatsClusterCond();
+  }
+}
+
+void PseudotreeNode::computeStatsCluster(vector<int>& result) {
+  result.clear();
+  vector<int> chi;
+  BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+    pt->computeStatsCluster(chi);
+    copy(chi.begin(), chi.end(), back_inserter(result));
+  }
+  result.push_back(m_context.size());
+  m_subprobStats->setClusterStats(result);
+}
+
+void PseudotreeNode::computeStatsLeafDepth(vector<int>& result) {
+  result.clear();
+  if (m_children.empty()) {
+    result.push_back(1);
+  } else {
+    vector<int> chi;
+    BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+      pt->computeStatsLeafDepth(chi);
+      BOOST_FOREACH( int d, chi ) {
+        result.push_back(d+1);
+      }
+    }
+  }
+  m_subprobStats->setDepthStats(result);  // also sets leaf count
+}
+
+void PseudotreeNode::computeStatsDomain(vector<int>& result) {
+  result.clear();
+  vector<int> chi;  // to collect child domain stats
+  BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+    pt->computeStatsDomain(chi);
+    copy(chi.begin(), chi.end(), back_inserter(result));
+  }
+  result.push_back(m_domain);
+  m_subprobStats->setDomainStats(result);  // also set var count
+}
+
+void PseudotreeNode::computeStatsClusterCond() {
+  vector<int> result;
+  this->computeStatsClusterCondSub(m_context, result);
+  m_subprobStats->setClusterCondStats(result);
+}
+
+void PseudotreeNode::computeStatsClusterCondSub(
+    const set<int>& cond, vector<int>& result) const {
+  set<int> context_cond;
+  set_difference(m_context.begin(), m_context.end(), cond.begin(), cond.end(),
+                 inserter(context_cond, context_cond.begin()));
+  result.push_back(context_cond.size());
+  BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+    pt->computeStatsClusterCondSub(cond, result);
+  }
+}
+
+#endif
 
 
 #if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC

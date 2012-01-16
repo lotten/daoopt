@@ -209,6 +209,11 @@ bool Main::findOrLoadOrdering() {
   // Pseudo tree has dummy node after build(), add to problem
   m_problem->addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   m_pseudotree->addFunctionInfo(m_problem->getFunctions());
+  m_pseudotree->addDomainInfo(m_problem->getDomains());
+
+#if defined PARALLEL_STATIC
+  m_pseudotree->computeSubprobStats();
+#endif
 #if defined PARALLEL_DYNAMIC //or defined PARALLEL_STATIC
   int cutoff = m_pseudotree->computeComplexities(m_options->threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
