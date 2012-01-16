@@ -360,16 +360,21 @@ public:
 					}
 				}
 
-				Factor fmatch;
 				vector<Factor> ftmp(ids.size());						// compute geometric mean
 		  	VarSet var = fin[ids[0]].vars();						// on all mutual variables
 				for (size_t i=1;i<ids.size();i++) var &= fin[ids[i]].vars();
+				//Factor fmatch(var,1.0);
+				Factor fmatch(var,0.0);
 				for (size_t i=0;i<ids.size();i++) {
-          ftmp[i] = marg(fin[ids[i]],var);
-          fmatch *= ftmp[i];
+          //ftmp[i] = marg(fin[ids[i]],var);
+          //fmatch *= ftmp[i];
+          ftmp[i] = marg(fin[ids[i]],var).log();
+          fmatch += ftmp[i];
         }
-				fmatch ^= (1.0/ids.size());									// and match each bucket to it
-				for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= fmatch/ftmp[i];
+				//fmatch ^= (1.0/ids.size());									// and match each bucket to it
+				fmatch *= (1.0/ids.size());									// and match each bucket to it
+				//for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= fmatch/ftmp[i];
+				for (size_t i=0;i<ids.size();i++) fin[ids[i]] *= (fmatch-ftmp[i]).exp();
 				
 				//beta = addFactor( Factor(fmatch.vars(),1.0) );	// add node to new cluster graph
 				//atElim[*x] |= beta;
