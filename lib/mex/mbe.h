@@ -317,6 +317,7 @@ public:
 					//std::cout<<"Joining "<<ii<<","<<jj<<"; size "<<(fin[ii].vars()+fin[jj].vars()).nrStates()<<"\n";
 			  	fin[jj] *= fin[ii]; 														// combine into j
 					Norm[jj] += Norm[ii];
+          double mx = fin[jj].max(); fin[jj]/=mx; mx=std::log(mx); _logZ+=mx; Norm[jj]+=mx;
 					erase(vin,ii,fin[ii].vars()); fin[ii]=Factor();	//   & remove i
 	
 					Orig[jj] |= Orig[ii]; Orig[ii].clear();  		// keep track of list of original factors in this cluster
@@ -434,10 +435,10 @@ public:
 
   void tighten(size_t nIter, double stopTime=-1, double stopObj=-1) {
     const mex::vector<EdgeID>& elist = edges();
-    double startTime=timeSystem(), dObj=stopObj+1;
+    double startTime=timeSystem(), dObj=infty();
     size_t iter;
 		for (iter=0; iter<nIter; ++iter) {
-      if (dObj < stopObj) break; else dObj=0.0;
+      if (std::abs(dObj) < stopObj) break; else dObj=0.0;
 			for (size_t i=0;i<elist.size();++i) {
         if (stopTime > 0 && stopTime <= (timeSystem()-startTime)) { iter=nIter; break; }
      	 	findex a,b; a=elist[i].first; b=elist[i].second; 
@@ -449,7 +450,7 @@ public:
 			}
 			for (size_t i=0;i<nFactors();++i) {
       	double maxf = _factors[i].max(); _factors[i]/=maxf; 
-        double lnmaxf=std::log(maxf); _logZ+=lnmaxf; dObj+=lnmaxf;
+        double lnmaxf=std::log(maxf); _logZ+=lnmaxf; dObj-=lnmaxf;
 			}
 		std::cout<<"Tightening "<<_logZ<<"; d="<<dObj<<"\n";
 		}
