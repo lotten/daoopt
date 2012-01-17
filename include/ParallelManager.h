@@ -105,6 +105,9 @@ protected:
 
   /* creates the encoding of subproblems for the condor submission */
   string encodeJobs(const vector<SearchNode*>&) const;
+  /* writes subproblem statistics to CSV file, solution node counts optional */
+  void writeStatsCSV(const vector<SearchNode*>& subprobs,
+                     const vector<pair<count_t, count_t> >* nodecounts = NULL) const;
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
 

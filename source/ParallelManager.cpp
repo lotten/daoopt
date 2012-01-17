@@ -465,23 +465,12 @@ bool ParallelManager::waitForGrid() const {
 
 
 bool ParallelManager::readExtResults() {
-
   myprint("Parsing external results.\n");
 
+  vector<pair<count_t, count_t> > nodecounts;
+  nodecounts.reserve(m_external.size());
+
   bool success = true;
-
-  // read current stats CSV
-  string line,csvheader;
-  vector<string> stats;
-  string csvfile = filename(PREFIX_STATS,".csv");
-  fstream csv(csvfile.c_str(), ios_base::in);
-  getline(csv,csvheader);
-  for (size_t id=0; id<m_subprobCount; ++id) {
-    getline(csv,line);
-    stats.push_back(line);
-  }
-  csv.close();
-
   for (size_t id=0; id<m_subprobCount; ++id) {
 
     SearchNode* node = m_external.at(id);
@@ -509,15 +498,10 @@ bool ParallelManager::readExtResults() {
     BINREAD(in, nodesOR);
     BINREAD(in, nodesAND);
 
+    nodecounts.push_back(make_pair(nodesOR, nodesAND));
+
     m_space->nodesORext += nodesOR;
     m_space->nodesANDext += nodesAND;
-
-    {
-    // for CSV output
-    stringstream ss;
-    ss << '\t' << nodesOR << '\t' << nodesAND;
-    stats.at(id) += ss.str();
-    }
 
 #ifndef NO_ASSIGNMENT
     int32_t n;
@@ -569,31 +553,57 @@ bool ParallelManager::readExtResults() {
 
     // Propagate
     m_prop.propagate(node,true);
-
   }
 
-  // rewrite CSV file
-  csv.open(csvfile.c_str(), ios_base::out | ios_base::trunc);
-  csv << csvheader << "\tOR\tAND" << endl;
-  for (vector<string>::iterator it=stats.begin(); it!=stats.end(); ++it) {
-    csv << *it << endl;
-  }
-  csv.close();
+  writeStatsCSV(m_external, &nodecounts);
 
   return success;
-
 }
 
 
-string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
+void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
+                                    const vector<pair<count_t, count_t> >* counts) const {
+  if (counts)
+    assert(subprobs.size() == counts->size());
 
   // open CSV file for stats
   string csvfile = filename(PREFIX_STATS,".csv");
   ofstream csv(csvfile.c_str(),ios_base::out | ios_base::app);
 
+  for (size_t i = 0; i < subprobs.size(); ++i) {
+    SearchNode* node = subprobs.at(i);
+    assert(node);
+
+    int rootVar = node->getVar();
+    PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
+    const SubprobStats* stats = ptnode->getSubprobStats();
+
+    int depth = ptnode->getDepth();
+    double lb = lowerBound(node);
+    double ub = node->getHeur();
+    double estimate = evaluate(node);
+
+    csv << i
+        << '\t' << rootVar
+        << '\t' << depth
+        << '\t' << lb
+        << '\t' << ub
+        << '\t' << *stats
+        << '\t' << estimate;
+
+    if (counts)  // solution node counts, if available
+      csv << '\t' << counts->at(i).first
+          << '\t' << counts->at(i).second;
+
+    csv << endl;
+  }
+  csv.close();
+}
+
+
+string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
   // Will hold the condor job description for the submission file
   ostringstream job;
-
   string subprobsFile = filename(PREFIX_SUB,".gz");
   ogzstream subprobs(subprobsFile.c_str(), ios::out | ios::binary);
   if (!subprobs) {
@@ -631,7 +641,6 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
 
     int rootVar = node->getVar();
     PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
-    const SubprobStats* stats = ptnode->getSubprobStats();
 
     /* subproblem root variable */
     BINWRITE( subprobs, rootVar );
@@ -659,33 +668,13 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
     for(vector<double>::iterator it=pst.begin();it!=pst.end();++it) {
       BINWRITE( subprobs, *it);
     }
-
-    // write CSV output
-    int depth = ptnode->getDepth();
-//    int height = ptnode->getSubHeight();
-//    int width = ptnode->getSubWidth();
-//    size_t vars = ptnode->getSubprobSize();
-
-    double lb = lowerBound(node);
-    double ub = node->getHeur();
-    double estimate = evaluate(node);
-
-    csv << id
-        << '\t' << rootVar
-        << '\t' << depth
-//        << '\t' << vars
-        << '\t' << lb
-        << '\t' << ub
-//        << '\t' << height
-//        << '\t' << width
-        << '\t' << *stats
-        << '\t' << estimate;
-    csv << endl;
-
   } // for-loop over nodes
 
   // close subproblem file
   subprobs.close();
+
+  /* CSV file with subproblem stats */
+  writeStatsCSV(nodes);
 
   // job string for submission file
   job // special condor attribute
@@ -715,11 +704,7 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
     << " -t 0" << endl;
 
   job << "queue " << m_subprobCount << endl;
-
-  // close CSV file
-  csv.close();
   return job.str();
-
 }
 
 
