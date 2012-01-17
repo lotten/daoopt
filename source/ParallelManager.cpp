@@ -631,6 +631,7 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
 
     int rootVar = node->getVar();
     PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
+    const SubprobStats* stats = ptnode->getSubprobStats();
 
     /* subproblem root variable */
     BINWRITE( subprobs, rootVar );
@@ -661,9 +662,9 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
 
     // write CSV output
     int depth = ptnode->getDepth();
-    int height = ptnode->getSubHeight();
-    int width = ptnode->getSubWidth();
-    size_t vars = ptnode->getSubprobSize();
+//    int height = ptnode->getSubHeight();
+//    int width = ptnode->getSubWidth();
+//    size_t vars = ptnode->getSubprobSize();
 
     double lb = lowerBound(node);
     double ub = node->getHeur();
@@ -672,11 +673,12 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
     csv << id
         << '\t' << rootVar
         << '\t' << depth
-        << '\t' << vars
+//        << '\t' << vars
         << '\t' << lb
         << '\t' << ub
-        << '\t' << height
-        << '\t' << width
+//        << '\t' << height
+//        << '\t' << width
+        << '\t' << *stats
         << '\t' << estimate;
     csv << endl;
 

@@ -37,6 +37,7 @@ public:
   static const int MAX;
   static const int AVG;
   static const int SDV;
+  static const int MED;
 
 protected:
   double m_varCount;          // Number of variables in subproblem.

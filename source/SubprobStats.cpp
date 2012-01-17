@@ -22,7 +22,6 @@
  */
 
 #include <SubprobStats.h>
-#include <algorithm>
 
 #ifdef PARALLEL_STATIC
 
@@ -30,22 +29,26 @@ const int SubprobStats::MIN = 0;
 const int SubprobStats::MAX = 1;
 const int SubprobStats::AVG = 2;
 const int SubprobStats::SDV = 3;
+const int SubprobStats::MED = 4;
 
 void SubprobStats::computeStats(const vector<int>& xs, double*& target) {
-  double mini, maxi, avg, sdev;
+  double mini, maxi, avg, sdev, med;
   mini = *min_element(xs.begin(), xs.end());
   maxi = *max_element(xs.begin(), xs.end());
+  vector<int> sorted(xs);
+  std::sort(sorted.begin(), sorted.end());
+  med = sorted.at(sorted.size()/2);
 
   if (xs.size() == 1) {
     avg = xs[0];
     sdev = 0.0;
   } else {
     avg = sdev = 0.0;
-    BOOST_FOREACH( int x, xs ) {
+    BOOST_FOREACH( int x, sorted ) {
       avg += x;
       sdev += x*x;
     }
-    size_t N = xs.size();
+    size_t N = sorted.size();
     avg /= N;
     sdev /= N;
     sdev -= avg*avg;
@@ -54,11 +57,12 @@ void SubprobStats::computeStats(const vector<int>& xs, double*& target) {
   }
 
   if (target) delete[] target;
-  target = new double[4];
+  target = new double[5];
   target[MIN] = mini;
   target[MAX] = maxi;
   target[AVG] = avg;
   target[SDV] = sdev;
+  target[MED] = med;
 }
 
 
@@ -69,14 +73,14 @@ void SubprobStats::getAll(vector<double>& out) const {
                     m_domainSize, m_leafDepth };
   BOOST_FOREACH( double* p, ls ) {
     if (p)
-      for (size_t i=0; i<4; ++i)
+      for (size_t i=0; i<5; ++i)
         out.push_back(p[i]);
   }
 }
 
 ostream& operator << (ostream& os, const SubprobStats& stats) {
   vector<double> all = stats.getAll();
-  os << "STATS";
+//  os << "STATS";
   BOOST_FOREACH( double d, all ) {
     os << "\t" << d;
   }

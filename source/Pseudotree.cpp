@@ -635,6 +635,7 @@ void Pseudotree::computeSubprobStats() {
   BOOST_FOREACH( PseudotreeNode* pt, m_nodes ) {
     pt->computeStatsClusterCond();
   }
+  cout << * m_root->getSubprobStats() << endl;
 }
 
 void PseudotreeNode::computeStatsCluster(vector<int>& result) {
