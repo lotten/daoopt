@@ -443,7 +443,8 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
 
 void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
-    const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
+    const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
+    bool subprobOnly, bool toScreen) const {
 
   bool writeFile = false;
   if (! file.empty())
@@ -459,15 +460,15 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     }
   }
 
+  oss screen;
+  screen << "s " << SCALE_LOG(m_curCost);
+#ifndef NO_ASSIGNMENT
   int32_t assigSize = UNKNOWN;
   if (subprobOnly)
     assigSize = (int32_t) m_curSolution.size() - 1; // -1 for dummy var
   else
     assigSize = (int32_t) m_nOrg;
-
-  cout << "s " << SCALE_LOG(m_curCost);
-#ifndef NO_ASSIGNMENT
-  cout << ' ' << assigSize;
+  screen << ' ' << assigSize;
 #endif
 
   if (writeFile) {
@@ -485,7 +486,7 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
   int32_t v = UNKNOWN;
   for (int32_t i=0; i<assigSize; ++i) {
     v = (int32_t) m_curSolution.at(i);
-    cout << ' ' << v;
+    screen << ' ' << v;
     if (writeFile) BINWRITE(out, v);
   }
 
@@ -505,10 +506,11 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     }
   }
 
-  cout << endl;
+  screen << endl;
+  if (toScreen)
+    cout << screen.str();
   if (writeFile)
     out.close();
-
 }
 
 

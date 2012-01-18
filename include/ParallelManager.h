@@ -110,6 +110,10 @@ protected:
 
 
 public:
+  /* stores the lower bound to file for subsequent retrieval */
+  bool storeLowerBound() const;
+  /* loads lower bound from file (post mode) */
+  bool loadLowerBound();
   /* performs subproblem sampling and learns a model to predict complexities */
   bool doLearning();
   /* computes the parallel frontier and , returns true iff successful */

@@ -42,6 +42,7 @@
 #define PREFIX_LOG "temp_log."
 #define PREFIX_STATS "temp_stats."
 #define PREFIX_SAMPLE "temp_sample."
+#define PREFIX_LOWERBOUND "temp_lb."
 
 #define PREFIX_JOBS "temp_jobs."
 
@@ -76,6 +77,27 @@ struct PQEntryComp {
     return false;
   }
 };
+
+
+bool ParallelManager::storeLowerBound() const {
+  oss fname;
+  fname << PREFIX_LOWERBOUND << m_options->problemName << "." << m_options->runTag
+      << ".sol.gz";
+  m_problem->outputAndSaveSolution(fname.str(), make_pair(0,0), m_nodeProfile,
+                                   m_leafProfile, false, false);
+  cout << "Wrote lower bound to file " << fname.str() << endl;
+  return true;
+}
+
+
+bool ParallelManager::loadLowerBound() {
+  oss fname;
+  fname << PREFIX_LOWERBOUND << m_options->problemName << "." << m_options->runTag
+      << ".sol.gz";
+  cout << "Reading initial lower bound from file " << fname.str() << endl;
+  this->loadInitialBound(fname.str());
+  return true;
+}
 
 
 bool ParallelManager::doLearning() {

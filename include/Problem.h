@@ -112,11 +112,13 @@ public:
    *  - sol is the optimal solution tuple
    *  - noNodes is the number of OR/AND nodes
    *  - nodeProf and leafProf are the full and leaf node profiles
-   * if subprobOnly is true, only the variables from sol will be output to
-   * file (for subproblem solving) */
+   *  - if subprobOnly==true, only the variables from sol will be output to
+   *    file (for subproblem solving)
+   *  - if toScreen==true, will skip the console output (file only)
+   */
   void outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
-                             bool subprobOnly = false) const;
+                             bool subprobOnly = false, bool toScreen = true) const;
 
 #ifndef NO_ASSIGNMENT
   /* returns true iff the index variable from the full set has been eliminated

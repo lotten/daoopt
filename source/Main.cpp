@@ -238,6 +238,10 @@ bool Main::findOrLoadOrdering() {
 
 
 bool Main::runSLS() {
+#ifdef PARALLEL_STATIC
+  if (m_options->par_postOnly)
+    return true;  // skip SLS for static post mode
+#endif
 #ifdef ENABLE_SLS
   if (!m_options->in_subproblemFile.empty())
     return true;  // no SLS in case of subproblem processing
@@ -411,7 +415,10 @@ bool Main::compileHeuristic() {
 
 
 bool Main::runLDS() {
-
+#ifdef PARALLEL_STATIC
+  if (m_options->par_postOnly)
+    return true;  // skip LDS for static post mode
+#endif
   // Run LDS if specified
   if (m_options->lds != NONE) {
     cout << "Running LDS with limit " << m_options->lds << endl;
@@ -471,6 +478,14 @@ bool Main::finishPreproc() {
   // in parallelized setting
   double lb = m_search->curLowerBound();
   cout << "Initial problem lower bound: " << lb << endl;
+
+#ifdef PARALLEL_STATIC
+  if (m_options->par_preOnly) {
+    m_search->storeLowerBound();
+  } else if (m_options->par_postOnly) {
+    m_search->loadLowerBound();
+  }
+#endif
 
   // Record time after preprocessing
   time(&_time_pre);
