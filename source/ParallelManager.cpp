@@ -550,12 +550,15 @@ bool ParallelManager::readExtResults() {
 #endif
     << endl;
     myprint(ss.str());
-
-    // Propagate
-    m_prop.propagate(node,true);
   }
 
+  myprint("Writing CSV stats.\n");
   writeStatsCSV(m_external, &nodecounts);
+
+  myprint("Propagating solutions.\n");
+  BOOST_FOREACH( SearchNode* node, m_external ) {
+    m_prop.propagate(node, true);
+  }
 
   return success;
 }
