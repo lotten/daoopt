@@ -31,6 +31,20 @@ const int SubprobStats::AVG = 2;
 const int SubprobStats::SDV = 3;
 const int SubprobStats::MED = 4;
 
+/* should match the fields returned by getAll */
+const string LEGEND[] =
+  { "Vars", "Leafs",
+    "Wmin", "Wmax", "Wavg", "Wsdv", "Wmed",
+    "WCmin", "WCmax", "WCavg", "WCsdv", "WCmed",
+    "Kmin", "Kmax", "Kavg", "Ksdv", "Kmed",
+    "Hmin", "Hmax", "Havg", "Hsdv", "Hmed" };
+
+template<typename T, size_t N> T* end(T (&ra)[N]) {
+  return ra + N;
+}
+
+const vector<string> SubprobStats::legend(LEGEND, end(LEGEND));
+
 void SubprobStats::computeStats(const vector<int>& xs, double*& target) {
   double mini, maxi, avg, sdev, med;
   mini = *min_element(xs.begin(), xs.end());

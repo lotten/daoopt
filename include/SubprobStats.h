@@ -39,6 +39,8 @@ public:
   static const int SDV;
   static const int MED;
 
+  static const vector<string> legend;
+
 protected:
   double m_varCount;          // Number of variables in subproblem.
   double m_leafCount;         // Number of pseudotree leaves below this node.
