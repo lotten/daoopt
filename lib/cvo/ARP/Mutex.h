@@ -55,6 +55,7 @@ private :
 	RecursiveMutex & operator=(const RecursiveMutex&) ;
 	RecursiveMutex(const RecursiveMutex &) ;
 
+#undef WIN32
 #ifdef WIN32
 	CRITICAL_SECTION _CS ;
 public:

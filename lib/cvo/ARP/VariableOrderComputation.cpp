@@ -25,7 +25,7 @@ static double eRandomPick = 0.5 ;
 static bool EarlyTerminationOfBasic_W = false, EarlyTerminationOfBasic_C = false ;
 
 // global copy of the problem; used by all threads as a starting point
-static ARE::utils::RecursiveMutex MasterGraphMutex ;
+//static ARE::utils::RecursiveMutex MasterGraphMutex ;
 static ARE::Graph OriginalGraph, MasterGraph ;
 #ifdef LINUX
 pthread_mutex_t nRunsSumMutex = PTHREAD_MUTEX_INITIALIZER ;
@@ -74,7 +74,7 @@ static void *WorkerThreadFn(void *X)
 	int bestWidth = 255 ;
 	double bestComplexity = DBL_MAX ;
 	{
-	ARE::utils::AutoLock lock(MasterGraphMutex) ;
+//	ARE::utils::AutoLock lock(MasterGraphMutex) ;
 	bestWidth = BestOrder_Width ;
 	bestComplexity = BestOrder_Complexity ;
 	}
@@ -148,7 +148,7 @@ static void *WorkerThreadFn(void *X)
 //			fflush(ARE::fpLOG) ;
 //			}
 		try {
-			ARE::utils::AutoLock lock(MasterGraphMutex) ;
+//			ARE::utils::AutoLock lock(MasterGraphMutex) ;
 //GetCurrentDT(strDT, ttNow) ;
 //printf("\n%s worker %2d found width=%d complexity=%I64d space(#elements)=%I64d res=%d", strDT, (int) w->_IDX, (int) w->_G->_VarElimOrderWidth, (__int64) w->_G->_TotalVarElimComplexity, (__int64) w->_G->_TotalNewFunctionStorageAsNumOfElements, (int) res) ;
 			if (0 == res) {
@@ -241,7 +241,7 @@ done :
 #endif
 }
 
-
+#if false
 int ARE::ComputeVariableEliminationOrder(
 	// IN
 	const std::string & uaifile, 
@@ -606,4 +606,4 @@ done :
 
 	return ret ;
 }
-
+}

@@ -391,7 +391,7 @@ void ARE::Function::DestroyFTBList(void)
 {
 	// release all disk-blocks; lock disk-block list.
 	if (NULL != _Workspace) {
-		ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//		ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 		while (NULL != _FTBsInMemory) {
 			FunctionTableBlock *ftb = _FTBsInMemory ;
 			_FTBsInMemory = _FTBsInMemory->NextFTBInFunction() ;
@@ -416,7 +416,7 @@ int ARE::Function::AllocateInMemoryTableBlock(void)
 {
 	// release all disk-blocks; lock disk-block list.
 	if (NULL != _Workspace) {
-		ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//		ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 		while (NULL != _FTBsInMemory) {
 			FunctionTableBlock *ftb = _FTBsInMemory ;
 			_FTBsInMemory = _FTBsInMemory->NextFTBInFunction() ;
@@ -977,7 +977,7 @@ void ARE::Function::RemoveFTB(ARE::FunctionTableBlock & FTB)
 {
 	if (NULL == _Workspace) 
 		return ;
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 	FunctionTableBlock *previous_ftb = NULL ;
 	for (FunctionTableBlock *ftb = _FTBsInMemory ; NULL != ftb ; ftb = ftb->NextFTBInFunction()) {
 		if (&FTB == ftb) {
@@ -1003,7 +1003,7 @@ int ARE::Function::ReleaseFTB(FunctionTableBlock & FTB, FunctionTableBlock *User
 	// get the mutex; block other threads from modifying the ftb list
 	if (NULL == _Workspace) 
 		return 1 ;
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 
 	if (NULL != User) {
 		FTB.RemoveUser(*User) ;
@@ -1032,7 +1032,7 @@ int ARE::Function::ReleaseAllFTBs(bool DeleteFiles)
 	// get the mutex; block other threads from modifying the ftb list
 	if (NULL == _Workspace) 
 		return 1 ;
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 
 	// if needed delete FTB files. use a wildcard to do it in one step.
 	// when changing this code, make sure the files are permanently deleted, not put in recycle bin.
@@ -1088,7 +1088,7 @@ int ARE::Function::GetFTB(__int64 Adr, FunctionTableBlock *User, ARE::FunctionTa
 	// get the mutex; block other threads from modifying the ftb list
 	if (NULL == _Workspace) 
 		return 1 ;
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 
 	// check if the block is already in memory
 	FunctionTableBlock *ftb ;

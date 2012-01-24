@@ -18,9 +18,7 @@ CPP_SRCS += \
 ../lib/cvo/ARP/Heap.cpp \
 ../lib/cvo/ARP/HeapBasic.cpp \
 ../lib/cvo/ARP/HeapBasicReductionWithPermutationMapping.cpp \
-../lib/cvo/ARP/Mutex.cpp \
 ../lib/cvo/ARP/Problem.cpp \
-../lib/cvo/ARP/VariableOrderComputation.cpp \
 ../lib/cvo/ARP/Workspace.cpp 
 
 CXX_SRCS += \
@@ -41,10 +39,8 @@ OBJS += \
 ./lib/cvo/ARP/Heap.o \
 ./lib/cvo/ARP/HeapBasic.o \
 ./lib/cvo/ARP/HeapBasicReductionWithPermutationMapping.o \
-./lib/cvo/ARP/Mutex.o \
 ./lib/cvo/ARP/Problem.o \
 ./lib/cvo/ARP/Sort.o \
-./lib/cvo/ARP/VariableOrderComputation.o \
 ./lib/cvo/ARP/Workspace.o 
 
 CPP_DEPS += \
@@ -62,9 +58,7 @@ CPP_DEPS += \
 ./lib/cvo/ARP/Heap.d \
 ./lib/cvo/ARP/HeapBasic.d \
 ./lib/cvo/ARP/HeapBasicReductionWithPermutationMapping.d \
-./lib/cvo/ARP/Mutex.d \
 ./lib/cvo/ARP/Problem.d \
-./lib/cvo/ARP/VariableOrderComputation.d \
 ./lib/cvo/ARP/Workspace.d 
 
 CXX_DEPS += \

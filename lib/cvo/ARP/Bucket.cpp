@@ -554,7 +554,7 @@ int BucketElimination::Bucket::ReorderFunctionScopesForExternalMemory(bool Inclu
 
 int BucketElimination::Bucket::AllocateOutputFunctionBlockComputationResult(__int64 MaxBlockSize, int nComputingThreads)
 {
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 	if (_OutputFunction.nTableBlocks() < 0) {
 		if (0 != _OutputFunction.ComputeTableBlockSize(MaxBlockSize, nComputingThreads)) 
 			return 1 ;
@@ -583,7 +583,7 @@ int BucketElimination::Bucket::AllocateOutputFunctionBlockComputationResult(__in
 
 bool BucketElimination::Bucket::IsOutputFunctionBlockComputed(__int64 IDX)
 {
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 	if (0 == IDX) {
 		// this means function table has 1 in-memory block
 		return _nOutputFunctionBlocksComputed > 0 ;
@@ -595,14 +595,14 @@ bool BucketElimination::Bucket::IsOutputFunctionBlockComputed(__int64 IDX)
 
 __int64 BucketElimination::Bucket::nOutputFunctionBlocksComputed(void) const
 {
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 	return _nOutputFunctionBlocksComputed ;
 }
 
 
 void BucketElimination::Bucket::MarkOutputFunctionBlockComputed(__int64 IDX)
 {
-	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
+//	ARE::utils::AutoLock lock(_Workspace->FTBMutex()) ;
 	if (0 == IDX) {
 		// this means function table has 1 in-memory block
 		if (0 == _nOutputFunctionBlocksComputed) 
