@@ -34,7 +34,8 @@ ARE::Graph::Graph(ARP *Problem)
 	_MinFill0ScoreList(NULL), 
 	_nRemainingNodes(0), 
 	_RemainingNodesList(NULL), 
-	_IsValid(false)
+	_IsValid(false),
+	_RNG(4243)
 {
 	if (NULL != _Problem) 
 		Create(*_Problem) ;
@@ -124,7 +125,7 @@ int ARE::Graph::Create(ARP & Problem)
 
 	_nTrivialNodes = _nMinFillScore0Nodes = _nRemainingNodes = _OrderLength = 0 ;
 // used with AdjustDomainSizes
-static int iSum = 0, iN = 0, idone = 0 ; static MTRand rg ;
+static int iSum = 0, iN = 0, idone = 0 ; static MTRand rg(4244) ;
 	for (i = 0 ; i < _nNodes ; i++) {
 		int domain_size = _Problem->K(i) ;
 		if (AdjustDomainSizes && domain_size > 1) {
