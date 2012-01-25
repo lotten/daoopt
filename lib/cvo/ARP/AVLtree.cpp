@@ -27,7 +27,7 @@
 #define sprintf_s snprintf
 #endif
 
-static MTRand mtrandgen ;
+static MTRand mtrandgen(4242) ;
 
 #ifdef DEBUG_AVL_mutex
 #include "util/OptexEXT.h"

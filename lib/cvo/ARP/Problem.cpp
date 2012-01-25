@@ -10,7 +10,7 @@
 #include "Problem.hxx"
 #include "ProblemGraphNode.hxx"
 
-static MTRand RNG ;
+static MTRand RNG(4247) ;
 
 int ARE::ARP::GetFilename(const std::string & Dir, std::string & fn)
 {
