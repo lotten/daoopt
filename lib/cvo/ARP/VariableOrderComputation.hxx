@@ -10,7 +10,7 @@
 namespace ARE
 {
 
-#define TempAdjVarSpaceSize 100000
+#define ARE_TempAdjVarSpaceSize 100000
 
 class VariableEliminationOrderComputationResultSnapShot
 {
@@ -114,7 +114,7 @@ public :
 	bool _ThreadIsRunning ;
 	bool _ThreadStop ;
 	int _nRunsDone ;
-	AdjVar _TempAdjVarSpace[TempAdjVarSpaceSize] ;
+	AdjVar _TempAdjVarSpace[ARE_TempAdjVarSpaceSize] ;
 public :
 	VOC_worker(int idx = -1, Graph *G = NULL)
 		:

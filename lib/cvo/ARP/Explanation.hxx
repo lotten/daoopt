@@ -33,7 +33,7 @@ public :
 		:
 		_Type(E), 
 		_Bucket(NULL), 
-		_FTBidx(NULL), 
+		_FTBidx(0),
 		_Next(NULL)
 	{
 	}
