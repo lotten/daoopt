@@ -41,6 +41,7 @@ public:
   bool par_preOnly; // static parallel: preprocessing only (generate subproblems)
   bool par_postOnly; // static parallel: postprocessing only (read solution files)
   bool rotate; // enables breadth-rotating AOBB
+  bool order_cvo;  // enables Kalev's CVO ordering code
   int match;  // enables Alex Ihler's MBE library (moment-matching flag)
   int mplp;  // enables MPLP in Alex Ihler's MBE library (# iters)
   double mplps;  // enables MPLP in Alex Ihler's MBE library (# sec)
@@ -95,8 +96,8 @@ ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),
-		      par_preOnly(false), par_postOnly(false), rotate(false), 
-          mplp(-1), mplps(-1), jglp(-1), jglps(-1),
+		      par_preOnly(false), par_postOnly(false), rotate(false), order_cvo(false),
+                      mplp(-1), mplps(-1), jglp(-1), jglps(-1),
 		      ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), order_timelimit(0),
 		      cutoff_depth(NONE), cutoff_width(NONE),

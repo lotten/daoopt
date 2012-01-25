@@ -2,7 +2,7 @@
  * cvo.h
  *
  *  Created on: Dec 14, 2011
- *      Author: lars
+ *      Author: kalev
  */
 
 #ifndef CVO_H_
@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 
-#include "ARPall.hxx"
+#include "cvo/ARP/ARPall.hxx"
 
 /*
  * Interface for CVO ordering code.

@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include <Globals.hxx>
+#include "Globals.hxx"
 
 #include "Sort.hxx"
 #include "AVLtreeSimple.hxx"

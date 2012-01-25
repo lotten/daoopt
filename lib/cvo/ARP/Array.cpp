@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <utils/Array.hxx>
+#include "Array.hxx"
 
 template<class TYPE> CMauiArray<TYPE>::CMauiArray(void)
 	:

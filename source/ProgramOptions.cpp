@@ -57,6 +57,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("jglp", po::value<int>()->default_value(-1), "use Join-Graph reparameterization (#iter)")
       ("jglps", po::value<double>()->default_value(-1), "use Join-Graph reparameterization (sec)")
 #endif
+      ("cvo", "use CVO minfill library by Kalev Kask")
       ("orderIter,t", po::value<int>()->default_value(25), "iterations for finding ordering")
       ("orderTime", po::value<int>()->default_value(-1), "maximum time for finding ordering")
       ("max-width", po::value<int>(), "max. induced width to process, abort otherwise")
@@ -151,6 +152,11 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 
     if (vm.count("cbound-worker"))
       opt->cbound_worker = vm["cbound-worker"].as<int>();
+
+    if (vm.count("cvo"))
+      opt->order_cvo = true;
+    else
+      opt->order_cvo = false;
 
     if (vm.count("orderIter"))
       opt->order_iterations = vm["orderIter"].as<int>();

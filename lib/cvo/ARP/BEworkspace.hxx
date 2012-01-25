@@ -1,10 +1,10 @@
 #ifndef BEworkspace_HXX_INCLUDED
 #define BEworkspace_HXX_INCLUDED
 
-#include <Function.hxx>
-#include <Problem.hxx>
-#include <Bucket.hxx>
-#include <Workspace.hxx>
+#include "Function.hxx"
+#include "Problem.hxx"
+#include "Bucket.hxx"
+#include "Workspace.hxx"
 
 namespace ARE { class Workspace ; }
 

@@ -1,11 +1,11 @@
 #include <stdlib.h>
 
-#include <MersenneTwister.h>
-#include <Function.hxx>
-#include <Problem.hxx>
-#include <ProblemGraphNode.hxx>
-#include <Workspace.hxx>
-#include <BEworkspace.hxx>
+#include "MersenneTwister.h"
+#include "Function.hxx"
+#include "Problem.hxx"
+#include "ProblemGraphNode.hxx"
+#include "Workspace.hxx"
+#include "BEworkspace.hxx"
 
 void ARE::Workspace::AddErrorExplanation(ARE::Function *f, ARE::FunctionTableBlock *ftb)
 {

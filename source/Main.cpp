@@ -26,6 +26,8 @@
 #include "UAI2012.h"
 string UAI2012::filename = "";
 
+#include "cvo/ARP/ARPall.hxx"
+
 #define VERSIONINFO "0.99.6b-UAI12"
 
 time_t _time_start, _time_pre;
@@ -102,6 +104,32 @@ bool Main::findOrLoadOrdering() {
   cout << "Graph with " << g.getStatNodes() << " nodes and "
        << g.getStatEdges() << " edges created." << endl;
 
+  scoped_ptr<ARE::Graph> cvoGraph;
+  scoped_ptr<ARE::Graph> cvoMasterGraph;
+  scoped_ptr<CMauiAVLTreeSimple> cvoAvlVars2CheckScore;
+  scoped_array<ARE::AdjVar> cvoTempAdjVarSpace;
+
+  if (m_options->order_cvo) {
+    vector<set<int> > fn_signatures;
+    BOOST_FOREACH( Function* f, m_problem->getFunctions() )
+      { fn_signatures.push_back(f->getScope()); }
+
+    cvoMasterGraph.reset(new ARE::Graph);
+    cvoMasterGraph->Create(m_problem->getN(), fn_signatures);
+    if (!cvoMasterGraph->_IsValid)
+      return false;
+
+    cvoAvlVars2CheckScore.reset(new CMauiAVLTreeSimple);
+    cvoTempAdjVarSpace.reset(new ARE::AdjVar[ARE_TempAdjVarSpaceSize]);
+
+    cvoMasterGraph->ComputeVariableEliminationOrder_Simple_wMinFillOnly(
+        INT_MAX, false, true, 10, -1, 0.0, *cvoAvlVars2CheckScore,
+        cvoTempAdjVarSpace.get(), ARE_TempAdjVarSpaceSize);
+    cvoMasterGraph->ReAllocateEdges();
+
+    cvoGraph.reset(new ARE::Graph);
+  }
+
 #ifdef PARALLEL_STATIC
   // for static parallelization post-processing mode, look for
   // ordering from preprocessing step
@@ -157,7 +185,22 @@ bool Main::findOrLoadOrdering() {
 
     vector<int> elimCand;  // new ordering candidate
     bool improved = false;  // improved in this iteration?
-    int new_w = m_pseudotree->eliminate(g,elimCand,w);
+    int new_w;
+    if (m_options->order_cvo) {
+      *cvoGraph = *cvoMasterGraph;
+      new_w = cvoGraph->ComputeVariableEliminationOrder_Simple_wMinFillOnly(
+          w, true, false, 10, -1, 0.0, *cvoAvlVars2CheckScore,
+          cvoTempAdjVarSpace.get(), ARE_TempAdjVarSpaceSize);
+      if (new_w != 0)
+        new_w = INT_MAX;
+      else {
+        new_w = cvoGraph->_VarElimOrderWidth;
+        elimCand.assign(cvoGraph->_VarElimOrder,
+                        cvoGraph->_VarElimOrder + cvoGraph->_nNodes);
+      }
+    } else {
+      new_w = m_pseudotree->eliminate(g,elimCand,w);
+    }
     if (new_w < w) {
       elim = elimCand; w = new_w; improved = true;
       m_pseudotree->build(g, elimCand, m_options->cbound);

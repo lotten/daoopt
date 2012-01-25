@@ -7,8 +7,8 @@
 #include <windows.h>
 #endif // WINDOWS
 
-#include <Explanation.hxx>
-#include <Function.hxx>
+#include "Explanation.hxx"
+#include "Function.hxx"
 
 namespace ARE { class ARP ; }
 namespace ARE { class Function ; }
@@ -54,9 +54,9 @@ protected :
 	// 2) _FTBsInMemory ptr (list) of functions in this workspace.
 	// 3) indirectly, the users list of each FTB.
 	// 4) maintain/update the _BucketFunctionBlockComputationResult arrays in each bucket
-	ARE::utils::RecursiveMutex _FTBMutex ;
+//	ARE::utils::RecursiveMutex _FTBMutex ;
 public :
-	inline ARE::utils::RecursiveMutex & FTBMutex(void) { return _FTBMutex ; }
+//	inline ARE::utils::RecursiveMutex & FTBMutex(void) { return _FTBMutex ; }
 
 protected :
 	std::string _DiskSpaceDirectory ;
@@ -103,27 +103,27 @@ public :
 	inline int nFTBsLoadedPerBucket(int IDX) const { return _nFTBsLoadedPerBucket[IDX] ; }
 	inline void NoteInputTableGetTime(DWORD t)
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		_InputTableGetTimeTotal += t ;
 	}
 	inline void NoteFileLoadTime(DWORD t)
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		_FileLoadTimeTotal += t ;
 	}
 	inline void NoteFileSaveTime(DWORD t)
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		_FileSaveTimeTotal += t ;
 	}
 	inline void NoteFTBComputationTime(DWORD t)
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		_FTBComputationTimeTotal += t ;
 	}
 	inline void NoteInputTableBlocksWait(int BucketIDX, __int64 BlockIDX, bool Increment, long WaitInMilliseconds)
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		_InputTableBlocksWaitPeriodTotal += WaitInMilliseconds ;
 		if (Increment) {
 //if (_nInputTableBlocksWaited < 128) {
@@ -135,14 +135,14 @@ public :
 	}
 	inline void IncrementnTableBlocksLoaded(int IDX)
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		++_nTableBlocksLoaded ;
 		if (IDX >= 0) 
 			_nFTBsLoadedPerBucket[IDX]++ ;
 	}
 	inline void IncrementnTableBlocksSaved(void)
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		++_nTableBlocksSaved ;
 	}
 	inline __int64 CurrentDiskMemorySpaceCached(void) const { return _CurrentDiskMemorySpaceCached ; }
@@ -151,7 +151,7 @@ public :
 	inline int MaximumNumConcurrentDiskTableBlocksInMemory(void) const { return _MaximumNumConcurrentDiskTableBlocksInMemory ; }
 	void NoteDiskMemoryBlockLoaded(__int64 Space) 
 	{ 
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		++_nDiskTableBlocksInMemory ;
 		if (_nDiskTableBlocksInMemory > _MaximumNumConcurrentDiskTableBlocksInMemory) 
 			_MaximumNumConcurrentDiskTableBlocksInMemory = _nDiskTableBlocksInMemory ;
@@ -161,7 +161,7 @@ public :
 	}
 	void NoteDiskMemoryBlockUnLoaded(__int64 Space) 
 	{
-		ARE::utils::AutoLock lock(_FTBMutex) ;
+//		ARE::utils::AutoLock lock(_FTBMutex) ;
 		--_nDiskTableBlocksInMemory ;
 		_CurrentDiskMemorySpaceCached -= Space ;
 	}

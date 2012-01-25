@@ -4,8 +4,8 @@
 
 #include "Sort.hxx"
 
-#include <Function.hxx>
-#include <BEworkspace.hxx>
+#include "Function.hxx"
+#include "BEworkspace.hxx"
 
 BucketElimination::BEworkspace::BEworkspace(const char *BEEMDiskSpaceDirectory)
 	:

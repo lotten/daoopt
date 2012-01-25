@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 // Added by Vibhav for domain pruning implementation
-#include "Solver.h"
+//#include "Solver.h"  // TODO: disabled by Lars
 
 
 #include "MersenneTwister.h"
@@ -1948,7 +1948,7 @@ done :
 	return return_value ;
 }
 
-
+#if false  // TODO: disabled by Lars
 int ARE::ARP::ComputeSingletonConsistency(int & nNewSingletonDomainVariables)
 {
 	nNewSingletonDomainVariables = 0 ;
@@ -2074,4 +2074,4 @@ void ARE::ARP::SingletonConsistencyHelper(vector<vector<bool> > & is_consistent)
 
 	// done
 }
-
+#endif

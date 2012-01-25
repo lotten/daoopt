@@ -280,7 +280,7 @@ public :
 
 	// create a graph from the given set of fn signatures. 
 	// we assume each signature is correct : var indeces range [0, nNodes), there are no repetitions.
-	int Create(int nNodes, std::vector<std::set<int>> & fn_signatures) ;
+	int Create(int nNodes, std::vector<std::set<int> > & fn_signatures) ;
 } ;
 
 } // namespace ARE

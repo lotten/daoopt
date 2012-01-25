@@ -40,7 +40,7 @@ int CVO::Sample_SingleThreaded_MinFill(const std::string & uaifile, int nIterati
 		return ret ;
 		}
 
-	std::vector<std::set<int>> fn_signatures ;
+	std::vector<std::set<int> > fn_signatures ;
 	for (i = 0 ; i < p.nFunctions() ; i++) {
 		ARE::Function *f = p.getFunction(i) ;
 		if (NULL == f) continue ;

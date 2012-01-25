@@ -166,8 +166,11 @@ static boost::mutex mtx_io;
 #include <sstream>
 #include <algorithm>
 
+#include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
 using boost::scoped_ptr;
+using boost::scoped_array;
 
 /* shorthand for convenience */
 typedef std::ostringstream oss;
