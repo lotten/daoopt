@@ -49,7 +49,7 @@ bool SLSWrapper::init(Problem* prob, int iter, int time) {
   sls4mpe::slsWrapper = this;
 
   // load network directly into SLS from Problem*
-  sls4mpe::num_vars = prob->getN();
+  sls4mpe::num_vars = prob->getN() - ((prob->hasDummy()) ? 1 : 0);  // -1 for dummy variable
   sls4mpe::num_pots = prob->getC() + 1; // for global constant dummy function
   sls4mpe::allocateVarsAndPTs(false);
 
