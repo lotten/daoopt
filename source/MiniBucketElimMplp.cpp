@@ -84,6 +84,7 @@ bool MiniBucketElimMplp::doMPLP() {
 
 // reparameterize problem using a join-graph of the current ibound size
 bool MiniBucketElimMplp::doJGLP() {
+  assert(_pt);  // JGLP requires a pseudo tree!
   bool changedFunctions = false;
 
   if (_options !=NULL && (_options->jglp > 0 || _options->jglps > 0)) {
@@ -107,6 +108,7 @@ bool MiniBucketElimMplp::doJGLP() {
 
 
 size_t MiniBucketElimMplp::build(const vector<val_t>* assignment, bool computeTables) {
+  assert(_pt);  // we need a pseudo tree
   if (computeTables == false) return _mbe.simulateMemory();
 
   if (_options==NULL) std::cout<<"Warning (MBE-ATI): ProgramOptions not available!\n";
@@ -133,9 +135,12 @@ MiniBucketElimMplp::MiniBucketElimMplp(Problem* p, Pseudotree* pt, ProgramOption
   _mbe = mex::mbe( copyFactors() );
   _mbe.setProperties("DoMatch=0,DoFill=0,DoMplp=0,DoJG=0");  // MPLP / JGLP done separately if needed
   if (_options->match > 0)  { _mbe.setProperties("DoMatch=1"); }
+  _mbe.setIBound(ib);
+
+  if (!_pt) { return; }  // no pseudo tree -> skip remainder
 
   mex::VarOrder ord(pt->getElimOrder().begin(),--pt->getElimOrder().end());   // -- to remove dummy root
-  _mbe.setOrder(ord); _mbe.setIBound(ib);                   // copy elimination order information
+  _mbe.setOrder(ord);                   // copy elimination order information
 
   mex::VarOrder parents(_mbe.gmOrig().nvar());              // copy pseudotree information
   for (size_t i=0;i<_mbe.gmOrig().nvar();++i) {

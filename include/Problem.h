@@ -36,6 +36,7 @@ class Problem {
 protected:
 
   bool m_subprobOnly;    // Solving only a conditioned subproblem
+  bool m_hasDummy;       // is last variable a dummy variable?
 
   int m_prob;            // Problem class (multiplication or summation of costs)
   int m_task;            // Type of problem (Minim. or maxim. task)
@@ -85,6 +86,8 @@ public:
   // replaces the current set of functions with an equivalent one
   // (pseudo tree compatibility is implicitly assumed)
   void replaceFunctions(const vector<Function*>& newFunctions);
+
+  bool hasDummy() const { return m_hasDummy; }
 
 public:
 
@@ -149,12 +152,14 @@ inline double Problem::getGlobalConstant() const {
 
 inline void Problem::addDummy() {
   m_n += 1;
+  m_hasDummy = true;
   m_domains.push_back(1); // unary domain
 }
 
 
 inline Problem::Problem() :
     m_subprobOnly(false),
+    m_hasDummy(false),
     m_prob(UNKNOWN),
     m_task(UNKNOWN),
     m_n(UNKNOWN),

@@ -83,6 +83,8 @@ protected:
   bool runSearchStatic();
   bool runSearchWorker();
 
+  static Heuristic* newHeuristic(Problem*, Pseudotree*, ProgramOptions*);
+
 public:
   bool start() const;
   bool parseOptions(int argc, char** argv);
