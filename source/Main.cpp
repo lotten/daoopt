@@ -254,6 +254,20 @@ bool Main::runSLS() {
 }
 
 
+Heuristic* Main::newHeuristic(Problem* p, Pseudotree* pt, ProgramOptions* po) {
+  // Just initalize heuristic instance, don't actually build it
+#ifdef NO_HEURISTIC
+  return new Unheuristic;
+#else
+  if (po->match >= 0 || po->mplp >= 0 || po->jglp >= 0) {
+    return new MiniBucketElimMplp(p, pt, po, po->ibound);
+  } else {
+    return new MiniBucketElim(p, pt, po, po->ibound);
+  }
+#endif
+}
+
+
 bool Main::initDataStructs() {
 
   // The main search space
@@ -263,18 +277,8 @@ bool Main::initDataStructs() {
   m_space.reset( new SearchSpace(m_pseudotree.get(), m_options.get()) );
 #endif
 
-  // Heuristic is initialized here, built later in compileHeuristic()
-#ifdef NO_HEURISTIC
-  m_heuristic.reset(new Unheuristic);
-#else
-  if (m_options->match >= 0 || m_options->mplp >= 0 || m_options->jglp >= 0) {
-    m_heuristic.reset(new MiniBucketElimMplp(m_problem.get(), m_pseudotree.get(),
-					    m_options.get(), m_options->ibound) );
-  } else {
-    m_heuristic.reset(new MiniBucketElim(m_problem.get(), m_pseudotree.get(),
-					 m_options.get(), m_options->ibound) );
-  }
-#endif
+  // Heuristic
+  m_heuristic.reset(newHeuristic(m_problem.get(), m_pseudotree.get(), m_options.get()));
 
   // Main search engine
 #if defined PARALLEL_DYNAMIC
@@ -327,11 +331,19 @@ bool Main::initDataStructs() {
 
 
 bool Main::preprocessHeuristic() {
-  m_options->ibound = min(m_options->ibound, m_pseudotree->getWidthCond());
+
+  Pseudotree* curPT = m_pseudotree.get();  // could be null
+  const vector<val_t>* curAsg = (m_search.get()) ? & m_search->getAssignment() : NULL;
+
+  if (curPT)
+    m_options->ibound = min(m_options->ibound, m_pseudotree->getWidthCond());
   size_t sz = 0;
-  if (m_options->memlimit != NONE) {
-    sz = m_heuristic->limitSize(m_options->memlimit,
-                                & m_search->getAssignment() );
+
+  // pseudo tree can be NULL right now!
+  m_heuristic.reset(newHeuristic(m_problem.get(), curPT, m_options.get()));
+
+  if (m_options->memlimit != NONE && curPT) {  // size limit needs pseudo tree
+    sz = m_heuristic->limitSize(m_options->memlimit, curAsg);
     sz *= sizeof(double) / (1024*1024.0);
     cout << "Enforcing memory limit resulted in i-bound " << m_options->ibound
          << " with " << sz << " MByte." << endl;
@@ -341,15 +353,23 @@ bool Main::preprocessHeuristic() {
     return false;
   }
 
-  if (m_heuristic->preprocess(& m_search->getAssignment()))
-    m_pseudotree->resetFunctionInfo(m_problem->getFunctions());
+  if (m_heuristic->preprocess(curAsg))
+    if (curPT)
+      m_pseudotree->resetFunctionInfo(m_problem->getFunctions());
 
   return true;
 }
 
 
 bool Main::compileHeuristic() {
+  m_options->ibound = min(m_options->ibound, m_pseudotree->getWidthCond());
   size_t sz = 0;
+  if (m_options->memlimit != NONE) {
+    sz = m_heuristic->limitSize(m_options->memlimit, & m_search->getAssignment());
+    sz *= sizeof(double) / (1024*1024.0);
+    cout << "Enforcing memory limit resulted in i-bound " << m_options->ibound
+         << " with " << sz << " MByte." << endl;
+  }
   if (m_options->nosearch) {
     cout << "Simulating mini bucket heuristic..." << endl;
     sz = m_heuristic->build(& m_search->getAssignment(), false); // false = just compute memory estimate
