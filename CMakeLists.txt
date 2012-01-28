@@ -5,8 +5,9 @@ cmake_minimum_required(VERSION 2.6)
 project(DAOOPT)
 
 # To select the two master modes
-option(DAOOPT_MASTER_STATIC "Build static master binary" OFF)
-option(DAOOPT_MASTER_DYNAMIC "Build dynamic master binary" OFF)
+option(DAOOPT_WORKER "Force worker binary" OFF)
+option(DAOOPT_MASTER_STATIC "Force static master binary" OFF)
+option(DAOOPT_MASTER_DYNAMIC "Force dynamic master binary" OFF)
 
 # To enable static linking of the final daoopt binary
 option(DAOOPT_LINK_STATIC "Link binary statically" OFF)
@@ -34,16 +35,17 @@ if(DAOOPT_LINK_STATIC)
   set(CMAKE_EXE_LINKER_FLAGS "-static")
 endif()
 
-# Master binary: static has precedence over dynamic mode
-if(DAOOPT_MASTER_STATIC)
-  add_definitions(-DPARALLEL_STATIC)
-endif()
-if(DAOOPT_MASTER_DYNAMIC AND NOT DAOOPT_MASTER_STATIC)
-  add_definitions(-DPARALLEL_DYNAMIC)
-  find_package(Threads)  # includes pthread
-endif()
-if(NOT DAOOPT_MASTER_DYNAMIC AND NOT DAOOPT_MASTER_STATIC)
+# Optional forced version: static over dynamic master, worker over both
+if(DAOOPT_WORKER)
   add_definitions(-DNOTHREADS)
+else()
+  if(DAOOPT_MASTER_STATIC)
+    add_definitions(-DPARALLEL_STATIC)
+  endif()
+  if(DAOOPT_MASTER_DYNAMIC AND NOT DAOOPT_MASTER_STATIC)
+    add_definitions(-DPARALLEL_DYNAMIC)
+    find_package(Threads)  # includes pthread
+  endif()
 endif()
 
 # Included folders for header files
@@ -89,5 +91,5 @@ set(FILES
 )
 
 # Main executable and library dependencies
-add_executable(daooptW daoopt.cpp ${FILES})
-target_link_libraries(daooptW ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+add_executable(daoopt daoopt.cpp ${FILES})
+target_link_libraries(daoopt ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
