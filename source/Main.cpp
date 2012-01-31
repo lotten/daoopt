@@ -106,7 +106,7 @@ bool Main::findOrLoadOrdering() {
   scoped_ptr<ARE::Graph> cvoGraph;
   scoped_ptr<ARE::Graph> cvoMasterGraph;
   scoped_ptr<CMauiAVLTreeSimple> cvoAvlVars2CheckScore;
-  scoped_array<ARE::AdjVar> cvoTempAdjVarSpace;
+  scoped_ptr<ARE::AdjVarMemoryDynamicManager> cvoTempAdjVarSpace;
 
   if (m_options->order_cvo) {
     vector<set<int> > fn_signatures;
@@ -119,11 +119,10 @@ bool Main::findOrLoadOrdering() {
       return false;
 
     cvoAvlVars2CheckScore.reset(new CMauiAVLTreeSimple);
-    cvoTempAdjVarSpace.reset(new ARE::AdjVar[ARE_TempAdjVarSpaceSize]);
+    cvoTempAdjVarSpace.reset(new ARE::AdjVarMemoryDynamicManager(ARE_TempAdjVarSpaceSize));
 
     cvoMasterGraph->ComputeVariableEliminationOrder_Simple_wMinFillOnly(
-        INT_MAX, false, true, 10, -1, 0.0, *cvoAvlVars2CheckScore,
-        cvoTempAdjVarSpace.get(), ARE_TempAdjVarSpaceSize);
+        INT_MAX, false, true, 10, -1, 0.0, *cvoAvlVars2CheckScore, *cvoTempAdjVarSpace);
     cvoMasterGraph->ReAllocateEdges();
 
     cvoGraph.reset(new ARE::Graph);
@@ -188,8 +187,7 @@ bool Main::findOrLoadOrdering() {
     if (m_options->order_cvo) {
       *cvoGraph = *cvoMasterGraph;
       new_w = cvoGraph->ComputeVariableEliminationOrder_Simple_wMinFillOnly(
-          w, true, false, 10, -1, 0.0, *cvoAvlVars2CheckScore,
-          cvoTempAdjVarSpace.get(), ARE_TempAdjVarSpaceSize);
+          w, true, false, 10, -1, 0.0, *cvoAvlVars2CheckScore, *cvoTempAdjVarSpace);
       if (new_w != 0)
         new_w = INT_MAX;
       else {
