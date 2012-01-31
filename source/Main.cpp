@@ -167,6 +167,8 @@ bool Main::findOrLoadOrdering() {
   // Search for variable elimination ordering, looking for min. induced
   // width, breaking ties via pseudo tree height
   cout << "Searching for elimination ordering,";
+  if (m_options->order_cvo)
+    cout << " CVO,";
   if (m_options->order_iterations != NONE)
     cout << " " << m_options->order_iterations << " iterations";
   if (m_options->order_timelimit != NONE)
