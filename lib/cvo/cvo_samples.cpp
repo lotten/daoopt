@@ -1,5 +1,6 @@
 // CVO.cpp : Defines the entry point for the console application.
 //
+#if false
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -75,10 +76,10 @@ int CVO::Sample_SingleThreaded_MinFill(const std::string & uaifile, int nIterati
 		}
 
 	static CMauiAVLTreeSimple avlVars2CheckScore ; // internally used variable
-	static ARE::AdjVar TempAdjVarSpace[TempAdjVarSpaceSize] ; // internally used variable
+	ARE::AdjVarMemoryDynamicManager TempAdjVarSpace(ARE_TempAdjVarSpaceSize) ;
 
 	// do all the easy eliminations; this will give us a starting point for large-scale randomized searches later.
-	j = MasterGraph.ComputeVariableEliminationOrder_Simple_wMinFillOnly(INT_MAX, false, true, 10, 1, 0.0, avlVars2CheckScore, TempAdjVarSpace, TempAdjVarSpaceSize) ;
+	j = MasterGraph.ComputeVariableEliminationOrder_Simple_wMinFillOnly(INT_MAX, false, true, 10, 1, 0.0, avlVars2CheckScore, TempAdjVarSpace) ;
 	MasterGraph.ReAllocateEdges() ;
 
 	ARE::Graph g ; // declare g outside of 'for' scope so that constructor/destructor is run only once
@@ -86,7 +87,8 @@ int CVO::Sample_SingleThreaded_MinFill(const std::string & uaifile, int nIterati
 	for (i = 0 ; i < nIterations ; i++) {
 		// MasterGraph will be used as the starting point for MinFill searches.
 		g = MasterGraph ;
-		j = g.ComputeVariableEliminationOrder_Simple_wMinFillOnly(BestWidthKnown, true, false, 10, 1, 0.0, avlVars2CheckScore, TempAdjVarSpace, TempAdjVarSpaceSize) ;
+		j = g.ComputeVariableEliminationOrder_Simple_wMinFillOnly(BestWidthKnown, true, false, 10, 1, 0.0, avlVars2CheckScore, TempAdjVarSpace) ;
+		printf("\ndone iteration=%d, res=%d, width=%d", (int) i, (int) j, (int) g._VarElimOrderWidth) ;
 		if (0 != j) 
 			continue ;
 		/*
@@ -113,4 +115,6 @@ done :
 
 	return ret ;
 }
+
+#endif  // false
 

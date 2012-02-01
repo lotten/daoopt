@@ -31,6 +31,104 @@ public :
 	AdjVar(void) : _V(-1), _IterationEdgeAdded(-1), _NextAdjVar(NULL) { }
 } ;
 
+class AdjVarListHelper
+{
+protected :
+	AdjVar *_av ;
+	long _ListSize ;
+	long _ListUsed ;
+public :
+	int Reset(void) 
+	{
+		_ListUsed = 0 ;
+		return 0 ;
+	}
+	AdjVar *GetNextElement(void)
+	{
+		if (_ListUsed >= _ListSize) 
+			return NULL ;
+		return &(_av[_ListUsed++]) ;
+	}
+public :
+	AdjVarListHelper(long ListSize = 1)
+		:
+		_av(NULL), 
+		_ListSize(0), 
+		_ListUsed(0)
+	{
+		if (ListSize < 1) 
+			ListSize = 0 ;
+		else if (ListSize > 1048576) 
+			ListSize = 1048576 ;
+		_av = new AdjVar[ListSize] ;
+		if (NULL != _av) 
+			_ListSize = ListSize ;
+	}
+	~AdjVarListHelper(void)
+	{
+		if (NULL != _av) delete [] _av ;
+	}
+} ;
+
+class AdjVarMemoryDynamicManager
+{
+protected :
+	AdjVarListHelper *_SpaceList[1024] ;
+	long _nSpaceList, _nSpaceListCurrentUseIdx ;
+	long _ReAllocationSize ;
+public :
+	inline long nSpaceList(void) const { return _nSpaceList ; }
+public :
+	int Reset(void)
+	{
+		if (_nSpaceList <= 0) 
+			return 0 ;
+		for (int i = 0 ; i < _nSpaceList ; i++) 
+			_SpaceList[i]->Reset() ;
+		_nSpaceListCurrentUseIdx = 0 ;
+		return 0 ;
+	}
+	inline AdjVar *GetNextElement(void)
+	{
+		// for speed, this fn is inline; also we assume that _nSpaceList is always > 0 (i.e. _nSpaceList_minus_1 >= 0).
+		AdjVar *av = _SpaceList[_nSpaceListCurrentUseIdx]->GetNextElement() ;
+		if (NULL != av) 
+			return av ;
+		if (_nSpaceListCurrentUseIdx < _nSpaceList-1) 
+			return _SpaceList[++_nSpaceListCurrentUseIdx]->GetNextElement() ;
+do_allocate :
+		if (_nSpaceList >= 1024) 
+			return NULL ;
+		_SpaceList[_nSpaceList] = new AdjVarListHelper(_ReAllocationSize) ;
+		if (NULL == _SpaceList[_nSpaceList]) 
+			return NULL ;
+		_nSpaceListCurrentUseIdx = _nSpaceList ;
+		return _SpaceList[_nSpaceList++]->GetNextElement() ;
+	}
+public :
+	AdjVarMemoryDynamicManager(long ReAllocationSize = 65536)
+		:
+		_nSpaceList(0), 
+		_nSpaceListCurrentUseIdx(-1), 
+		_ReAllocationSize(65536)
+	{
+		if (ReAllocationSize < 1) 
+			ReAllocationSize = 1 ;
+		else if (ReAllocationSize > 1048576) 
+			ReAllocationSize = 1048576 ;
+		_ReAllocationSize = ReAllocationSize ;
+		_SpaceList[0] = new AdjVarListHelper(_ReAllocationSize) ;
+		if (NULL != _SpaceList[0]) 
+			{ _nSpaceList = 1 ; _nSpaceListCurrentUseIdx = 0 ; }
+	}
+	~AdjVarMemoryDynamicManager(void)
+	{
+		for (int i = 0 ; i < _nSpaceList ; i++) {
+			delete _SpaceList[i] ;
+			}
+	}
+} ;
+
 class Node
 {
 public :
@@ -264,7 +362,7 @@ public :
 		// aux avl tree to keep track of vars whose scores may change during each iteration; passed in here so that it does not have to be created each time.
 		CMauiAVLTreeSimple & avlVars2CheckScore,
 		// an array of AdjVar objects; usually statically/globally allocated; used to extra supply of AdjVar objects used/needed when edges are added to the graph.
-		AdjVar *TempAdjVarSpace, int nTempAdjVarSpace) ;
+		AdjVarMemoryDynamicManager & TempAdjVarSpace) ;
 public :
 	int RemoveRedundantFillEdges(void) ;
 public :

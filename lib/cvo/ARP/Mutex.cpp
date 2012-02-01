@@ -1,3 +1,4 @@
+#if false
 #include <stdlib.h>
 
 #ifdef WINDOWS
@@ -122,3 +123,4 @@ void RecursiveMutex::unlock(void) throw()
 
 	}
 }
+#endif  // false

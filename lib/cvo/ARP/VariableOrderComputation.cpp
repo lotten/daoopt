@@ -1,5 +1,6 @@
 // CVO.cpp : Defines the entry point for the console application.
 //
+#if false
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -607,3 +608,5 @@ done :
 	return ret ;
 }
 }
+
+#endif  // false
