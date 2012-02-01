@@ -13,11 +13,11 @@ size_t MiniBucketElimMplp::limitSize(size_t memlimit, const vector<val_t> *assig
   memlimit *= 1024 *1024 / sizeof(double);            // convert to # of table entries
   cout<<"Adjusting mini-bucket i-bound (ati)...\n";
   this->setIbound(ibound);                            // try initial ibound
-  size_t mem = _mbe.simulateMemory();
+  size_t mem = _mbe.simulateMemory(NULL, memlimit);
   cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) ) << " MBytes\n";
   while (mem > memlimit && ibound > 1) {
     this->setIbound(--ibound);
-    mem = _mbe.simulateMemory();
+    mem = _mbe.simulateMemory(NULL, memlimit);
     cout << " i=" << ibound << " -> " << ((mem / (1024*1024.0)) * sizeof(double) ) << " MBytes\n";
   }
   m_options->ibound = ibound;

@@ -28,9 +28,9 @@ namespace mex {
 
 class regionGraph : virtual public mxObject {
 public:
-	typedef graphModel::findex        findex;				// factor index
-	typedef graphModel::vindex        vindex;				// variable index
-	typedef graphModel::flist				  flist; 				// collection of factor indices
+  typedef graphModel::findex        findex;        // factor index
+  typedef graphModel::vindex        vindex;        // variable index
+  typedef graphModel::flist          flist;         // collection of factor indices
 
 protected:
 
@@ -60,22 +60,22 @@ protected:
   vector<flist>      _parents;             //  "" ""  (???)
 
 public:
-	regionGraph() { } 
-	regionGraph(const vector<Factor>& fs) {      // build region graph from list of factors
+  regionGraph() { } 
+  regionGraph(const vector<Factor>& fs) {      // build region graph from list of factors
     for (size_t f=0;f<fs.size();++f) {
       if (fs[f].nvar() > 0) addRegion(fs[f].vars() , false);  // don't update counts yet
     }
     calculateCount();                    // update counting numbers for the regions
     //dump();
   }
-	regionGraph(const vector<VarSet>& vs) {      // build region graph from list of regions
+  regionGraph(const vector<VarSet>& vs) {      // build region graph from list of regions
     for (size_t v=0;v<vs.size();++v) {
       if (vs[v].nvar() > 0) addRegion(vs[v] , false);   // don't update counts yet
     }
     calculateCount();                    // update counting numbers for the regions
   }
-	
-	// virtual regionGraph* clone() const { regionGraph* rg = new regionGraph(*this); return rg; }
+  
+  // virtual regionGraph* clone() const { regionGraph* rg = new regionGraph(*this); return rg; }
 
   size_t        nvar()           const { return _vAdj.size(); }
   size_t        nregions()       const { return _regions.size(); }
@@ -119,20 +119,20 @@ public:
     for (std::map<VarSet,findex>::reverse_iterator it=_regionIndex.rbegin();it!=_regionIndex.rend();++it) {
       findex r=it->second;
       _count[r]=1.0;
-      flist ancestors = contains(_region[r]); 
-      for (flist::const_iterator p=_ancestors.begin(); p!=_ancestors.end(); ++p) _count[r]-=_count[*p];
+      flist ancestors = contains(_regions[r]); 
+      for (flist::const_iterator p=ancestors.begin(); p!=ancestors.end(); ++p) _count[r]-=_count[*p];
     }
   }
 
   // Recalculate counting numbers at region r and below
   void calculateCount(findex r) {
     _count[r]=1.0;
-    flist ancestors = contains(_region[r]);       // Compute r's counting # from its ancestors
-    for (flist::const_iterator p=_ancestors.begin(); p!=_ancestors.end(); ++p) _count[r]-=_count[*p];
-    flist descend = containedBy(_region[r]);      // Now update all of r's descendants:
-    for (flist::const_iterator c=_descend.begin(); c!=_descend.end(); ++c) {
-      flist ancestors = contains(_region[*c]);    //   find their ancestors and recompute
-      for (flist::const_iterator p=_ancestors.begin(); p!=_ancestors.end(); ++p) _count[*c]-=_count[*p];
+    flist ancestors = contains(_regions[r]);      // Compute r's counting # from its ancestors
+    for (flist::const_iterator p=ancestors.begin(); p!=ancestors.end(); ++p) _count[r]-=_count[*p];
+    flist descend = containedBy(_regions[r]);     // Now update all of r's descendants:
+    for (flist::const_iterator c=descend.begin(); c!=descend.end(); ++c) {
+      flist ancestors = contains(_regions[*c]);   //   find their ancestors and recompute
+      for (flist::const_iterator p=ancestors.begin(); p!=ancestors.end(); ++p) _count[*c]-=_count[*p];
     }
   }
 
@@ -193,11 +193,11 @@ public:
     if (updateCount) calculateCount(_regionIndex[vs]); // recalculate counting numbers from vs downward
   }
 
-	// check if counting numbers are valid for all variables (?)
-	// check properties: valid, non-singular, maxent-consistent, etc?
+  // check if counting numbers are valid for all variables (?)
+  // check properties: valid, non-singular, maxent-consistent, etc?
 
 
-	void swap(regionGraph& gm); 	// !!!
+  void swap(regionGraph& gm);   // !!!
 
 #ifdef MEX  
   // MEX Class Wrapper Functions //////////////////////////////////////////////////////////
@@ -210,11 +210,11 @@ public:
   /////////////////////////////////////////////////////////////////////////////////////////
 #endif
 
-protected:	// Contained objects
-	// connectivity information (parents, children, etc?)
-	// list of maximal subsets?  list of descendents of each maximal subset?  list of parents of each set?
+protected:  // Contained objects
+  // connectivity information (parents, children, etc?)
+  // list of maximal subsets?  list of descendents of each maximal subset?  list of parents of each set?
 
-	// Algorithmic specialization data
+  // Algorithmic specialization data
 };
 
 
@@ -223,14 +223,14 @@ protected:	// Contained objects
 // MEX specific functions, and non-mex stubs for compatibility
 //////////////////////////////////////////////////////////////////////////////////////////////
 bool factorGraph::mxCheckValid(const mxArray* GM) { 
-	return graphModel::mxCheckValid(GM);			// !!!
+  return graphModel::mxCheckValid(GM);      // !!!
 }
 void factorGraph::mxSet(mxArray* M) { throw std::runtime_error("NOT IMPLEMENTED"); }
 mxArray* regionGraph::mxGet()       { throw std::runtime_error("NOT IMPLEMENTED"); }
 void regionGraph::mxRelease()       { throw std::runtime_error("NOT IMPLEMENTED"); }
 void regionGraph::mxDestroy()       { throw std::runtime_error("NOT IMPLEMENTED"); }
 void regionGraph::mxSwap(regionGraph& gm) { throw std::runtime_error("NOT IMPLEMENTED"); }
-#endif		// ifdef MEX
+#endif    // ifdef MEX
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
