@@ -589,12 +589,16 @@ bool Search::loadInitialBound(string file) {
     }
 #endif
 
-    // store solution/bound into search space
-    this->setInitialSolution(bound
-#ifndef NO_ASSIGNMENT
-        , reduced
+    // store solution/bound into search space and problem instance
+#ifdef NO_ASSIGNMENT
+    this->updateSolution(bound);
+    m_problem->updateSolution(getCurOptValue(), make_pair(0,0), true);
+#else
+    this->updateSolution(bound, reduced);
+    m_problem->updateSolution(getCurOptValue(), getCurOptTuple(), make_pair(0,0), true);
 #endif
-    );
+
+
   }
   infile.close();
   return true;
@@ -669,22 +673,22 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
 }
 
 
-void Search::setInitialSolution(double d
+bool Search::updateSolution(double d
 #ifndef NO_ASSIGNMENT
     ,const vector<val_t>& tuple
 #endif
   ) const {
   assert(m_space && m_space->root);
+  if (ISNAN(d))
+    return false;
   double curValue = m_space->root->getValue();
-  if (ISNAN(curValue) || d > curValue) {
-    m_space->root->setValue(d);
-#ifdef NO_ASSIGNMENT
-    m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
-#else
-    m_space->root->setOptAssig(tuple);
-    m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
+  if (!ISNAN(curValue) && d <= curValue)
+    return false;
+  m_space->root->setValue(d);
+#ifndef NO_ASSIGNMENT
+  m_space->root->setOptAssig(tuple);
 #endif
-  }
+  return true;
 }
 
 
