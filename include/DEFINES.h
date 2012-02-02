@@ -1,5 +1,5 @@
 /*
- * defs.h
+ * DEFINES.h
  *
  *  Copyright (C) 2008-2012 Lars Otten
  *  This file is part of DAOOPT.

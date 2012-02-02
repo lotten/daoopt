@@ -79,13 +79,13 @@ struct PQEntryComp {
 
 
 bool ParallelManager::doLearning() {
-  if (m_options->sampleRepeat == 0)
+  if (m_options->sampleRepeat == 0 || m_options->sampleSizes.empty())
     return true;
 
 #ifndef NO_ASSIGNMENT
-  m_sampleSearch->setInitialSolution(this->getCurOptValue(), this->getCurOptTuple());
+  m_sampleSearch->updateSolution(this->getCurOptValue(), this->getCurOptTuple());
 #else
-  m_sampleSearch->setInitialSolution(this->getCurOptValue());
+  m_sampleSearch->updateSolution(this->getCurOptValue());
 #endif
 
   BoundPropagator prop(m_problem, m_sampleSpace.get());
@@ -907,7 +907,7 @@ bool ParallelManager::applyLDS(SearchNode* node) {
 }
 
 /*
-void ParallelManager::setInitialSolution(double d
+void ParallelManager::updateSolution(double d
 #ifndef NO_ASSIGNMENT
     ,const vector<val_t>& tuple
 #endif

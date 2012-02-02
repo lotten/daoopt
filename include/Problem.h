@@ -105,6 +105,16 @@ public:
   /* removes evidence and unary-domain variables */
   void removeEvidence();
 
+  /* retrieve the current optimal solution */
+  double getSolutionCost() const { return m_curCost; }
+
+#ifndef NO_ASSIGNMENT
+  /* retrieve the current optimal assignment */
+  const vector<val_t>& getSolutionAssg() const { return m_curSolution; }
+  /* compute the assignment for output (might add evidence back in) */
+  void assignmentForOutput(vector<val_t>&) const;
+#endif
+
   /* report an updated solution */
   void updateSolution(double cost,
 #ifndef NO_ASSIGNMENT
@@ -114,15 +124,16 @@ public:
       bool output = true);
 
   /* outputs the solution to the screen and, if file!="", writes it to file
+   * (for subproblem solving, only relevant variables will be output)
    *  - cost is the MPE tuple value
    *  - sol is the optimal solution tuple
    *  - noNodes is the number of OR/AND nodes
    *  - nodeProf and leafProf are the full and leaf node profiles
-   * if subprobOnly is true, only the variables from sol will be output to
-   * file (for subproblem solving) */
+   *  - if toScreen==true, will skip the console output (file only)
+   */
   void outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
-                             bool subprobOnly = false) const;
+                             bool toScreen = true) const;
 
 #ifndef NO_ASSIGNMENT
   /* returns true iff the index variable from the full set has been eliminated

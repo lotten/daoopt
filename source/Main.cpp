@@ -28,7 +28,7 @@ string UAI2012::filename = "";
 
 #include "cvo/ARP/ARPall.hxx"
 
-#define VERSIONINFO "0.99.6b-UAI12"
+#define VERSIONINFO "0.99.7-UAI12"
 
 time_t _time_start, _time_pre;
 
@@ -460,7 +460,7 @@ bool Main::compileHeuristic() {
     } else if (!ISNAN ( m_options->initialBound )) {
 #ifdef NO_ASSIGNMENT
       cout <<  "Setting external lower bound " << m_options->initialBound << endl;
-      m_search->setInitialSolution(m_options->initialBound);
+      m_search->updateSolution(m_options->initialBound);
 #else
       err_txt("Compiled with tuple support, value-based bound not possible.");
       return false;
@@ -498,18 +498,13 @@ bool Main::runLDS() {
         return false;
     }
 
-#ifdef ENABLE_SLS
-    if (m_options->slsIter > 0) {
-      vector<val_t> slsTup;
-      double slsSol = m_slsWrapper->getSolution(&slsTup);
-      lds.setInitialSolution(slsSol
+    // load current best solution into LDS
+    if (lds.updateSolution(m_problem->getSolutionCost()
 #ifndef NO_ASSIGNMENT
-          ,slsTup
+        , m_problem->getSolutionAssg()
 #endif
-      );
-      cout << "LDS: Solution from SLS loaded: " << slsSol << endl;
-    }
-#endif
+    ))
+      cout << "LDS: Initial solution loaded." << endl;
 
     BoundPropagator propLDS(m_problem.get(), spaceLDS.get(), false);  // doCaching = false
     SearchNode* n = lds.nextLeaf();
@@ -520,14 +515,7 @@ bool Main::runLDS() {
     cout << "LDS: explored " << spaceLDS->nodesOR << '/' << spaceLDS->nodesAND
          << " OR/AND nodes" << endl;
     cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
-    if (lds.getCurOptValue() > m_search->curLowerBound()) {
-      cout << "LDS: updating initial lower bound" << endl;
-      m_search->setInitialSolution(lds.getCurOptValue()
-#ifndef NO_ASSIGNMENT
-          , lds.getCurOptTuple()
-#endif
-      );
-    }
+
 #ifndef NO_HEURISTIC
     if (m_search->getCurOptValue() >= m_heuristic->getGlobalUB()) {
       m_solved = true;
@@ -542,24 +530,13 @@ bool Main::runLDS() {
 
 bool Main::finishPreproc() {
 
-#ifdef ENABLE_SLS
-  // pull solution from SLS, if applicable
-  if (m_options->slsIter > 0) {
-    vector<val_t> slsTup;
-    double slsSol = m_slsWrapper->getSolution(&slsTup);
-    m_search->setInitialSolution(slsSol
+  // load current best solution from preprocessin into search instance
+  if (m_search->updateSolution(m_problem->getSolutionCost()
 #ifndef NO_ASSIGNMENT
-        ,slsTup
+      , m_problem->getSolutionAssg()
 #endif
-    );
-    cout << "Passed SLS solution to search: " << slsSol << endl;
-  }
-#endif
-
-  // output (sub)problem lower bound, mostly makes sense for conditioned subproblems
-  // in parallelized setting
-  double lb = m_search->curLowerBound();
-  cout << "Initial problem lower bound: " << lb << endl;
+  ))
+    cout << "Initial problem lower bound: " << m_search->curLowerBound() << endl;
 
   // Record time after preprocessing
   time(&_time_pre);
@@ -726,8 +703,7 @@ bool Main::outputStats() const {
 
   pair<size_t,size_t> noNodes = make_pair(m_space->nodesOR, m_space->nodesAND);
   m_problem->outputAndSaveSolution(m_options->out_solutionFile, noNodes,
-      m_search->getNodeProfile(), m_search->getLeafProfile(),
-      !m_options->in_subproblemFile.empty() );
+      m_search->getNodeProfile(), m_search->getLeafProfile());
 #ifdef PARALLEL_STATIC
   }
 #endif

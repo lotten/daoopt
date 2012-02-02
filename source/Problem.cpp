@@ -452,7 +452,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
 
 void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
-    const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
+    const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool toScreen) const {
 
   bool writeFile = false;
   if (! file.empty())
@@ -471,7 +471,7 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
   cout << "s " << SCALE_LOG(m_curCost);
 #ifndef NO_ASSIGNMENT
   int32_t assigSize = UNKNOWN;
-  if (subprobOnly)
+  if (m_subprobOnly)
     assigSize = (int32_t) m_curSolution.size() - 1; // -1 for dummy var
   else
     assigSize = (int32_t) m_nOrg;
@@ -485,22 +485,21 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
   }
 
 #ifndef NO_ASSIGNMENT
-
   if (writeFile) {
     BINWRITE(out,assigSize); // no. of variables in opt. assignment
   }
 
-  int32_t v = UNKNOWN;
-  for (int32_t i=0; i<assigSize; ++i) {
-    v = (int32_t) m_curSolution.at(i);
+  // generate full assignment (incl. evidence) if necessary and output
+  vector<val_t> outputAssig;
+  assignmentForOutput(outputAssig);
+  BOOST_FOREACH( int32_t v, outputAssig ) {
     cout << ' ' << v;
     if (writeFile) BINWRITE(out, v);
   }
-
 #endif
 
   // output node profiles in case of subproblem processing
-  if (subprobOnly) {
+  if (m_subprobOnly) {
     int32_t size = (int32_t) leafProf.size();
     BINWRITE(out, size);
     // leaf nodes first
@@ -520,6 +519,29 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
 }
 
 
+#ifndef NO_ASSIGNMENT
+void Problem::assignmentForOutput(vector<val_t>& assg) const {
+  if (m_subprobOnly)
+    assg = m_curSolution;
+  else {
+    assg.resize(m_nOrg, UNKNOWN);
+    for (int i=0; i<m_nOrg; ++i) {
+      map<int,int>::const_iterator itRen = m_old2new.find(i);
+      if (itRen != m_old2new.end()) {  // var part of solution
+        assg.at(i) = m_curSolution.at(itRen->second);
+      } else {
+        map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
+        if (itEvid != m_evidence.end())  // var part of evidence
+          assg.at(i) = itEvid->second;
+        else  // var had unary domain
+          assg.at(i) = 0;
+      }
+    }
+  }
+}
+#endif
+
+
 void Problem::updateSolution(double cost,
 #ifndef NO_ASSIGNMENT
     const vector<val_t>& sol,
@@ -527,45 +549,46 @@ void Problem::updateSolution(double cost,
     pair<size_t,size_t> nodes,
     bool output) {
 
-  if ( (ISNAN(m_curCost) || cost > m_curCost ) ) // TODO? && cost != ELEM_ZERO )
-    m_curCost = cost;
-  else
+  if (ISNAN(cost))
     return;
 
+#ifndef NO_ASSIGNMENT
+  // use Kahan summation to compute exact solution cost
+  // TODO (might not work in non-log scale?)
+  if (cost != ELEM_ZERO && !m_subprobOnly) {
+    double kahan = ELEM_ONE;
+    double comp = ELEM_ONE;
+    double y, z;
+
+    BOOST_FOREACH( Function* f, m_functions ) {
+      y = f->getValue(sol) OP_DIVIDE comp;
+      z = kahan OP_TIMES y;
+      comp = (z OP_DIVIDE kahan) OP_DIVIDE y;
+      kahan = z;
+    }
+    //  if (cost != kahan) cout << cost << " d=" << abs(kahan-cost) << endl;
+    cost = kahan;  // use Kahan sum
+  }
+#endif
+
+  if (!ISNAN(m_curCost) && cost <= m_curCost)  // TODO cost =?= ELEM_ZERO )
+    return;
+  m_curCost = cost;
   if (cost == ELEM_ZERO) output = false;
   ostringstream ss;
   if (output)
     ss << "u " << nodes.first << ' ' <<  nodes.second << ' ' << SCALE_LOG(cost) ;
 
 #ifndef NO_ASSIGNMENT
-
-  bool copyAssig = false;
-  if (m_subprobOnly || (int) sol.size() == m_nOrg)
-    copyAssig = true;
-
-  if (copyAssig) {  // simply copy given assignment
-    m_curSolution = sol;
-  } else {  // reconstruct full solution
-    m_curSolution.resize(m_nOrg, UNKNOWN);
-
-    for (int i=0; i<m_nOrg; ++i) {
-      map<int,int>::const_iterator itRen = m_old2new.find(i);
-      if (itRen != m_old2new.end()) { // var part of solution
-        m_curSolution.at(i) = sol.at(itRen->second);
-      } else {
-	      map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
-	      if (itEvid != m_evidence.end())  // var part of evidence
-	        m_curSolution.at(i) = itEvid->second;
-	      else  // var had unary domain
-	        m_curSolution.at(i) = 0;
-      }
-    }
-  }
-
+  // save only the reduced solution
+  // NOTE: sol.size() < m_nOrg in conditioned subproblem case
+  m_curSolution = sol;
+  // output the complete assignment (incl. evidence)
   if (output) {
-    ss << ' ' << m_curSolution.size();
-    for (vector<val_t>::const_iterator it=m_curSolution.begin(); it!=m_curSolution.end(); ++it) {
-      ss << ' ' << (int) (*it); 
+    vector<val_t> outputAssg;
+    assignmentForOutput(outputAssg);
+    BOOST_FOREACH( int v, outputAssg ) {
+      ss << ' ' << v;
     }
     UAI2012::outputSolutionValT(m_curSolution);
   }
@@ -575,7 +598,6 @@ void Problem::updateSolution(double cost,
     ss << endl;
     myprint(ss.str());
   }
-
 }
 
 
