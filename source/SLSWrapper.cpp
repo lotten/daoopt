@@ -91,8 +91,8 @@ bool SLSWrapper::init(Problem* prob, int iter, int time) {
 
 
 void SLSWrapper::reportSolution(double cost, int num_vars, int* assignment) {
-  cost += sls4mpe::EPS;  // EPS needed to avoid floating point precision issues
 #ifndef NO_ASSIGNMENT
+  cost += sls4mpe::EPS;  // EPS needed to avoid floating point precision issues
   assert(assignment);
   vector<val_t> assigVec(num_vars);
   for (int i = 0; i < num_vars; ++i)
@@ -120,7 +120,11 @@ double SLSWrapper::getSolution(vector<val_t>* tuple) const {
       tuple->at(i) = m_assignment[i];
     }
   }
+#ifdef NO_ASSIGNMENT
   return m_likelihood + sls4mpe::EPS;  // EPS for floating point precision issues
+#else
+  return m_likelihood;  // no ESP needed since solution cost will be recalculated
+#endif
 }
 
 #endif  /* ENABLE_SLS */
