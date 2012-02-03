@@ -590,7 +590,7 @@ void Problem::updateSolution(double cost,
     BOOST_FOREACH( int v, outputAssg ) {
       ss << ' ' << v;
     }
-    UAI2012::outputSolutionValT(m_curSolution);
+    UAI2012::outputSolutionValT(outputAssg);
   }
 #endif
 
