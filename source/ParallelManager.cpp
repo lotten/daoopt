@@ -571,7 +571,9 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
   ofstream csv(csvfile.c_str(), ios_base::out | ios_base::trunc);
 
   csv // << "idx" << '\t'
-    << "root" << '\t' << "lb" << '\t' << "ub" << '\t' << "D";
+    << "root" << '\t'
+    << "ibnd" << '\t'
+    << "lb" << '\t' << "ub" << '\t' << "D";
   BOOST_FOREACH( const string& s, SubprobStats::legend ) {
     csv << '\t' << s;
   }
@@ -595,7 +597,9 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     double estimate = evaluate(node);
 
     csv // << i << '\t'
-      << rootVar << '\t' << lb << '\t' << ub << '\t' << depth;
+      << rootVar << '\t'
+      << m_options->ibound << '\t'
+      << lb << '\t' << ub << '\t' << depth;
     BOOST_FOREACH ( double d, stats->getAll() ) {
       csv << '\t' << d;
     }
