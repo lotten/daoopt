@@ -51,7 +51,7 @@ ostream& operator << (ostream& os, const SubproblemStats& s) {
 
 #define FALLOFF 0.9
 
-void Statistics::init(int depth, int height, count_t N, count_t L, count_t D, double lower, double upper) {
+void AvgStatistics::init(int depth, int height, count_t N, count_t L, count_t D, double lower, double upper) {
 
   cout << "Statistics::init(" << depth <<','<< N <<','<< L <<','<< D <<','<< lower <<','<< upper <<")"<< endl;
 
@@ -97,7 +97,7 @@ void Statistics::init(int depth, int height, count_t N, count_t L, count_t D, do
 
 
 /* !! ATTENTION: caller should own mutex on mtx_space !! */
-void Statistics::addSubprob(Subproblem* subp) {
+void AvgStatistics::addSubprob(Subproblem* subp) {
 
   assert(subp && subp->isSolved());
 
@@ -156,7 +156,7 @@ void Statistics::addSubprob(Subproblem* subp) {
 
 }
 
-double Statistics::getAvgInc() {
+double AvgStatistics::getAvgInc() {
   if (increment.empty()) {
     if (defInc==NONE)
       assert(false);
@@ -177,7 +177,7 @@ double Statistics::getAvgInc() {
 }
 
 
-double Statistics::getAvgBra() {
+double AvgStatistics::getAvgBra() {
   if (branching.empty()) {
     if (defBra==NONE)
       assert(false);
@@ -198,7 +198,7 @@ double Statistics::getAvgBra() {
 }
 
 
-double Statistics::getAvgHei() {
+double AvgStatistics::getAvgHei() {
   if (height.empty()) {
     if (defHei==NONE)
       assert(false);
@@ -213,7 +213,7 @@ double Statistics::getAvgHei() {
 }
 
 
-double Statistics::normalize(double d) const {
+double AvgStatistics::normalize(double d) const {
 
   if (branching.size() < 2 || increment.size() < 2)
     return d;

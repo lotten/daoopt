@@ -83,7 +83,7 @@ bool ParallelManager::storeLowerBound() const {
   oss fname;
   fname << PREFIX_LOWERBOUND << m_options->problemName << "." << m_options->runTag
       << ".sol.gz";
-  m_problem->outputAndSaveSolution(fname.str(), make_pair(0,0), m_nodeProfile,
+  m_problem->outputAndSaveSolution(fname.str(), NULL, m_nodeProfile,
                                    m_leafProfile, false, false);
   cout << "Wrote lower bound to file " << fname.str() << endl;
   return true;
@@ -403,12 +403,6 @@ bool ParallelManager::writeJobs() const {
   }
   templ.close();
 
-  // reset CSV file
-  string csvfile = filename(PREFIX_STATS,".csv");
-  ofstream csv(csvfile.c_str(),ios_base::out | ios_base::trunc);
-  csv << "#id\troot\tdepth\tvars\tlb\tub\theight\twidth\test" << endl;
-  csv.close();
-
   // encode actual subproblems
   string alljobs = encodeJobs(m_external);
   jobstr << alljobs;
@@ -422,6 +416,9 @@ bool ParallelManager::writeJobs() const {
   }
   file << jobstr.str();
   file.close();
+
+  // CSV file with subproblem stats
+  writeStatsCSV(m_external);
 
   return true;
 }
@@ -487,23 +484,12 @@ bool ParallelManager::waitForGrid() const {
 
 
 bool ParallelManager::readExtResults() {
-
   myprint("Parsing external results.\n");
 
+  vector<pair<count_t, count_t> > nodecounts;
+  nodecounts.reserve(m_external.size());
+
   bool success = true;
-
-  // read current stats CSV
-  string line,csvheader;
-  vector<string> stats;
-  string csvfile = filename(PREFIX_STATS,".csv");
-  fstream csv(csvfile.c_str(), ios_base::in);
-  getline(csv,csvheader);
-  for (size_t id=0; id<m_subprobCount; ++id) {
-    getline(csv,line);
-    stats.push_back(line);
-  }
-  csv.close();
-
   for (size_t id=0; id<m_subprobCount; ++id) {
 
     SearchNode* node = m_external.at(id);
@@ -531,15 +517,10 @@ bool ParallelManager::readExtResults() {
     BINREAD(in, nodesOR);
     BINREAD(in, nodesAND);
 
-    m_space->nodesORext += nodesOR;
-    m_space->nodesANDext += nodesAND;
+    nodecounts.push_back(make_pair(nodesOR, nodesAND));
 
-    {
-    // for CSV output
-    stringstream ss;
-    ss << '\t' << nodesOR << '\t' << nodesAND;
-    stats.at(id) += ss.str();
-    }
+    m_space->stats.numORext += nodesOR;
+    m_space->stats.numANDext += nodesAND;
 
 #ifndef NO_ASSIGNMENT
     int32_t n;
@@ -588,34 +569,77 @@ bool ParallelManager::readExtResults() {
 #endif
     << endl;
     myprint(ss.str());
-
-    // Propagate
-    m_prop.propagate(node,true);
-
   }
 
-  // rewrite CSV file
-  csv.open(csvfile.c_str(), ios_base::out | ios_base::trunc);
-  csv << csvheader << "\tOR\tAND" << endl;
-  for (vector<string>::iterator it=stats.begin(); it!=stats.end(); ++it) {
-    csv << *it << endl;
+  myprint("Writing CSV stats.\n");
+  writeStatsCSV(m_external, &nodecounts);
+
+  myprint("Propagating solutions.\n");
+  BOOST_FOREACH( SearchNode* node, m_external ) {
+    m_prop.propagate(node, true);
   }
-  csv.close();
 
   return success;
+}
 
+
+void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
+                                    const vector<pair<count_t, count_t> >* counts) const {
+  if (counts)
+    assert(subprobs.size() == counts->size());
+
+  // open CSV file for stats
+  string csvfile = filename(PREFIX_STATS,".csv");
+  ofstream csv(csvfile.c_str(), ios_base::out | ios_base::trunc);
+
+  csv // << "idx" << '\t'
+    << "root" << '\t'
+    << "ibnd" << '\t'
+    << "lb" << '\t' << "ub" << '\t' << "D";
+  BOOST_FOREACH( const string& s, SubprobStats::legend ) {
+    csv << '\t' << s;
+  }
+  csv << '\t' << "est";
+  if (counts) {
+    csv << '\t' << "or" << '\t' << "and";
+  }
+  csv << endl;
+
+  for (size_t i = 0; i < subprobs.size(); ++i) {
+    SearchNode* node = subprobs.at(i);
+    assert(node);
+
+    int rootVar = node->getVar();
+    PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
+    const SubprobStats* stats = ptnode->getSubprobStats();
+
+    int depth = ptnode->getDepth();
+    double lb = lowerBound(node);
+    double ub = node->getHeur();
+    double estimate = evaluate(node);
+
+    csv // << i << '\t'
+      << rootVar << '\t'
+      << m_options->ibound << '\t'
+      << lb << '\t' << ub << '\t' << depth;
+    BOOST_FOREACH ( double d, stats->getAll() ) {
+      csv << '\t' << d;
+    }
+    csv << '\t' << estimate;
+
+    if (counts)  // solution node counts, if available
+      csv << '\t' << counts->at(i).first  // OR nodes
+          << '\t' << counts->at(i).second;  // AND nodes
+
+    csv << endl;
+  }
+  csv.close();
 }
 
 
 string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
-
-  // open CSV file for stats
-  string csvfile = filename(PREFIX_STATS,".csv");
-  ofstream csv(csvfile.c_str(),ios_base::out | ios_base::app);
-
   // Will hold the condor job description for the submission file
   ostringstream job;
-
   string subprobsFile = filename(PREFIX_SUB,".gz");
   ogzstream subprobs(subprobsFile.c_str(), ios::out | ios::binary);
   if (!subprobs) {
@@ -680,28 +704,6 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
     for(vector<double>::iterator it=pst.begin();it!=pst.end();++it) {
       BINWRITE( subprobs, *it);
     }
-
-    // write CSV output
-    int depth = ptnode->getDepth();
-    int height = ptnode->getSubHeight();
-    int width = ptnode->getSubWidth();
-    size_t vars = ptnode->getSubprobSize();
-
-    double lb = lowerBound(node);
-    double ub = node->getHeur();
-    double estimate = evaluate(node);
-
-    csv << id
-        << '\t' << rootVar
-        << '\t' << depth
-        << '\t' << vars
-        << '\t' << lb
-        << '\t' << ub
-        << '\t' << height
-        << '\t' << width
-        << '\t' << estimate;
-    csv << endl;
-
   } // for-loop over nodes
 
   // close subproblem file
@@ -735,11 +737,7 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
     << " -t 0" << endl;
 
   job << "queue " << m_subprobCount << endl;
-
-  // close CSV file
-  csv.close();
   return job.str();
-
 }
 
 
@@ -867,8 +865,9 @@ void ParallelManager::solveLocal(SearchNode* node) {
 
 bool ParallelManager::doExpand(SearchNode* n) {
 
-  assert(n);
+  assert(false);  // function should never be called
 
+  assert(n);
   m_expand.clear();
 
   if (n->getType() == NODE_AND) { /////////////////////////////////////

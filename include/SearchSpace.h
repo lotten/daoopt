@@ -59,21 +59,43 @@ struct ProgramOptions;
 class Pseudotree;
 
 
+/* simple container to hold node statistics for search */
+struct SearchStats {
+  size_t numProcessed;        // number of nodes processed (total)
+  size_t numOR;               // number of OR nodes expanded
+  size_t numAND;              // number of AND nodes expanded
+#ifdef PARALLEL_STATIC
+  size_t numORext;            // number of OR nodes from external problems
+  size_t numANDext;           // number of OR nodes from external problems
+#endif
+  size_t numLeaf;             // number of leaf nodes
+  size_t numPruned;           // number of nodes pruned by the heuristic
+  size_t numDead;             // number of "dead end" nodes (probability 0)
+  SearchStats() :
+    numProcessed(0), numOR(0), numAND(0),
+#ifdef PARALLEL_STATIC
+    numORext(0), numANDext(0),
+#endif
+    numLeaf(0), numPruned(0), numDead(0) {}
+  SearchStats(const SearchStats& ns) :
+    numProcessed(ns.numProcessed), numOR(ns.numOR), numAND(ns.numAND),
+#ifdef PARALLEL_STATIC
+    numORext(ns.numORext), numANDext(ns.numANDext),
+#endif
+    numLeaf(ns.numLeaf), numPruned(ns.numPruned), numDead(ns.numDead) {}
+};
+
+
 /* main search space structure for worker nodes */
 struct SearchSpace{
-
-  size_t nodesOR;               // number of OR nodes expanded
-  size_t nodesAND;              // number of AND nodes expanded
-#ifdef PARALLEL_STATIC
-  size_t nodesORext;            // number of OR nodes from external problems
-  size_t nodesANDext;           // number of OR nodes from external problems
-#endif
 
   SearchNode* root;             // true root of the search space, always a dummy OR node
   SearchNode* subproblemLocal;  // pseudo root node when processing subproblem (NULL otherwise)
   ProgramOptions* options;      // Pointer to instance of program options container
   Pseudotree* pseudotree;       // Guiding pseudotree
   CacheTable* cache;            // Cache table (not used when caching is disabled through preprocessor flag)
+
+  SearchStats stats;        // keeps track of various node stats
 
   SearchNode* getTrueRoot() const;
   SearchSpace(Pseudotree* pt, ProgramOptions* opt);
@@ -83,10 +105,6 @@ struct SearchSpace{
 
 
 inline SearchSpace::SearchSpace(Pseudotree* pt, ProgramOptions* opt) :
-    nodesOR(0), nodesAND(0),
-#ifdef PARALLEL_STATIC
-    nodesORext(0), nodesANDext(0),
-#endif
     root(NULL), subproblemLocal(NULL), options(opt), pseudotree(pt), cache(NULL)
 { /* intentionally empty at this point */ }
 
@@ -112,7 +130,7 @@ inline SearchNode* SearchSpace::getTrueRoot() const {
 /* search space for master node, extends worker search space to allow threading */
 struct SearchSpaceMaster : public SearchSpace {
 
-  Statistics* stats; // keeps track of the statistics
+  AvgStatistics* avgStats; // keeps track of subproblem statistics by averaging
 
   /* queue for information exchange between components */
   queue< Subproblem* > solved; // for externally solved subproblems
@@ -164,7 +182,7 @@ inline SearchSpaceMaster::SearchSpaceMaster(Pseudotree* pt, ProgramOptions* opt)
 }
 
 inline SearchSpaceMaster::~SearchSpaceMaster() {
-  if (stats) delete stats;
+  if (avgStats) delete avgStats;
 }
 
 #endif /* PARALLEL_DYNAMIC */

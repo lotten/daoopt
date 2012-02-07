@@ -211,11 +211,11 @@ bool SearchMaster::doParallelize(SearchNode* node) {
   if (m_space->options->autoCutoff) { // && m_nextThreadId >= (size_t) m_space->options->threads) {
 
     GETLOCK(m_spaceMaster->mtx_stats,lk);
-    Statistics* stats = m_spaceMaster->stats;
+    AvgStatistics* stats = m_spaceMaster->avgStats;
 
     // compute estimate
-    double avgInc = m_spaceMaster->stats->getAvgInc();
-    double avgBra = m_spaceMaster->stats->getAvgBra();
+    double avgInc = m_spaceMaster->avgStats->getAvgInc();
+    double avgBra = m_spaceMaster->avgStats->getAvgBra();
 
 #ifdef USE_LOG
     double estDepth = pow(ub-lb,stats->getAlpha()) / avgInc;
