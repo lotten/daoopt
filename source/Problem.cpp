@@ -443,7 +443,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 }
 
 
-void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
+void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodestats,
     const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool subprobOnly) const {
 
   bool writeFile = false;
@@ -473,8 +473,13 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
 
   if (writeFile) {
     BINWRITE(out, m_curCost); // mpe solution cost
-    BINWRITE(out, noNodes.first); // no. of OR nodes expanded
-    BINWRITE(out, noNodes.second); // no. of AND nodes expanded
+    count_t countOR = 0, countAND = 0;
+    if (nodestats) {
+      countOR = nodestats->numOR;
+      countAND = nodestats->numAND;
+    }
+    BINWRITE(out, countOR);
+    BINWRITE(out, countAND);
   }
 
 #ifndef NO_ASSIGNMENT
@@ -517,7 +522,7 @@ void Problem::updateSolution(double cost,
 #ifndef NO_ASSIGNMENT
     const vector<val_t>& sol,
 #endif
-    pair<size_t,size_t> nodes,
+    const SearchStats* nodestats,
     bool output) {
 
   if ( (ISNAN(m_curCost) || cost > m_curCost ) ) // TODO? && cost != ELEM_ZERO )
@@ -527,8 +532,14 @@ void Problem::updateSolution(double cost,
 
   if (cost == ELEM_ZERO) output = false;
   ostringstream ss;
-  if (output)
-    ss << "u " << nodes.first << ' ' <<  nodes.second << ' ' << SCALE_LOG(cost) ;
+  if (output) {
+    ss << "u ";
+    if (nodestats)
+      ss << nodestats->numOR << ' ' <<  nodestats->numAND << ' ';
+    else
+      ss << "0 0 ";
+    ss << SCALE_LOG(cost) ;
+  }
 
 #ifndef NO_ASSIGNMENT
   bool subprob = ((int) sol.size() != m_n) ? true : false;

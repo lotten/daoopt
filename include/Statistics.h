@@ -78,7 +78,7 @@ inline void SubproblemStats::update(SearchNode* n, PseudotreeNode* pt, count_t c
 /**
  * keeps track of subproblem statistics, used for complexity estimates
  */
-class Statistics {
+class AvgStatistics {
 
 protected:
   count_t _minN, _maxN;           // min and max number of nodes
@@ -129,12 +129,12 @@ public:
   double getBeta()  const { return _beta;  }
   double getGamma() const { return _gamma; }
 
-  Statistics();
+  AvgStatistics();
 
 };
 
 
-inline Statistics::Statistics() :
+inline AvgStatistics::AvgStatistics() :
     _minN( numeric_limits<count_t>::max() ), _maxN( numeric_limits<count_t>::min() ),
     _minE( numeric_limits<count_t>::max() ), _maxE( numeric_limits<count_t>::min() ),
     defBra(NONE), defInc(NONE), defDep(NONE), defHei(NONE),

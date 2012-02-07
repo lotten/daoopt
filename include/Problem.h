@@ -27,6 +27,7 @@
 #include "Function.h"
 #include "Graph.h"
 #include "MiniBucket.h"
+#include "SearchSpace.h"
 #include "_base.h"
 #include "gzstream.h"
 
@@ -104,7 +105,7 @@ public:
 #ifndef NO_ASSIGNMENT
       const vector<val_t>& sol,
 #endif
-      pair<size_t,size_t> nodes,
+      const SearchStats* nodestats = NULL,
       bool output = true);
 
   /* outputs the solution to the screen and, if file!="", writes it to file
@@ -114,7 +115,7 @@ public:
    *  - nodeProf and leafProf are the full and leaf node profiles
    * if subprobOnly is true, only the variables from sol will be output to
    * file (for subproblem solving) */
-  void outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
+  void outputAndSaveSolution(const string& file, const SearchStats* nodestats,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
                              bool subprobOnly = false) const;
 

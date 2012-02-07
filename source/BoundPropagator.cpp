@@ -200,11 +200,11 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
         if (prop) {
 #ifndef NO_ASSIGNMENT
           propagateTuple(n,cur);
-          if (reportSolution) m_problem->updateSolution(cur->getValue(), cur->getOptAssig(),
-              make_pair(m_space->nodesOR,m_space->nodesAND), true);
+          if (reportSolution)
+            m_problem->updateSolution(cur->getValue(), cur->getOptAssig(), & m_space->stats, true);
 #else
-          if (reportSolution) m_problem->updateSolution(cur->getValue(),
-              make_pair(m_space->nodesOR,m_space->nodesAND), true);
+          if (reportSolution)
+            m_problem->updateSolution(cur->getValue(), & m_space->stats, true);
 #endif
       }
       break;
@@ -231,10 +231,11 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
   if (prop && !cur) {
 #ifndef NO_ASSIGNMENT
     propagateTuple(n,prev);
-    if (reportSolution) m_problem->updateSolution(prev->getValue(), prev->getOptAssig(),
-        make_pair(m_space->nodesOR, m_space->nodesAND), true);
+    if (reportSolution)
+      m_problem->updateSolution(prev->getValue(), prev->getOptAssig(), & m_space->stats , true);
 #else
-    if (reportSolution) m_problem->updateSolution(prev->getValue(), make_pair(m_space->nodesOR, m_space->nodesAND), true);
+    if (reportSolution)
+      m_problem->updateSolution(prev->getValue(), & m_space->stats, true);
 #endif
   }
 

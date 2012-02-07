@@ -100,9 +100,9 @@ void SLSWrapper::reportSolution(double cost, int num_vars, int* assignment) {
   vector<val_t> assigVec(num_vars);
   for (int i = 0; i < num_vars; ++i)
     assigVec[i] = assignment[i];
-  m_problem->updateSolution(cost, assigVec, make_pair(0,0), true);
+  m_problem->updateSolution(cost, assigVec, NULL, true);
 #else
-  m_problem->updateSolution(cost, make_pair(0,0), true);
+  m_problem->updateSolution(cost, NULL, true);
 #endif
 }
 

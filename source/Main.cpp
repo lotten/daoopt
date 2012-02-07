@@ -447,7 +447,7 @@ bool Main::runLDS() {
       propLDS.propagate(n,true); // true = report solution
       n = lds.nextLeaf();
     }
-    cout << "LDS: explored " << spaceLDS->nodesOR << '/' << spaceLDS->nodesAND
+    cout << "LDS: explored " << spaceLDS->stats.numOR << '/' << spaceLDS->stats.numAND
          << " OR/AND nodes" << endl;
     cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
     if (lds.getCurOptValue() > m_search->curLowerBound()) {
@@ -596,12 +596,17 @@ bool Main::outputStats() const {
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   cout << "Condor jobs:   " << m_search->getSubproblemCount() << endl;
 #endif
-  cout << "OR nodes:      " << m_space->nodesOR << endl;
-  cout << "AND nodes:     " << m_space->nodesAND << endl;
+  cout << "OR nodes:      " << m_space->stats.numOR << endl;
+  cout << "AND nodes:     " << m_space->stats.numAND << endl;
 #if defined PARALLEL_STATIC
-  cout << "OR external:   " << m_space->nodesORext << endl;
-  cout << "AND external:  " << m_space->nodesANDext << endl;
+  cout << "OR external:   " << m_space->stats.numORext << endl;
+  cout << "AND external:  " << m_space->stats.numANDext << endl;
 #endif
+  cout << "Proc. nodes:   " << m_space->stats.numProcessed << endl;
+  cout << "Leaf nodes:    " << m_space->stats.numLeaf << endl;
+  cout << "Pruned nodes:  " << m_space->stats.numPruned << endl;
+  cout << "Deadend nodes: " << m_space->stats.numDead << endl;
+
 
 #ifdef PARALLEL_STATIC
   if (m_options->par_preOnly && m_solved) {
@@ -639,8 +644,8 @@ bool Main::outputStats() const {
   }
   cout << endl;
 
-  pair<size_t,size_t> noNodes = make_pair(m_space->nodesOR, m_space->nodesAND);
-  m_problem->outputAndSaveSolution(m_options->out_solutionFile, noNodes,
+//  pair<size_t,size_t> noNodes = make_pair(m_space->stats.numOR, m_space->stats.numAND);
+  m_problem->outputAndSaveSolution(m_options->out_solutionFile, & m_space->stats,
       m_search->getNodeProfile(), m_search->getLeafProfile(),
       !m_options->in_subproblemFile.empty() );
 #ifdef PARALLEL_STATIC

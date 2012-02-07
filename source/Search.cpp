@@ -70,22 +70,12 @@ SearchNode* Search::initSearch() {
 bool Search::doProcess(SearchNode* node) {
   assert(node);
   if (node->getType() == NODE_AND) {
+    // 0-labeled nodes should not get generated in the first place
+    assert(node->getLabel() != ELEM_ZERO);  // if this fires, something is wrong!
     DIAG( ostringstream ss; ss << *node << " (l=" << node->getLabel() << ")\n"; myprint(ss.str()) );
     int var = node->getVar();
     int val = node->getVal();
     m_assignment[var] = val; // record assignment
-
-    /* not required anymore, 0-label nodes won't be generated in the first place
-    // dead end (AND label = 0)?
-    if (node->getLabel() == ELEM_ZERO) {
-      node->setLeaf(); // mark as leaf
-      int depth = m_pseudotree->getNode(var)->getDepth();
-      m_leafProfile.at(depth) += 1; // count leaf node
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-      node->setSubLeaves(1);
-#emdof
-      return true; // and abort
-    } */
   } else { // NODE_OR
     DIAG( ostringstream ss; ss << *node << "\n"; myprint(ss.str()) );
   }
@@ -109,7 +99,7 @@ bool Search::doCaching(SearchNode* node) {
 
   } else { // OR node, try actual caching
 
-    if (!ptnode->getParent()) return false;
+    if (!ptnode->getParent()) return false;  // pseudo tree root
 
     if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
       // add cache context information
@@ -165,6 +155,7 @@ bool Search::doPruning(SearchNode* node) {
   if (canBePruned(node)) {
     DIAG( myprint("\t !pruning \n") );
     node->setLeaf();
+    m_space->stats.numPruned += 1;
     node->setPruned();
     if (node->getType() == NODE_AND) {
       // count 1 leaf AND node
@@ -194,6 +185,7 @@ SearchNode* Search::nextLeaf() {
 
   SearchNode* node = this->nextNode();
   while (node) {
+    m_space->stats.numProcessed += 1;
     if (doProcess(node)) // initial processing
       { return node; }
     if (doCaching(node)) // caching?
@@ -295,7 +287,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->nodesAND += 1;
+  m_space->stats.numAND += 1;
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
@@ -330,6 +322,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
   if (chi.empty()) {
     n->setLeaf(); // terminal node
     n->setValue(ELEM_ONE);
+    m_space->stats.numLeaf += 1;
     if (depth!=-1) m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC
     n->setSubLeaves(1);
@@ -367,15 +360,15 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->nodesOR +=1 ;
+  m_space->stats.numOR += 1;
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
 
 #ifndef NO_HEURISTIC
-    // retrieve precomputed labels and heuristic values
-    double* heur = n->getHeurCache();
+  // retrieve precomputed labels and heuristic values
+  double* heur = n->getHeurCache();
 #endif
 
   for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
@@ -387,6 +380,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
       d OP_TIMESEQ (*it)->getValue(m_assignment);
     if (d == ELEM_ZERO) {
+      m_space->nodesLeaf += 1;
       m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC
       n->addSubLeaves(1);
@@ -397,6 +391,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
 #else
     // early pruning if heuristic is zero (since it's an upper bound)
     if (heur[2*i] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
+      m_space->stats.numDead += 1;
       m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC
       n->addSubLeaves(1);
@@ -679,10 +674,10 @@ void Search::setInitialSolution(double d
   if (ISNAN(curValue) || d > curValue) {
     m_space->root->setValue(d);
 #ifdef NO_ASSIGNMENT
-    m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
+    m_problem->updateSolution(this->getCurOptValue(), NULL, true);
 #else
     m_space->root->setOptAssig(tuple);
-    m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
+    m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), NULL, true);
 #endif
   }
 }

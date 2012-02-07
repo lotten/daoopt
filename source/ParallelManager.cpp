@@ -497,8 +497,8 @@ bool ParallelManager::readExtResults() {
 
     nodecounts.push_back(make_pair(nodesOR, nodesAND));
 
-    m_space->nodesORext += nodesOR;
-    m_space->nodesANDext += nodesAND;
+    m_space->stats.numORext += nodesOR;
+    m_space->stats.numANDext += nodesAND;
 
 #ifndef NO_ASSIGNMENT
     int32_t n;
@@ -843,8 +843,9 @@ void ParallelManager::solveLocal(SearchNode* node) {
 
 bool ParallelManager::doExpand(SearchNode* n) {
 
-  assert(n);
+  assert(false);  // function should never be called
 
+  assert(n);
   m_expand.clear();
 
   if (n->getType() == NODE_AND) { /////////////////////////////////////
