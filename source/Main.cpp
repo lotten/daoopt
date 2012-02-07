@@ -623,7 +623,7 @@ bool Main::outputStats() const {
   if (!m_options->par_preOnly || m_solved) { // parallel static: only output if solved
 #endif
 
-  double mpeCost = m_search->getCurOptValue();
+  double mpeCost = m_problem->getSolutionCost();
   cout << SCALE_LOG(mpeCost) << " (" << SCALE_NORM(mpeCost) << ')' << endl;
 
   // Output node and leaf profiles per depth
