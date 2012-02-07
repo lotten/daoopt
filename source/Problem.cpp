@@ -554,22 +554,24 @@ void Problem::updateSolution(double cost,
   // use Kahan summation to compute exact solution cost
   // TODO (might not work in non-log scale?)
   if (cost != ELEM_ZERO && !m_subprobOnly) {
-    double kahan = ELEM_ONE;
-    double comp = ELEM_ONE;
-    double y, z;
-
+    double kahan = ELEM_ONE, comp = ELEM_ONE;  // used across loop iterations
+    double y, z;  // reset for each loop iteration
     BOOST_FOREACH( Function* f, m_functions ) {
-      y = f->getValue(sol) OP_DIVIDE comp;
+      z = f->getValue(sol);
+      if (z == ELEM_ZERO) {
+        myprint("Warning: skipping zero-cost solution.\n"); return;
+      }
+      y = z OP_DIVIDE comp;
       z = kahan OP_TIMES y;
       comp = (z OP_DIVIDE kahan) OP_DIVIDE y;
       kahan = z;
     }
-    //  if (cost != kahan) cout << cost << " d=" << abs(kahan-cost) << endl;
+//    if (cost != kahan) cout << cost << " " << kahan << " " << abs(kahan-cost) << endl;
     cost = kahan;  // use Kahan sum
   }
 #endif
 
-  if (!ISNAN(m_curCost) && cost <= m_curCost)  // TODO cost =?= ELEM_ZERO )
+  if (ISNAN(cost) || (!ISNAN(m_curCost) && cost <= m_curCost))  // TODO cost =?= ELEM_ZERO )
     return;
   m_curCost = cost;
   if (cost == ELEM_ZERO) output = false;
@@ -591,6 +593,7 @@ void Problem::updateSolution(double cost,
   if (output) {
     vector<val_t> outputAssg;
     assignmentForOutput(outputAssg);
+    ss << ' ' << outputAssg.size();
     BOOST_FOREACH( int v, outputAssg ) {
       ss << ' ' << v;
     }
