@@ -587,10 +587,10 @@ bool Search::loadInitialBound(string file) {
     // store solution/bound into search space and problem instance
 #ifdef NO_ASSIGNMENT
     this->updateSolution(bound);
-    m_problem->updateSolution(getCurOptValue(), make_pair(0,0), true);
+    m_problem->updateSolution(getCurOptValue(), NULL, true);
 #else
     this->updateSolution(bound, reduced);
-    m_problem->updateSolution(getCurOptValue(), getCurOptTuple(), make_pair(0,0), true);
+    m_problem->updateSolution(getCurOptValue(), getCurOptTuple(), NULL, true);
 #endif
 
 
