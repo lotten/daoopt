@@ -118,7 +118,7 @@ public:
    * returns true on success, false on error */
   bool loadInitialBound(string);
 
-  void setInitialSolution(double
+  bool updateSolution(double
 #ifndef NO_ASSIGNMENT
     , const vector<val_t>&
 #endif

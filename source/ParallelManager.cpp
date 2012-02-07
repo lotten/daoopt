@@ -84,7 +84,7 @@ bool ParallelManager::storeLowerBound() const {
   fname << PREFIX_LOWERBOUND << m_options->problemName << "." << m_options->runTag
       << ".sol.gz";
   m_problem->outputAndSaveSolution(fname.str(), NULL, m_nodeProfile,
-                                   m_leafProfile, false, false);
+                                   m_leafProfile, false);  // false -> no output to screen
   cout << "Wrote lower bound to file " << fname.str() << endl;
   return true;
 }
@@ -101,13 +101,13 @@ bool ParallelManager::loadLowerBound() {
 
 
 bool ParallelManager::doLearning() {
-  if (m_options->sampleRepeat == 0)
+  if (m_options->sampleRepeat == 0 || m_options->sampleSizes.empty())
     return true;
 
 #ifndef NO_ASSIGNMENT
-  m_sampleSearch->setInitialSolution(this->getCurOptValue(), this->getCurOptTuple());
+  m_sampleSearch->updateSolution(this->getCurOptValue(), this->getCurOptTuple());
 #else
-  m_sampleSearch->setInitialSolution(this->getCurOptValue());
+  m_sampleSearch->updateSolution(this->getCurOptValue());
 #endif
 
   BoundPropagator prop(m_problem, m_sampleSpace.get());
@@ -928,7 +928,7 @@ bool ParallelManager::applyLDS(SearchNode* node) {
 }
 
 /*
-void ParallelManager::setInitialSolution(double d
+void ParallelManager::updateSolution(double d
 #ifndef NO_ASSIGNMENT
     ,const vector<val_t>& tuple
 #endif
