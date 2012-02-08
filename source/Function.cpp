@@ -183,7 +183,7 @@ Function* FunctionBayes::substitute(const map<int,val_t>& assignment) const {
 }
 
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 
 /* Computes tightness:
  * 1) Table is projected down on 'proj'.
@@ -300,7 +300,7 @@ size_t Function::getTightness(const set<int>& proj, const set<int>& cond,
 #endif /* PARALLEL_DYNAMIC */
 
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
                               const set<int>& cond, const vector<val_t>* assig) {
 
@@ -336,7 +336,7 @@ bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
 #endif /* PARALLEL_DYNAMIC */
 
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 double Function::getAverage(const set<int>& cond, const vector<val_t>& assig) {
 
   double sum = ELEM_ONE;

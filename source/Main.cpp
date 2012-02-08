@@ -189,7 +189,7 @@ bool Main::findOrLoadOrdering() {
     m_problem->saveOrdering(m_options->in_orderingFile, elim);
     cout << "Saved ordering to file " << m_options->in_orderingFile << endl;
   }
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 #if defined PARALLEL_STATIC
   if (!m_options->par_postOnly) // no need to write ordering in post processing
 #endif
@@ -215,7 +215,7 @@ bool Main::findOrLoadOrdering() {
 #if defined PARALLEL_STATIC
   m_pseudotree->computeSubprobStats();
 #endif
-#if defined PARALLEL_DYNAMIC //or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC //|| defined PARALLEL_STATIC
   int cutoff = m_pseudotree->computeComplexities(m_options->threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
 //  if (opt.autoCutoff) {
@@ -697,7 +697,7 @@ bool Main::start() const {
 bool Main::outputInfo() const {
   assert(m_options.get());
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   if (m_options->runTag == "") {
     m_options->runTag = "notag";
   }
@@ -711,7 +711,7 @@ bool Main::outputInfo() const {
   << "+ Suborder:\t" << m_options->subprobOrder << " ("
   << subprob_order[m_options->subprobOrder] <<")"<< endl
   << "+ Random seed:\t" << m_options->seed << endl
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   << "+ Cutoff depth:\t" << m_options->cutoff_depth << endl
   << "+ Cutoff size:\t" << m_options->cutoff_size << endl
   << "+ Max. workers:\t" << m_options->threads << endl

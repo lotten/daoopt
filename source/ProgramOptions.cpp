@@ -46,7 +46,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("sol-file,c", po::value<string>(), "path to output optimal solution to")
       ("ibound,i", po::value<int>()->default_value(10), "i-bound for mini bucket heuristics")
       ("cbound,j", po::value<int>()->default_value(1000), "context size bound for caching")
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
       ("cbound-worker,k", po::value<int>()->default_value(1000), "context size bound for caching in worker nodes")
 #else
       ("rotate,y", "use breadth-rotating AOBB")
@@ -55,7 +55,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("orderIter,t", po::value<int>()->default_value(25), "iterations for finding ordering")
       ("orderTime", po::value<int>()->default_value(-1), "maximum time for finding ordering")
       ("max-width", po::value<int>(), "max. induced width to process, abort otherwise")
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
       ("cutoff-width,w", po::value<int>()->default_value(-1), "cutoff width for central search")
       ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^5)")

@@ -228,7 +228,7 @@ using __gnu_cxx::hash_map;
 #define hash_set google::sparse_hash_set
 #endif
 
-#if defined HASH_SGI | defined HASH_GOOGLE_DENSE | defined HASH_GOOGLE_SPARSE
+#if defined HASH_SGI || defined HASH_GOOGLE_DENSE || defined HASH_GOOGLE_SPARSE
 /* BEGIN FIX FOR STRINGS AND SGI HASH TABLE in __gnu_cxx */
 namespace __gnu_cxx {
 template<> struct hash<std::string> {
@@ -256,7 +256,7 @@ template<> struct hash<std::string> {
 typedef uint64_t count_t;
 
 /* LibGMP C++ interface */
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
  #ifdef USE_GMP
  #include <gmpxx.h>
  typedef mpz_class bigint;
@@ -448,7 +448,7 @@ inline double mylog10(unsigned long a) {
   return log10(a);
 }
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
  #ifdef USE_GMP
  double mylog10(bigint a);
  #endif

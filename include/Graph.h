@@ -125,7 +125,7 @@ public:
 
 /* Constructor */
 inline Graph::Graph(const int& n) : m_statNumNodes(0), m_statNumEdges(0) {
-#if defined HASH_GOOGLE_DENSE | defined HASH_GOOGLE_SPARSE
+#if defined HASH_GOOGLE_DENSE || defined HASH_GOOGLE_SPARSE
   m_neighbors.set_deleted_key(UNKNOWN);
 #endif
 #ifdef HASH_GOOGLE_DENSE

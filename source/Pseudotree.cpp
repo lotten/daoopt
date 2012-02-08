@@ -277,7 +277,7 @@ void Pseudotree::buildChain(Graph G, const vector<int>& elim, const int cachelim
   m_root->updateSubprobVars(m_nodes.size());
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -372,7 +372,7 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
   m_root->updateSubprobVars(m_nodes.size());  // includes dummy
   m_size = m_root->getSubprobSize() - 1;  // -1 for dummy
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -439,7 +439,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
     (*it)->orderChildren(m_subOrder);
   }
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -451,8 +451,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
 }
 
 
-
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 /* a-priori computation of several complexity estimates, outputs various
  * results for increasing depth-based cutoff. Returns suggested optimal
  * cutoff depth (bad choice in practice) */
@@ -696,7 +695,7 @@ void PseudotreeNode::computeStatsClusterCondSub(
 #endif
 
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 /* computes subproblem complexity parameters for a particular pseudo tree node */
 void PseudotreeNode::initSubproblemComplexity() {
 
@@ -759,7 +758,7 @@ void PseudotreeNode::initSubproblemComplexity() {
 #endif /* PARALLEL */
 
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 /* compute upper bound on subproblem size, assuming conditioning on 'cond' */
 bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_t>* assig) const {
 
