@@ -418,9 +418,10 @@ bool Main::runLDS() {
     LimitedDiscrepancy lds(m_problem.get(), m_pseudotree.get(), spaceLDS.get(),
                            m_heuristic.get(), m_options->lds);
     if (!m_options->in_subproblemFile.empty()) {
-      if (!lds.restrictSubproblem(m_options->in_subproblemFile))
+      if (!lds.restrictSubproblem(m_options->in_subproblemFile)) {
         err_txt("Subproblem restriction for LDS failed.");
         return false;
+      }
     }
 
     // load current best solution into LDS
