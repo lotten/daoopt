@@ -554,8 +554,10 @@ void Problem::updateSolution(double cost,
 #ifndef NO_ASSIGNMENT
   // check for complete assignment first
   BOOST_FOREACH(val_t v, sol) {
-    myprint("Warning: skipping incomplete solution.\n");
-    if (v == NONE) return;
+    if (v == NONE) {
+      myprint("Warning: skipping incomplete solution.\n");
+      return;
+    }
   }
 
   // use Kahan summation to compute exact solution cost
