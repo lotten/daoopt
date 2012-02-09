@@ -519,9 +519,10 @@ void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodes
 
 #ifndef NO_ASSIGNMENT
 void Problem::assignmentForOutput(vector<val_t>& assg) const {
-  if (m_subprobOnly)
+  if (m_subprobOnly) {
     assg = m_curSolution;
-  else {
+    assg.pop_back();  // dummy variable
+  } else {
     assg.resize(m_nOrg, UNKNOWN);
     for (int i=0; i<m_nOrg; ++i) {
       map<int,int>::const_iterator itRen = m_old2new.find(i);
@@ -551,6 +552,12 @@ void Problem::updateSolution(double cost,
     return;
 
 #ifndef NO_ASSIGNMENT
+  // check for complete assignment first
+  BOOST_FOREACH(val_t v, sol) {
+    myprint("Warning: skipping incomplete solution.\n");
+    if (v == NONE) return;
+  }
+
   // use Kahan summation to compute exact solution cost
   // TODO (might not work in non-log scale?)
   if (cost != ELEM_ZERO && !m_subprobOnly) {
@@ -559,7 +566,8 @@ void Problem::updateSolution(double cost,
     BOOST_FOREACH( Function* f, m_functions ) {
       z = f->getValue(sol);
       if (z == ELEM_ZERO) {
-        myprint("Warning: skipping zero-cost solution.\n"); return;
+        myprint("Warning: skipping zero-cost solution.\n");
+        return;
       }
       y = z OP_DIVIDE comp;
       z = kahan OP_TIMES y;

@@ -563,21 +563,19 @@ bool ParallelManager::readExtResults() {
     ostringstream ss;
     ss  << "Read solution file " << id << " (" << *node
         << ") " << nodesOR << " / " << nodesAND
-        << " v:" << node->getValue()
+        << " v:" << node->getValue();
 #ifndef NO_ASSIGNMENT
-//    << " -assignment " << node->getOptAssig()
+    DIAG(ss << " -assignment " << node->getOptAssig());
 #endif
-    << endl;
+    ss << endl;
     myprint(ss.str());
+
+    // propagate result (but don't delete node, needed for stats)
+    m_prop.propagate(node, true, node);
   }
 
   myprint("Writing CSV stats.\n");
   writeStatsCSV(m_external, &nodecounts);
-
-  myprint("Propagating solutions.\n");
-  BOOST_FOREACH( SearchNode* node, m_external ) {
-    m_prop.propagate(node, true);
-  }
 
   return success;
 }
@@ -843,29 +841,25 @@ double ParallelManager::evaluate(const SearchNode* node) const {
 }
 
 
-void ParallelManager::solveLocal(SearchNode* node) {
-
-  assert(node && node->getType()==NODE_OR);
-
-  DIAG(ostringstream ss; ss << "Solving subproblem locally: " << *node << endl; myprint(ss.str()));
-
-  syncAssignment(node);
-
-  // clear out stack first
-  while (m_stack.size())
+void ParallelManager::resetLocalStack(SearchNode* node) {
+  while (!m_stack.empty())
     m_stack.pop();
-  // push subproblem root onto stack
-  m_stack.push(node);
+  if (node)
+    m_stack.push(node);
+}
 
+
+void ParallelManager::solveLocal(SearchNode* node) {
+  assert(node && node->getType()==NODE_OR);
+  DIAG(ostringstream ss; ss << "Solving subproblem locally: " << *node << endl; myprint(ss.str()));
+  syncAssignment(node);
+  this->resetLocalStack(node);
   while ( ( node=nextLeaf() ) )
     m_prop.propagate(node,true);
-
 }
 
 
 bool ParallelManager::doExpand(SearchNode* n) {
-
-  assert(false);  // function should never be called
 
   assert(n);
   m_expand.clear();
@@ -927,22 +921,6 @@ bool ParallelManager::applyLDS(SearchNode* node) {
 
 }
 
-/*
-void ParallelManager::updateSolution(double d
-#ifndef NO_ASSIGNMENT
-    ,const vector<val_t>& tuple
-#endif
-  ) const {
-  assert(m_space);
-  m_space->root->setValue(d);
-#ifdef NO_ASSIGNMENT
-  m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
-#else
-  m_space->root->setOptAssig(tuple);
-  m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
-#endif
-}
-*/
 
 string ParallelManager::filename(const char* pre, const char* ext, int count) const {
   ostringstream ss;

@@ -99,7 +99,8 @@ bool Search::doCaching(SearchNode* node) {
 
   } else { // OR node, try actual caching
 
-    if (!ptnode->getParent()) return false;  // pseudo tree root
+    if (!ptnode->getParent() || !ptnode->getParent()->getParent())
+      return false;  // pseudo tree root or one of its direct children
 
     if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
       // add cache context information

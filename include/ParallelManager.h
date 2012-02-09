@@ -76,15 +76,6 @@ protected:
   SearchNode* nextNode();
   bool isMaster() const { return true; }
 
-/*
-public:
-  void setInitialSolution(double
-#ifndef NO_ASSIGNMENT
-   ,const vector<val_t>&
-#endif
-  ) const;
-*/
-
 protected:
   /* moves the frontier one step deeper by splitting the given node */
   bool deepenFrontier(SearchNode*, vector<SearchNode*>& out);
