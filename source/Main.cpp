@@ -457,13 +457,17 @@ bool Main::runLDS() {
 
 bool Main::finishPreproc() {
 
-  // load current best solution from preprocessin into search instance
+  // load current best solution from preprocessing into search instance
   if (m_search->updateSolution(m_problem->getSolutionCost()
 #ifndef NO_ASSIGNMENT
       , m_problem->getSolutionAssg()
 #endif
   ))
     cout << "Initial problem lower bound: " << m_search->curLowerBound() << endl;
+
+#ifndef NO_HEURISTIC
+  m_search->finalizeHeuristic();
+#endif
 
 #ifdef PARALLEL_STATIC
   if (m_options->par_preOnly) {

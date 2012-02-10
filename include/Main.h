@@ -113,10 +113,6 @@ inline bool Main::runSearch() {
     return false;
   if (m_solved)
     return true;
-#ifndef NO_HEURISTIC
-  m_search->finalizeHeuristic();
-#endif
-
   cout << "--- Starting search ---" << endl;
 #if defined PARALLEL_DYNAMIC
   return runSearchDynamic();
