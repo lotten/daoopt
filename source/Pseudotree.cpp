@@ -70,7 +70,7 @@ void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
   for (vector<Function*>::const_iterator itF=fns.begin(); itF!=fns.end(); ++itF) {
     const set<int>& scope = (*itF)->getScope();
     if (scope.size() == 0) {
-      m_nodes[m_elimOrder.back()]->addFunction(*itF);
+      m_nodes[m_elimOrder.back()]->addFunction(*itF);  // dummy variable
       continue;
     }
     vector<int>::const_iterator it = m_elimOrder.begin();

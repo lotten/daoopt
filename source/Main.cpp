@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.7"
+#define VERSIONINFO "0.99.7b"
 
 time_t _time_start, _time_pre;
 
@@ -77,7 +77,7 @@ bool Main::loadProblem() {
 #endif
 
   // Some statistics
-  cout << "Global constant:\t" << m_problem->getGlobalConstant() << endl;
+  cout << "Global constant:\t" << m_problem->globalConstInfo() << endl;
   cout << "Max. domain size:\t" << (int) m_problem->getK() << endl;
   cout << "Max. function arity:\t" << m_problem->getR() << endl;
 
@@ -433,6 +433,7 @@ bool Main::runLDS() {
       cout << "LDS: Initial solution loaded." << endl;
 
     BoundPropagator propLDS(m_problem.get(), spaceLDS.get(), false);  // doCaching = false
+    lds.finalizeHeuristic();
     SearchNode* n = lds.nextLeaf();
     while (n) {
       propLDS.propagate(n,true); // true = report solution

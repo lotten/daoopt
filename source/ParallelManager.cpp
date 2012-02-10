@@ -533,6 +533,15 @@ bool ParallelManager::readExtResults() {
       BINREAD(in, v); // read opt. assignments
       tup[i] = (val_t) v;
     }
+
+    size_t subsize = m_pseudotree->getNode(node->getVar())->getSubprobVars().size();
+    if (tup.size() != subsize) {
+      oss ss;
+      ss << "Warning: tuple length mismatch, got " << tup.size() << ", needed " << subsize << endl;
+      myprint(ss.str());
+      success = false;
+      continue;
+    }
 #endif
 
     // read node profiles
@@ -953,11 +962,7 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* spa
 
   SearchNode* first = this->initSearch();
   assert(first);
-
-  // one more dummy OR node for OPEN list (top of stack needs to be OR node)
-  SearchNode* next = new SearchNodeOR(first, first->getVar(), -1) ;
-  first->setChild(next);
-  m_external.push_back(next);
+  m_external.push_back(first);
 
   // set up LDS
 //  m_ldsSpace = new SearchSpace(m_pseudotree, m_options);

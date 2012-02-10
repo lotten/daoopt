@@ -46,25 +46,27 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 
 
 SearchNode* Search::initSearch() {
-  // Add initial set of dummy nodes.
   if (!m_space->root) {
-    // create root OR node (dummy variable)
+    // Create root OR node (dummy variable)
     PseudotreeNode* ptroot = m_pseudotree->getRoot();
     SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar(), -1);
     m_space->root = node;
-
-    // create dummy AND node (domain size 1) with global constant as label
-    SearchNode* next = new SearchNodeAND(node, 0, m_problem->getGlobalConstant());
-    m_space->root->setChild(next);
-
-    return next;
+    return node;
   } else {
-    if (m_space->root->getChildCountAct())
+    if (m_space->root->getChildCountAct())  // TODO: not needed anymore?
       return m_space->root->getChildren()[0];
     else
       return m_space->root;
   }
 }
+
+
+#ifndef NO_HEURISTIC
+void Search::finalizeHeuristic() {
+  assert(m_space && m_space->getTrueRoot());
+  heuristicOR(m_space->getTrueRoot());
+}
+#endif
 
 
 bool Search::doProcess(SearchNode* node) {
@@ -625,47 +627,39 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
   // generate structure of bogus nodes to hold partial solution tree copied
   // from master search space
 
-  SearchNode* next = this->nextNode(); // dummy AND node on top of stack
-  SearchNode* node = NULL;
+  SearchNode *next = NULL, *node = NULL;
+  delete m_space->root;  // delete previous search space root
 
   int pstSize = pst.size() / 2;
+  int dummyVar = m_problem->getN() - 1;
 
   // build structure top-down, first entry in pst array is assumed to correspond to
   // highest OR value, last entry is the lowest AND label
   for (int i=0; i<pstSize; ++i) {
 
-    // add dummy OR node with proper value
-    node = next;
-    next = new SearchNodeOR(node, node->getVar(), -1) ;
+    // dummy OR node with solution bound from master PST
+    next = new SearchNodeOR(node, dummyVar, -1) ;
     next->setValue(pst.at(2*i));
-//    cout << " Added dummy OR node with value " << d1 << endl;
-    node->setChild(next);
-
+    DIAG(cout << "- Created OR dummy with value " << pst.at(2*i) << endl;)
+    if (i > 0) node->setChild(next);
+    else m_space->root = next;
     node = next;
-    next = new SearchNodeAND(node, 0, pst.at(2*i+1)) ;
-//    cout << " Added dummy AND node with label " << d2 << endl;
-    node->setChild(next);
 
+    // dummy AND node with label from master PST
+    next = new SearchNodeAND(node, 0, pst.at(2*i+1)) ;
+    DIAG(cout << " -Created AND dummy with label " << pst.at(2*i+1) << endl;)
+    node->setChild(next);
+    node = next;
   }
 
-  // create another set of dummy nodes as a buffer for the subproblem
-  // value since the previous dummy nodes might have non-empty
-  // labels/values from the parent problem)
-  node = next;
-  next = new SearchNodeOR(node, node->getVar(), -1);
+  // create the OR node for the actual (non-dummy) subproblem root variable
+  next = new SearchNodeOR(node, rootVar, 0);
   node->setChild(next);
-
-  node = next;
-  next = new SearchNodeAND(node, 0); // label = ELEM_ONE !
-  node->setChild(next);
-
-  m_space->subproblemLocal = node; // dummy OR node
-
+  m_space->subproblemLocal = next;
   // empty existing queue/stack/etc. and add new node
-  this->reset(next); // dummy AND node
+  this->reset(next);
 
   return depth;
-
 }
 
 

@@ -50,7 +50,7 @@ bool SLSWrapper::init(Problem* prob, int iter, int time) {
 
   // load network directly into SLS from Problem*
   sls4mpe::num_vars = prob->getN() - ((prob->hasDummy()) ? 1 : 0);  // -1 for dummy variable
-  sls4mpe::num_pots = prob->getC() + 1; // for global constant dummy function
+  sls4mpe::num_pots = prob->getC();
   sls4mpe::allocateVarsAndPTs(false);
 
   for (int i=0; i < prob->getN(); ++i)
@@ -74,17 +74,6 @@ bool SLSWrapper::init(Problem* prob, int iter, int time) {
 #endif
     }
   }
-
-  // dummy function for global constant
-  int i = sls4mpe::num_pots - 1;
-  sls4mpe::probTables[i]->init(0);
-  sls4mpe::probTables[i]->setNumEntries(1);
-#ifdef USE_LOG
-  sls4mpe::probTables[i]->setLogEntry(0, prob->getGlobalConstant());
-#else
-  sls4mpe::probTables[i]->setEntry(0, prob->getGlobalConstant());
-#endif
-
 
   return true;
 }

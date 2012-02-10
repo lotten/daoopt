@@ -99,6 +99,8 @@ protected:
   /* writes subproblem statistics to CSV file, solution node counts optional */
   void writeStatsCSV(const vector<SearchNode*>& subprobs,
                      const vector<pair<count_t, count_t> >* nodecounts = NULL) const;
+  /* clear stack for local solving */
+  void resetLocalStack(SearchNode* node = NULL);
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
 
