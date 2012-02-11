@@ -28,7 +28,17 @@
 
 #ifdef PARALLEL_STATIC
 
-/* stores static information about a subproblem's complexity */
+/* stores dynamic subproblem features (associated with specific
+ * search node) */
+struct SubprobFeatures {
+  double ratioPruned;  // ratio of heuristically pruned nodes
+  double ratioDead;    // ratio of dead-end nodes (0-valued)
+  double ratioLeaf;    // ratio of leaf nodes (pseudotree leaf)
+  SubprobFeatures();
+};
+
+/* stores static information about a subproblem's complexity
+ * (associated with pseudo tree node) */
 class SubprobStats {
   friend ostream& operator << (ostream& os, const SubprobStats& stats);
 
@@ -81,6 +91,10 @@ public:
 ostream& operator << (ostream& os, const SubprobStats& stats);
 
 /* Inline functions */
+
+inline SubprobFeatures::SubprobFeatures() :
+    ratioPruned(UNKNOWN), ratioDead(UNKNOWN), ratioLeaf(UNKNOWN)
+{ /* empty */ }
 
 inline double SubprobStats::getStats(double* xs, int idx) const {
   assert (xs  && idx >= 0 && idx < 4);

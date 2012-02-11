@@ -277,7 +277,6 @@ bool ParallelManager::restoreFrontier() {
   }
 
   return true;
-
 }
 
 
@@ -351,7 +350,6 @@ bool ParallelManager::findFrontier() {
   myprint("Local jobs (if any) done.\n");
 
   return true;
-
 }
 
 
@@ -374,7 +372,6 @@ bool ParallelManager::runCondor() const {
   }
 
   return true; // default: success
-
 }
 
 
@@ -600,9 +597,10 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
   ofstream csv(csvfile.c_str(), ios_base::out | ios_base::trunc);
 
   csv // << "idx" << '\t'
-    << "root" << '\t'
-    << "ibnd" << '\t'
-    << "lb" << '\t' << "ub" << '\t' << "D";
+    << "root" << '\t' << "ibnd"
+    << '\t' << "lb" << '\t' << "ub"
+    << '\t' << "rPruned" << '\t' << "rDead" << '\t' << "rLeaf"
+    << '\t' << "D";
   BOOST_FOREACH( const string& s, SubprobStats::legend ) {
     csv << '\t' << s;
   }
@@ -620,15 +618,20 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
     const SubprobStats* stats = ptnode->getSubprobStats();
 
+    SubprobFeatures* dynamicFeatures = node->getSubprobFeatures();
+
     int depth = ptnode->getDepth();
     double lb = lowerBound(node);
     double ub = node->getHeur();
     double estimate = evaluate(node);
 
     csv // << i << '\t'
-      << rootVar << '\t'
-      << m_options->ibound << '\t'
-      << lb << '\t' << ub << '\t' << depth;
+      << rootVar << '\t' << m_options->ibound
+      << '\t' << lb << '\t' << ub
+      << '\t' << dynamicFeatures->ratioPruned
+      << '\t' << dynamicFeatures->ratioDead
+      << '\t' << dynamicFeatures->ratioLeaf
+      << '\t' << depth;
     BOOST_FOREACH ( double d, stats->getAll() ) {
       csv << '\t' << d;
     }
@@ -795,9 +798,13 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
 
-      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
-        m_ldsProp->propagate(*it,true);
-        continue; // skip to next
+//      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
+//        m_ldsProp->propagate(*it,true);
+//        continue; // skip to next
+//      }
+      if (applyAOBB(*it, m_options->aobbLookahead)) {
+        m_prop.propagate(*it, true);
+        continue;
       }
 
       if (doCaching(*it)) {
@@ -814,7 +821,6 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
   }
 
   return false; // default false
-
 }
 
 
@@ -909,6 +915,41 @@ SearchNode* ParallelManager::nextNode() {
 }
 
 
+bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
+  assert(node);
+  bool complete = false;
+
+  this->resetLocalStack(node);
+  SearchStats startStats = m_space->stats;
+  SearchStats& endStats = m_space->stats;
+//  size_t countStart = m_space->stats.numProcessed;
+  size_t countProc = 0;
+
+  SearchNode* n = this->nextLeaf();
+  while (n) {
+    m_prop.propagate(n, true, node);
+    n = this->nextLeaf();
+    countProc = endStats.numProcessed - startStats.numProcessed;
+    if (countProc > countLimit)
+      break;
+  }
+
+  // compute features
+  node->getSubprobFeatures()->ratioPruned =
+      (endStats.numPruned - startStats.numPruned) * 1.0 / countProc;
+  node->getSubprobFeatures()->ratioDead =
+      (endStats.numDead - startStats.numDead) * 1.0 / countProc;
+  node->getSubprobFeatures()->ratioLeaf =
+      (endStats.numLeaf - startStats.numLeaf) * 1.0 / countProc;
+
+  complete = (n == NULL);
+  node->clearChildren();
+  DIAG(oss ss; ss << "Subproblem " << *node << " lookahead with " << countProc << " expansions, "
+       << ((complete) ? "complete" : "not complete") << endl; myprint(ss.str());)
+  return complete;
+}
+
+
 bool ParallelManager::applyLDS(SearchNode* node) {
 
   assert(node);
@@ -927,7 +968,6 @@ bool ParallelManager::applyLDS(SearchNode* node) {
   }
 
   return complete;
-
 }
 
 

@@ -87,6 +87,11 @@ protected:
    * returns true if subproblem was solved fully */
   bool applyLDS(SearchNode*);
 
+  /* applies limited number of "full" AOBB node expansions to subproblem
+   * below node (max. nodeLimit expansions); returns true if subproblem
+   * was solved */
+  bool applyAOBB(SearchNode* node, count_t nodeLimit);
+
   /* compiles the name of a temporary file */
   string filename(const char* pre, const char* ext, int count = NONE) const;
   /* submits jobs to the grid system (Condor) */
@@ -99,11 +104,11 @@ protected:
   /* writes subproblem statistics to CSV file, solution node counts optional */
   void writeStatsCSV(const vector<SearchNode*>& subprobs,
                      const vector<pair<count_t, count_t> >* nodecounts = NULL) const;
+
   /* clear stack for local solving */
   void resetLocalStack(SearchNode* node = NULL);
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
-
 
 public:
   /* stores the lower bound to file for subsequent retrieval */

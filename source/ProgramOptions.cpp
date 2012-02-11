@@ -72,6 +72,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("sampledepth", po::value<int>()->default_value(10), "Randomness branching depth for initial sampling")
       ("samplesizes", po::value<string>(), "Sequence of sample sizes for complexity prediction (in 10^5 nodes)")
       ("samplerepeat", po::value<int>()->default_value(1), "Number of sample sequence repeats")
+      ("lookahead", po::value<int>()->default_value(1000), "Number of nodes for subproblem AOBB lookahead")
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
@@ -230,6 +231,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       opt->sampleSizes = vm["samplesizes"].as<string>();
     if (vm.count("samplerepeat"))
       opt->sampleRepeat = vm["samplerepeat"].as<int>();
+
+    if (vm.count("lookahead"))
+      opt->aobbLookahead = vm["lookahead"].as<int>();
 
     if (vm.count("reduce"))
       opt->out_reducedFile = vm["reduce"].as<string>();
