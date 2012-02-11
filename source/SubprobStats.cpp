@@ -92,21 +92,13 @@ void SubprobStats::getAll(vector<double>& out) const {
   }
 }
 
+
 ostream& operator << (ostream& os, const SubprobStats& stats) {
   vector<double> all = stats.getAll();
 //  os << "STATS";
   BOOST_FOREACH( double d, all ) {
     os << "\t" << d;
   }
-  /*
-  os << "STATS\t" << stats.m_varCount << '\t' << stats.m_leafCount;
-  double* ls[4] = { stats.m_clusterSize, stats.m_clusterSizeCond, stats.m_domainSize, stats.m_leafDepth };
-  BOOST_FOREACH( double* p, ls ) {
-    if (p) {
-      for (size_t i=0; i<4; ++i)
-        os << '\t' << p[i];
-    }
-  }*/
   return os;
 }
 

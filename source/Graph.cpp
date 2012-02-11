@@ -50,7 +50,7 @@ map<int,set<int> > Graph::connectedComponents(const set<int>& s) {
 
   // keeps track of which node has been visited
   SETCLASS<int> nodes(s.begin(), s.end());
-#if defined HASH_GOOGLE_SPARSE | defined HASH_GOOGLE_DENSE
+#if defined HASH_GOOGLE_SPARSE || defined HASH_GOOGLE_DENSE
   nodes.set_deleted_key(UNKNOWN);
 #endif
 #ifdef HASH_GOOGLE_DENSE

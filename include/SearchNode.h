@@ -26,6 +26,7 @@
 
 #include "_base.h"
 #include "utils.h"
+#include "SubprobStats.h"  // only for PARALLEL_STATIC
 
 class Problem;
 class PseudotreeNode;
@@ -48,7 +49,6 @@ struct SearchNodeComp {
 /* data types to store child pointers */
 typedef SearchNode* NodeP;
 typedef NodeP* CHILDLIST;
-
 
 class SearchNode {
 protected:
@@ -112,6 +112,9 @@ public:
   count_t getSubLeafD() const { return m_subLeafD; }
   void setSubLeafD(count_t d) { m_subLeafD = d; }
   void addSubLeafD(count_t d) { m_subLeafD += d; }
+#endif
+#ifdef PARALLEL_STATIC
+  virtual SubprobFeatures* getSubprobFeatures() { assert(false); return NULL; }  // OR only
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   virtual void setSubprobContext(const context_t&) = 0;
@@ -231,6 +234,9 @@ protected:
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   context_t m_subprobContext; // Stores the context values to this subproblem
 #endif
+#ifdef PARALLEL_STATIC
+  SubprobFeatures m_subprobFeatures; // subproblem feature set
+#endif
 
 public:
   int getType() const { return NODE_OR; }
@@ -260,6 +266,10 @@ public:
   size_t getCacheInst() const { return 0; }
 #endif
 
+#ifdef PARALLEL_STATIC
+  SubprobFeatures* getSubprobFeatures() { return &m_subprobFeatures; }
+#endif
+
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setInitialBound(double d) { m_initialBound = d; }
   double getInitialBound() const { return m_initialBound; }
@@ -281,13 +291,10 @@ public:
 };
 
 
-
 /* cout function */
 ostream& operator << (ostream&, const SearchNode&);
 
-
 /* Inline definitions */
-
 inline SearchNode::SearchNode(SearchNode* parent) :
     m_flags(0), m_parent(parent), m_nodeValue(ELEM_NAN), m_heurValue(INFINITY),
     m_children(NULL), m_childCountFull(0), m_childCountAct(0)
@@ -337,6 +344,7 @@ inline void SearchNode::eraseChild(SearchNode* node) {
 }
 
 inline void SearchNode::clearChildren() {
+  if (!m_children) return;
   for (size_t i = 0; i < m_childCountFull; ++i) {
     if (m_children[i]) {
       delete m_children[i];

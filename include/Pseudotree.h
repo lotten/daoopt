@@ -63,7 +63,7 @@ protected:
 
   vector<PseudotreeNode*> m_nodes;
   vector<int> m_elimOrder;
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   vector<list<PseudotreeNode*> > m_levels;
 #endif
 
@@ -111,7 +111,7 @@ public:
   /* adds domain size info to pseudo tree nodes */
   void addDomainInfo(const vector<val_t>& domains);
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   /* computes the subproblem complexity parameters for all subtrees */
   int computeComplexities(int workers);
 #endif
@@ -152,7 +152,7 @@ public:
 /* represents a single problem variable in the pseudotree */
 class PseudotreeNode {
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 protected:
   /* internal container class for subproblem complexity information */
   class Complexity {
@@ -187,7 +187,7 @@ protected:
   int m_subWidth; // max. width in subproblem
   PseudotreeNode* m_parent; // The parent node
   Pseudotree* m_tree;
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   Complexity* m_complexity; // Contains information about subproblem complexity
 #endif
 #ifdef PARALLEL_STATIC
@@ -246,14 +246,14 @@ public:
   void setSubprobVarMap(const vector<int>& map) { m_subproblemVarMap = map; }
 
 public:
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   int getSubCondWidth() const { assert(m_complexity); return m_complexity->subCondWidth; }
   bigint getSubCondBound() const { assert(m_complexity); return m_complexity->subCondBound; }
   bigint getOwnsize() const { assert(m_complexity); return m_complexity->ownsize; }
   bigint getNumContexts() const { assert(m_complexity); return m_complexity->numContexts; }
 #endif
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void initSubproblemComplexity();
 #endif
   const set<int>& updateSubprobVars(int numVars);
@@ -272,7 +272,7 @@ protected:
   void computeStatsClusterCondSub(const set<int>&, vector<int>&) const;
 #endif
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 public: // TODO protected:
   /* computes an estimate for the subproblem under this node, assuming the context
    * is instantiated as given in assig. Exploits function determinism.
@@ -347,7 +347,7 @@ inline Pseudotree::~Pseudotree() {
 
 /* PseudotreeNode inlines */
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 inline bigint PseudotreeNode::computeHWB(const vector<val_t>* assig) {
   return computeSubCompDet(this->getFullContext(), assig);
 }
@@ -368,7 +368,7 @@ inline PseudotreeNode::PseudotreeNode(Pseudotree* t, int v, const set<int>& s) :
 #endif
 
 inline PseudotreeNode::~PseudotreeNode()  {
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
     if (m_complexity) delete m_complexity;
 #endif
 #ifdef PARALLEL_STATIC

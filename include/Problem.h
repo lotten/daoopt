@@ -69,7 +69,7 @@ protected:
 
 public:
   val_t getDomainSize(int i) const;
-  double getGlobalConstant() const;
+  double globalConstInfo() const;
 
   int getN() const { return m_n; }
   int getNOrg() const { return m_nOrg; }
@@ -158,16 +158,9 @@ inline val_t Problem::getDomainSize(int i) const {
   return m_domains[i];
 }
 
-inline double Problem::getGlobalConstant() const {
+inline double Problem::globalConstInfo() const {
   return m_globalConstant;
 }
-
-inline void Problem::addDummy() {
-  m_n += 1;
-  m_hasDummy = true;
-  m_domains.push_back(1); // unary domain
-}
-
 
 inline Problem::Problem() :
     m_subprobOnly(false),

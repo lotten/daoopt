@@ -277,7 +277,6 @@ bool ParallelManager::restoreFrontier() {
   }
 
   return true;
-
 }
 
 
@@ -351,7 +350,6 @@ bool ParallelManager::findFrontier() {
   myprint("Local jobs (if any) done.\n");
 
   return true;
-
 }
 
 
@@ -374,7 +372,6 @@ bool ParallelManager::runCondor() const {
   }
 
   return true; // default: success
-
 }
 
 
@@ -533,6 +530,15 @@ bool ParallelManager::readExtResults() {
       BINREAD(in, v); // read opt. assignments
       tup[i] = (val_t) v;
     }
+
+    size_t subsize = m_pseudotree->getNode(node->getVar())->getSubprobVars().size();
+    if (tup.size() != subsize) {
+      oss ss;
+      ss << "Warning: tuple length mismatch, got " << tup.size() << ", needed " << subsize << endl;
+      myprint(ss.str());
+      success = false;
+      continue;
+    }
 #endif
 
     // read node profiles
@@ -563,21 +569,19 @@ bool ParallelManager::readExtResults() {
     ostringstream ss;
     ss  << "Read solution file " << id << " (" << *node
         << ") " << nodesOR << " / " << nodesAND
-        << " v:" << node->getValue()
+        << " v:" << node->getValue();
 #ifndef NO_ASSIGNMENT
-//    << " -assignment " << node->getOptAssig()
+    DIAG(ss << " -assignment " << node->getOptAssig());
 #endif
-    << endl;
+    ss << endl;
     myprint(ss.str());
+
+    // propagate result (but don't delete node, needed for stats)
+    m_prop.propagate(node, true, node);
   }
 
   myprint("Writing CSV stats.\n");
   writeStatsCSV(m_external, &nodecounts);
-
-  myprint("Propagating solutions.\n");
-  BOOST_FOREACH( SearchNode* node, m_external ) {
-    m_prop.propagate(node, true);
-  }
 
   return success;
 }
@@ -593,9 +597,10 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
   ofstream csv(csvfile.c_str(), ios_base::out | ios_base::trunc);
 
   csv // << "idx" << '\t'
-    << "root" << '\t'
-    << "ibnd" << '\t'
-    << "lb" << '\t' << "ub" << '\t' << "D";
+    << "root" << '\t' << "ibnd"
+    << '\t' << "lb" << '\t' << "ub"
+    << '\t' << "rPruned" << '\t' << "rDead" << '\t' << "rLeaf"
+    << '\t' << "D";
   BOOST_FOREACH( const string& s, SubprobStats::legend ) {
     csv << '\t' << s;
   }
@@ -613,15 +618,20 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
     const SubprobStats* stats = ptnode->getSubprobStats();
 
+    SubprobFeatures* dynamicFeatures = node->getSubprobFeatures();
+
     int depth = ptnode->getDepth();
     double lb = lowerBound(node);
     double ub = node->getHeur();
     double estimate = evaluate(node);
 
     csv // << i << '\t'
-      << rootVar << '\t'
-      << m_options->ibound << '\t'
-      << lb << '\t' << ub << '\t' << depth;
+      << rootVar << '\t' << m_options->ibound
+      << '\t' << lb << '\t' << ub
+      << '\t' << dynamicFeatures->ratioPruned
+      << '\t' << dynamicFeatures->ratioDead
+      << '\t' << dynamicFeatures->ratioLeaf
+      << '\t' << depth;
     BOOST_FOREACH ( double d, stats->getAll() ) {
       csv << '\t' << d;
     }
@@ -788,9 +798,13 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
 
-      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
-        m_ldsProp->propagate(*it,true);
-        continue; // skip to next
+//      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
+//        m_ldsProp->propagate(*it,true);
+//        continue; // skip to next
+//      }
+      if (applyAOBB(*it, m_options->aobbLookahead)) {
+        m_prop.propagate(*it, true);
+        continue;
       }
 
       if (doCaching(*it)) {
@@ -807,7 +821,6 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
   }
 
   return false; // default false
-
 }
 
 
@@ -843,29 +856,25 @@ double ParallelManager::evaluate(const SearchNode* node) const {
 }
 
 
-void ParallelManager::solveLocal(SearchNode* node) {
-
-  assert(node && node->getType()==NODE_OR);
-
-  DIAG(ostringstream ss; ss << "Solving subproblem locally: " << *node << endl; myprint(ss.str()));
-
-  syncAssignment(node);
-
-  // clear out stack first
-  while (m_stack.size())
+void ParallelManager::resetLocalStack(SearchNode* node) {
+  while (!m_stack.empty())
     m_stack.pop();
-  // push subproblem root onto stack
-  m_stack.push(node);
+  if (node)
+    m_stack.push(node);
+}
 
+
+void ParallelManager::solveLocal(SearchNode* node) {
+  assert(node && node->getType()==NODE_OR);
+  DIAG(ostringstream ss; ss << "Solving subproblem locally: " << *node << endl; myprint(ss.str()));
+  syncAssignment(node);
+  this->resetLocalStack(node);
   while ( ( node=nextLeaf() ) )
     m_prop.propagate(node,true);
-
 }
 
 
 bool ParallelManager::doExpand(SearchNode* n) {
-
-  assert(false);  // function should never be called
 
   assert(n);
   m_expand.clear();
@@ -906,6 +915,41 @@ SearchNode* ParallelManager::nextNode() {
 }
 
 
+bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
+  assert(node);
+  bool complete = false;
+
+  this->resetLocalStack(node);
+  SearchStats startStats = m_space->stats;
+  SearchStats& endStats = m_space->stats;
+//  size_t countStart = m_space->stats.numProcessed;
+  size_t countProc = 0;
+
+  SearchNode* n = this->nextLeaf();
+  while (n) {
+    m_prop.propagate(n, true, node);
+    n = this->nextLeaf();
+    countProc = endStats.numProcessed - startStats.numProcessed;
+    if (countProc > countLimit)
+      break;
+  }
+
+  // compute features
+  node->getSubprobFeatures()->ratioPruned =
+      (endStats.numPruned - startStats.numPruned) * 1.0 / countProc;
+  node->getSubprobFeatures()->ratioDead =
+      (endStats.numDead - startStats.numDead) * 1.0 / countProc;
+  node->getSubprobFeatures()->ratioLeaf =
+      (endStats.numLeaf - startStats.numLeaf) * 1.0 / countProc;
+
+  complete = (n == NULL);
+  node->clearChildren();
+  DIAG(oss ss; ss << "Subproblem " << *node << " lookahead with " << countProc << " expansions, "
+       << ((complete) ? "complete" : "not complete") << endl; myprint(ss.str());)
+  return complete;
+}
+
+
 bool ParallelManager::applyLDS(SearchNode* node) {
 
   assert(node);
@@ -924,25 +968,8 @@ bool ParallelManager::applyLDS(SearchNode* node) {
   }
 
   return complete;
-
 }
 
-/*
-void ParallelManager::updateSolution(double d
-#ifndef NO_ASSIGNMENT
-    ,const vector<val_t>& tuple
-#endif
-  ) const {
-  assert(m_space);
-  m_space->root->setValue(d);
-#ifdef NO_ASSIGNMENT
-  m_problem->updateSolution(this->getCurOptValue(), make_pair(0,0), true);
-#else
-  m_space->root->setOptAssig(tuple);
-  m_problem->updateSolution(this->getCurOptValue(), this->getCurOptTuple(), make_pair(0,0), true);
-#endif
-}
-*/
 
 string ParallelManager::filename(const char* pre, const char* ext, int count) const {
   ostringstream ss;
@@ -975,11 +1002,7 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* spa
 
   SearchNode* first = this->initSearch();
   assert(first);
-
-  // one more dummy OR node for OPEN list (top of stack needs to be OR node)
-  SearchNode* next = new SearchNodeOR(first, first->getVar(), -1) ;
-  first->setChild(next);
-  m_external.push_back(next);
+  m_external.push_back(first);
 
   // set up LDS
 //  m_ldsSpace = new SearchSpace(m_pseudotree, m_options);

@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.7"
+#define VERSIONINFO "0.99.7c"
 
 time_t _time_start, _time_pre;
 
@@ -77,7 +77,7 @@ bool Main::loadProblem() {
 #endif
 
   // Some statistics
-  cout << "Global constant:\t" << m_problem->getGlobalConstant() << endl;
+  cout << "Global constant:\t" << m_problem->globalConstInfo() << endl;
   cout << "Max. domain size:\t" << (int) m_problem->getK() << endl;
   cout << "Max. function arity:\t" << m_problem->getR() << endl;
 
@@ -189,7 +189,7 @@ bool Main::findOrLoadOrdering() {
     m_problem->saveOrdering(m_options->in_orderingFile, elim);
     cout << "Saved ordering to file " << m_options->in_orderingFile << endl;
   }
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 #if defined PARALLEL_STATIC
   if (!m_options->par_postOnly) // no need to write ordering in post processing
 #endif
@@ -215,7 +215,7 @@ bool Main::findOrLoadOrdering() {
 #if defined PARALLEL_STATIC
   m_pseudotree->computeSubprobStats();
 #endif
-#if defined PARALLEL_DYNAMIC //or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC //|| defined PARALLEL_STATIC
   int cutoff = m_pseudotree->computeComplexities(m_options->threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
 //  if (opt.autoCutoff) {
@@ -418,9 +418,10 @@ bool Main::runLDS() {
     LimitedDiscrepancy lds(m_problem.get(), m_pseudotree.get(), spaceLDS.get(),
                            m_heuristic.get(), m_options->lds);
     if (!m_options->in_subproblemFile.empty()) {
-      if (!lds.restrictSubproblem(m_options->in_subproblemFile))
+      if (!lds.restrictSubproblem(m_options->in_subproblemFile)) {
         err_txt("Subproblem restriction for LDS failed.");
         return false;
+      }
     }
 
     // load current best solution into LDS
@@ -432,6 +433,7 @@ bool Main::runLDS() {
       cout << "LDS: Initial solution loaded." << endl;
 
     BoundPropagator propLDS(m_problem.get(), spaceLDS.get(), false);  // doCaching = false
+    lds.finalizeHeuristic();
     SearchNode* n = lds.nextLeaf();
     while (n) {
       propLDS.propagate(n,true); // true = report solution
@@ -455,13 +457,17 @@ bool Main::runLDS() {
 
 bool Main::finishPreproc() {
 
-  // load current best solution from preprocessin into search instance
+  // load current best solution from preprocessing into search instance
   if (m_search->updateSolution(m_problem->getSolutionCost()
 #ifndef NO_ASSIGNMENT
       , m_problem->getSolutionAssg()
 #endif
   ))
     cout << "Initial problem lower bound: " << m_search->curLowerBound() << endl;
+
+#ifndef NO_HEURISTIC
+  m_search->finalizeHeuristic();
+#endif
 
 #ifdef PARALLEL_STATIC
   if (m_options->par_preOnly) {
@@ -697,7 +703,7 @@ bool Main::start() const {
 bool Main::outputInfo() const {
   assert(m_options.get());
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   if (m_options->runTag == "") {
     m_options->runTag = "notag";
   }
@@ -711,7 +717,7 @@ bool Main::outputInfo() const {
   << "+ Suborder:\t" << m_options->subprobOrder << " ("
   << subprob_order[m_options->subprobOrder] <<")"<< endl
   << "+ Random seed:\t" << m_options->seed << endl
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   << "+ Cutoff depth:\t" << m_options->cutoff_depth << endl
   << "+ Cutoff size:\t" << m_options->cutoff_size << endl
   << "+ Max. workers:\t" << m_options->threads << endl

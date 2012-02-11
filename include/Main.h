@@ -114,7 +114,6 @@ inline bool Main::runSearch() {
   if (m_solved)
     return true;
   cout << "--- Starting search ---" << endl;
-
 #if defined PARALLEL_DYNAMIC
   return runSearchDynamic();
 #elif defined PARALLEL_STATIC

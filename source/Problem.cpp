@@ -77,6 +77,13 @@ void Problem::removeEvidence() {
   }
   m_functions = new_funs;
 
+  // Create dummy function for global constant. Technically the field value needs
+  // to be reset to ELEM_ONE, but we keep it around for informational purposes --
+  // it should never get used in actual computations.
+  double* table1 = new double[1];
+  table1[0] = m_globalConstant;
+  Function* constFun = new FunctionBayes(m_nOrg, this, set<int>(), table1, 1);
+  m_functions.push_back(constFun);
 
   /*
   // === shrink more by eliminating certain vars ===
@@ -464,7 +471,7 @@ void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodes
 #ifndef NO_ASSIGNMENT
   int32_t assigSize = UNKNOWN;
   if (m_subprobOnly)
-    assigSize = (int32_t) m_curSolution.size() - 1; // -1 for dummy var
+    assigSize = (int32_t) m_curSolution.size();  // no dummy variable included
   else
     assigSize = (int32_t) m_nOrg;
   screen << ' ' << assigSize;
@@ -519,9 +526,10 @@ void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodes
 
 #ifndef NO_ASSIGNMENT
 void Problem::assignmentForOutput(vector<val_t>& assg) const {
-  if (m_subprobOnly)
+  if (m_subprobOnly) {
     assg = m_curSolution;
-  else {
+    // update: no need to remove dummy anymore
+  } else {
     assg.resize(m_nOrg, UNKNOWN);
     for (int i=0; i<m_nOrg; ++i) {
       map<int,int>::const_iterator itRen = m_old2new.find(i);
@@ -551,6 +559,14 @@ void Problem::updateSolution(double cost,
     return;
 
 #ifndef NO_ASSIGNMENT
+  // check for complete assignment first
+  BOOST_FOREACH(val_t v, sol) {
+    if (v == NONE) {
+      myprint("Warning: skipping incomplete solution.\n");
+      return;
+    }
+  }
+
   // use Kahan summation to compute exact solution cost
   // TODO (might not work in non-log scale?)
   if (cost != ELEM_ZERO && !m_subprobOnly) {
@@ -559,7 +575,8 @@ void Problem::updateSolution(double cost,
     BOOST_FOREACH( Function* f, m_functions ) {
       z = f->getValue(sol);
       if (z == ELEM_ZERO) {
-        myprint("Warning: skipping zero-cost solution.\n"); return;
+        myprint("Warning: skipping zero-cost solution.\n");
+        return;
       }
       y = z OP_DIVIDE comp;
       z = kahan OP_TIMES y;
@@ -626,9 +643,7 @@ void Problem::writeUAI(const string& prob) const {
     out << ' ' << ((int) *it) ;
 
   // function information
-  // NOTE: introduces a dummy function to account for a possible global constant
-  // introduced by eliminating evidence and unary variables earlier
-  out << endl << m_functions.size()+1 << endl; // no. of functions +1 (for dummy function)
+  out << endl << m_functions.size() << endl;
   for (vector<Function*>::const_iterator it=m_functions.begin(); it!=m_functions.end(); ++it) {
     const set<int>& scope = (*it)->getScope();
     out << scope.size() << '\t'; // scope size
@@ -636,7 +651,6 @@ void Problem::writeUAI(const string& prob) const {
       out << *itS << ' '; // variables in scope
     out << endl;
   }
-  out << "0" << endl; // dummy function (constant, thus empty scope)
   out << endl;
 
   // write the function tables
@@ -647,13 +661,18 @@ void Problem::writeUAI(const string& prob) const {
       out << ' ' << SCALE_NORM( T[i] ); // table entries
     out << endl;
   }
-  // and the dummy function table
-  out << '1' << endl << ' ' << SCALE_NORM(m_globalConstant) << endl;
 
   // done
   out << endl;
   out.close();
 
+}
+
+
+void Problem::addDummy() {
+  m_n += 1;
+  m_hasDummy = true;
+  m_domains.push_back(1); // unary domain
 }
 
 

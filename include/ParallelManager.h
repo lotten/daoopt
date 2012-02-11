@@ -76,15 +76,6 @@ protected:
   SearchNode* nextNode();
   bool isMaster() const { return true; }
 
-/*
-public:
-  void setInitialSolution(double
-#ifndef NO_ASSIGNMENT
-   ,const vector<val_t>&
-#endif
-  ) const;
-*/
-
 protected:
   /* moves the frontier one step deeper by splitting the given node */
   bool deepenFrontier(SearchNode*, vector<SearchNode*>& out);
@@ -95,6 +86,11 @@ protected:
   /* applies LDS to the subproblem, i.e. mini bucket forward pass;
    * returns true if subproblem was solved fully */
   bool applyLDS(SearchNode*);
+
+  /* applies limited number of "full" AOBB node expansions to subproblem
+   * below node (max. nodeLimit expansions); returns true if subproblem
+   * was solved */
+  bool applyAOBB(SearchNode* node, count_t nodeLimit);
 
   /* compiles the name of a temporary file */
   string filename(const char* pre, const char* ext, int count = NONE) const;
@@ -108,9 +104,11 @@ protected:
   /* writes subproblem statistics to CSV file, solution node counts optional */
   void writeStatsCSV(const vector<SearchNode*>& subprobs,
                      const vector<pair<count_t, count_t> >* nodecounts = NULL) const;
+
+  /* clear stack for local solving */
+  void resetLocalStack(SearchNode* node = NULL);
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
-
 
 public:
   /* stores the lower bound to file for subsequent retrieval */
