@@ -626,17 +626,14 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
 
   // generate structure of bogus nodes to hold partial solution tree copied
   // from master search space
-
   SearchNode *next = NULL, *node = NULL;
   delete m_space->root;  // delete previous search space root
-
   int pstSize = pst.size() / 2;
   int dummyVar = m_problem->getN() - 1;
 
   // build structure top-down, first entry in pst array is assumed to correspond to
   // highest OR value, last entry is the lowest AND label
   for (int i=0; i<pstSize; ++i) {
-
     // dummy OR node with solution bound from master PST
     next = new SearchNodeOR(node, dummyVar, -1) ;
     next->setValue(pst.at(2*i));

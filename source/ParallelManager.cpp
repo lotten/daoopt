@@ -498,7 +498,7 @@ bool ParallelManager::readExtResults() {
       inTemp.close();
       if (inTemp.fail()) {
         ostringstream ss;
-        ss << "Problem reading subproblem solution " << id << " from file " << solutionFile << endl;
+        ss << "Solution file " << id << " unavailable: " << solutionFile << endl;
         myerror(ss.str());
         success = false;
         continue; // skip rest of loop
@@ -531,10 +531,12 @@ bool ParallelManager::readExtResults() {
       tup[i] = (val_t) v;
     }
 
+    // Check external tuple size, but allow zero (from NaN solutions)
     size_t subsize = m_pseudotree->getNode(node->getVar())->getSubprobVars().size();
-    if (tup.size() != subsize) {
+    if (tup.size() > 0 && tup.size() != subsize) {
       oss ss;
-      ss << "Warning: tuple length mismatch, got " << tup.size() << ", needed " << subsize << endl;
+      ss << "Solution file " << id << " length mismatch, got " << tup.size()
+         << ", expected " << subsize << endl;
       myprint(ss.str());
       success = false;
       continue;
@@ -567,7 +569,7 @@ bool ParallelManager::readExtResults() {
 #endif
 
     ostringstream ss;
-    ss  << "Read solution file " << id << " (" << *node
+    ss  << "Solution file " << id << " read (" << *node
         << ") " << nodesOR << " / " << nodesAND
         << " v:" << node->getValue();
 #ifndef NO_ASSIGNMENT
@@ -798,10 +800,11 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
 
-//      if (applyLDS(*it)) {// apply LDS. i.e. mini bucket forward pass
+      // Apply LDS if mini buckets are accurate, fully propagated
+      if (applyLDS(*it)) {
 //        m_ldsProp->propagate(*it,true);
-//        continue; // skip to next
-//      }
+        continue; // skip to next
+      }
       if (applyAOBB(*it, m_options->aobbLookahead)) {
         m_prop.propagate(*it, true);
         continue;
@@ -951,23 +954,20 @@ bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
 
 
 bool ParallelManager::applyLDS(SearchNode* node) {
-
   assert(node);
-
-  bool complete = false;
   PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
-  if (ptnode->getSubWidth() <= m_options->ibound) {
-    complete = true; // subproblem solved fully
+  if (ptnode->getSubWidth() > m_options->ibound) {
+    return false;  // cannot be solved by LDS
   }
 
   m_ldsSearch->reset(node);
   SearchNode* n = m_ldsSearch->nextLeaf();
   while (n) {
-    m_ldsProp->propagate(n,true,node);
+    m_prop.propagate(n,true); //,node);
     n = m_ldsSearch->nextLeaf();
   }
-
-  return complete;
+  DIAG(oss ss; ss << "Subproblem " << *node << " solved by LDS << endl"; myprint(ss.str());)
+  return true;
 }
 
 
@@ -1008,7 +1008,7 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* spa
 //  m_ldsSpace = new SearchSpace(m_pseudotree, m_options);
 //  m_ldsSpace->root = m_space->root;
   m_ldsSearch.reset(new LimitedDiscrepancy(prob, pt, m_space, heur, 0));
-  m_ldsProp.reset(new BoundPropagator(prob, m_space, false));
+//  m_ldsProp.reset(new BoundPropagator(prob, m_space, false));
 
   // Set up subproblem sampler and complexity prediction
   m_sampleSpace.reset(new SearchSpace(pt, m_options));
