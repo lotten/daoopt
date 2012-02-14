@@ -277,7 +277,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
   const set<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
 
   // get variable map for end node
-  vector<int> endVarMap = m_space->pseudotree->getNode(endVar)->getSubprobVarMap();
+  const vector<int>& endVarMap = m_space->pseudotree->getNode(endVar)->getSubprobVarMap();
   // allocate assignment in end node
   vector<val_t>& assig = end->getOptAssig();
   assig.resize(endSubprob.size(), UNKNOWN);

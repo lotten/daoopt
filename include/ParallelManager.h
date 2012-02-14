@@ -47,7 +47,7 @@ protected:
   /* for LDS */
 //  SearchSpace* m_ldsSpace;  // plain pointer to avoid destructor call
   scoped_ptr<LimitedDiscrepancy> m_ldsSearch;
-  scoped_ptr<BoundPropagator> m_ldsProp;
+//  scoped_ptr<BoundPropagator> m_ldsProp;
 
   /* for complexity prediction */
   scoped_ptr<LearningEngine> m_learner;
