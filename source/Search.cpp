@@ -204,49 +204,25 @@ SearchNode* Search::nextLeaf() {
 
 
 bool Search::canBePruned(SearchNode* n) const {
+  DIAG(oss ss; ss << "\tcanBePruned(" << *n << ")" << " h=" << n->getHeur() << endl; myprint(ss.str());)
 
-  // heuristic is upper bound, hence can use to prune if value=zero
-  if (n->getHeur() == ELEM_ZERO)
+  if (n->getHeur() == ELEM_ZERO)  // heuristic is upper bound, prune if zero
     return true;
 
-  SearchNode* curAND;
-  SearchNode* curOR;
-  double curPSTVal;
+  double curPSTVal = n->getHeur();  // includes label in case of AND node
+  SearchNode* curOR = (n->getType() == NODE_OR) ? n : n->getParent();
 
-  if (n->getType() == NODE_AND) {
-    curAND = n;
-    curOR = n->getParent();
-    curPSTVal = curAND->getHeur(); // includes label
-  } else { // NODE_OR
-    curAND = NULL;
-    curOR = n;
-    curPSTVal = curOR->getHeur(); // n->getHeur()
-  }
+  if (curPSTVal <= curOR->getValue())  // simple pruning case
+    return true;
 
-  DIAG( ostringstream ss; ss << "\tcanBePruned(" << *n << ")" << " h=" << n->getHeur() << endl; myprint(ss.str()); )
+  SearchNode* curAND = NULL;
 
-  list<SearchNode*> notOptOR; // marks nodes for tagging as possibly not optimal
+  while (curOR->getParent()) {  // climb all the way up to root node, if we have to
 
-  // up to root node, if we have to
-  while (curOR->getParent()) {
-    DIAG( ostringstream ss; ss << "\t ?PST root: " << *curOR << " pst=" << curPSTVal << " v=" << curOR->getValue() << endl; myprint(ss.str()); )
+    curAND = curOR->getParent();  // climb up one, update values
+    curPSTVal OP_TIMESEQ curAND->getLabel();  // collect AND node label
+    curPSTVal OP_TIMESEQ curAND->getSubSolved();  // incorporate already solved sibling OR nodes
 
-    //if ( fpLt(curPSTVal, curOR->getValue()) ) {
-    if ( curPSTVal <= curOR->getValue() ) {
-      for (list<SearchNode*>::iterator it=notOptOR.begin(); it!=notOptOR.end(); ++it)
-        (*it)->setNotOpt(); // mark as possibly not optimal
-      return true; // pruning is possible!
-    }
-
-    notOptOR.push_back(curOR);
-
-    // climb up, update values
-    curAND = curOR->getParent();
-
-    // collect AND node label
-    curPSTVal OP_TIMESEQ curAND->getLabel();
-    // incorporate already solved sibling OR nodes
-    curPSTVal OP_TIMESEQ curAND->getSubSolved();
     // incorporate new not-yet-solved sibling OR nodes through their heuristic
     NodeP* children = curAND->getChildren();
     for (size_t i = 0; i < curAND->getChildCountFull(); ++i) {
@@ -254,10 +230,19 @@ bool Search::canBePruned(SearchNode* n) const {
       else curPSTVal OP_TIMESEQ children[i]->getHeur();
     }
     curOR = curAND->getParent();
+
+    DIAG( ostringstream ss; ss << "\t ?PST root: " << *curOR << " pst=" << curPSTVal << " v=" << curOR->getValue() << endl; myprint(ss.str()); )
+
+    //if ( fpLt(curPSTVal, curOR->getValue()) ) {
+    if ( curPSTVal <= curOR->getValue() ) {
+      for (SearchNode* nn = (n->getType() == NODE_OR) ? n : n->getParent();
+           nn != curOR; nn = nn->getParent()->getParent())
+        nn->setNotOpt();  // mark possibly not optimally solved subproblems
+      return true;  // pruning is possible!
+    }
   }
 
-  // default, no pruning possible
-  return false;
+  return false;  // default, no pruning possible
 
 } // Search::canBePruned
 
@@ -637,7 +622,7 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
     // dummy OR node with solution bound from master PST
     next = new SearchNodeOR(node, dummyVar, -1) ;
     next->setValue(pst.at(2*i));
-    DIAG(cout << "- Created OR dummy with value " << pst.at(2*i) << endl;)
+    DIAG(cout << "- Created  OR dummy with value " << pst.at(2*i) << endl;)
     if (i > 0) node->setChild(next);
     else m_space->root = next;
     node = next;
@@ -782,7 +767,6 @@ bool Search::restrictSubproblem(string file) {
   cout << "Reading parent partial solution tree of size " << pstSize << endl;
 
   vector<double> pstVals(pstSize*2, ELEM_NAN);
-
   if (reverse) { // fill array in reverse
     int i=pstSize-1;
     while (i >= 0) {
@@ -802,12 +786,10 @@ bool Search::restrictSubproblem(string file) {
       i += 1;
     }
   }
-
   fs.close();
 
   // call function to actually condition this search instance
   int depth = this->restrictSubproblem(rootVar, assignment, pstVals);
-
   cout << "Restricted to subproblem with root node " << rootVar << " at depth " << depth  << endl;
 
   return true; // success
