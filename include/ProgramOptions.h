@@ -70,6 +70,7 @@ public:
   int maxWidthAbort; // upper bound for induced width, abort if above this
   int slsIter; // number of SLS iterations for initial lower bound
   int slsTime; // time per SLS iteration (in seconds)
+  int aobbLookahead;  // max. number of nodes for parallel static AOBB subproblem lookahead
 
   double initialBound; // initial lower bound
 
@@ -106,6 +107,7 @@ inline ProgramOptions::ProgramOptions() :
 		      lds(NONE), seed(NONE), rotateLimit(0), subprobOrder(NONE),
 		      sampleDepth(NONE), sampleScheme(NONE), sampleRepeat(NONE),
 		      maxWidthAbort(NONE), slsIter(0), slsTime(5),
+		      aobbLookahead(0),
 		      initialBound(ELEM_NAN) {}
 
 #endif /* PROGRAMOPTIONS_H_ */

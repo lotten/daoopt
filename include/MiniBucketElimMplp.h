@@ -36,7 +36,7 @@ public:
   size_t build(const vector<val_t>* assignment = NULL, bool computeTables = true);
 
   // returns the global upper bound
-  double getGlobalUB() const { return _mbe.ub() + _p->getGlobalConstant(); }
+  double getGlobalUB() const { return _mbe.ub(); }
 
   // computes the heuristic for variable var given a (partial) assignment
   double getHeur(int var, const vector<val_t>& assignment) const {

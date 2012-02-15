@@ -31,6 +31,9 @@
 #include "Function.h"
 #include "Problem.h"
 
+#ifdef PARALLEL_STATIC
+#include "SubprobStats.h"
+#endif
 
 /* forward declaration */
 class PseudotreeNode;
@@ -60,7 +63,7 @@ protected:
 
   vector<PseudotreeNode*> m_nodes;
   vector<int> m_elimOrder;
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   vector<list<PseudotreeNode*> > m_levels;
 #endif
 
@@ -105,9 +108,16 @@ public:
   /* augments the pseudo tree with function information */
   void resetFunctionInfo(const vector<Function*>& fns);
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+  /* adds domain size info to pseudo tree nodes */
+  void addDomainInfo(const vector<val_t>& domains);
+
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   /* computes the subproblem complexity parameters for all subtrees */
   int computeComplexities(int workers);
+#endif
+
+#ifdef PARALLEL_STATIC
+  void computeSubprobStats();
 #endif
 
   const list<Function*>& getFunctions(int i) const;
@@ -142,7 +152,7 @@ public:
 /* represents a single problem variable in the pseudotree */
 class PseudotreeNode {
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 protected:
   /* internal container class for subproblem complexity information */
   class Complexity {
@@ -170,14 +180,18 @@ protected:
 #endif
 
 protected:
+  val_t m_domain; // The node's variable's domain size
   int m_var; // The node variable
   int m_depth; // The node's depth in the tree
   int m_subHeight; // The node's height in the tree (distance from farthest child)
   int m_subWidth; // max. width in subproblem
   PseudotreeNode* m_parent; // The parent node
   Pseudotree* m_tree;
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   Complexity* m_complexity; // Contains information about subproblem complexity
+#endif
+#ifdef PARALLEL_STATIC
+  SubprobStats* m_subprobStats;
 #endif
   set<int> m_subproblemVars; // The variables in the subproblem (including self)
   vector<int> m_subproblemVarMap; // Maps variables to their index in subprob assignment
@@ -218,6 +232,9 @@ public:
   void resetFunctions() { m_functions.clear(); }
   const list<Function*>& getFunctions() const { return m_functions; }
 
+  void setDomain(val_t d) { m_domain = d; }
+  val_t getDomain() const { return m_domain; }
+
   int getVar() const { return m_var; }
   int getDepth() const { return m_depth; }
   int getSubHeight() const { return m_subHeight; }
@@ -229,21 +246,33 @@ public:
   void setSubprobVarMap(const vector<int>& map) { m_subproblemVarMap = map; }
 
 public:
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   int getSubCondWidth() const { assert(m_complexity); return m_complexity->subCondWidth; }
   bigint getSubCondBound() const { assert(m_complexity); return m_complexity->subCondBound; }
   bigint getOwnsize() const { assert(m_complexity); return m_complexity->ownsize; }
   bigint getNumContexts() const { assert(m_complexity); return m_complexity->numContexts; }
 #endif
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void initSubproblemComplexity();
 #endif
   const set<int>& updateSubprobVars(int numVars);
   int updateDepthHeight(int d);
   int updateSubWidth();
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#ifdef PARALLEL_STATIC
+public:
+  const SubprobStats* getSubprobStats() const { return m_subprobStats; }
+  void computeStatsCluster(vector<int>&);
+  void computeStatsLeafDepth(vector<int>&);
+  void computeStatsDomain(vector<int>&);
+  void computeStatsClusterCond();
+protected:
+  /* appends cluster sizes of all descendants, conditioned on set */
+  void computeStatsClusterCondSub(const set<int>&, vector<int>&) const;
+#endif
+
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 public: // TODO protected:
   /* computes an estimate for the subproblem under this node, assuming the context
    * is instantiated as given in assig. Exploits function determinism.
@@ -259,11 +288,7 @@ protected:
 public:
   /* creates new pseudo tree node for variable v with context s */
   PseudotreeNode(Pseudotree* t, int v, const set<int>& s);
-  ~PseudotreeNode() {
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
-    if (m_complexity) delete m_complexity;
-#endif
-    }
+  ~PseudotreeNode();
 };
 
 
@@ -322,7 +347,7 @@ inline Pseudotree::~Pseudotree() {
 
 /* PseudotreeNode inlines */
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 inline bigint PseudotreeNode::computeHWB(const vector<val_t>* assig) {
   return computeSubCompDet(this->getFullContext(), assig);
 }
@@ -331,10 +356,24 @@ inline bigint PseudotreeNode::computeHWB(const vector<val_t>* assig) {
 
 /* Constructor */
 inline PseudotreeNode::PseudotreeNode(Pseudotree* t, int v, const set<int>& s) :
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
-  m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_context(s) {}
+#if defined PARALLEL_DYNAMIC
+  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_context(s) {}
+#elif defined PARALLEL_STATIC
+  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_subprobStats(NULL), m_context(s)
+{
+  m_subprobStats = new SubprobStats();
+}
 #else
-  m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_context(s) {}
+  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_context(s) {}
 #endif
+
+inline PseudotreeNode::~PseudotreeNode()  {
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+    if (m_complexity) delete m_complexity;
+#endif
+#ifdef PARALLEL_STATIC
+    if (m_subprobStats) delete m_subprobStats;
+#endif
+}
 
 #endif /* PSEUDOTREE_H_ */

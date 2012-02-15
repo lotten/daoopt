@@ -107,7 +107,7 @@ public:
   /* gets static tightness */
   size_t getTightness() const { return m_tightness; }
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   /* tightness when projected down to 'proj' */
   size_t getTightness(const set<int>& proj, const set<int>& cond,
                        const vector<val_t>* assig = NULL);

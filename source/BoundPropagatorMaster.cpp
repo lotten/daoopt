@@ -62,7 +62,7 @@ void BoundPropagatorMaster::operator() () {
 //            myprint("Adding subproblem to statistics\n");
             GETLOCK(m_spaceMaster->mtx_stats, lk2);
 //            myprint("Acquired mutex\n");
-            m_spaceMaster->stats->addSubprob(sp);
+            m_spaceMaster->avgStats->addSubprob(sp);
           }
 
           { // clean up processing thread

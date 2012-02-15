@@ -89,7 +89,7 @@ protected:
 inline SearchMaster::SearchMaster(Problem* prob, Pseudotree* pt, SearchSpaceMaster* s, Heuristic* h) :
           Search(prob, pt, s, h), m_nextThreadId(0), m_spaceMaster(s)
 {
-  m_spaceMaster->stats = new Statistics();
+  m_spaceMaster->avgStats = new AvgStatistics();
 }
 
 

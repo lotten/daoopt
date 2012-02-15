@@ -70,7 +70,7 @@ void Pseudotree::resetFunctionInfo(const vector<Function*>& fns) {
   for (vector<Function*>::const_iterator itF=fns.begin(); itF!=fns.end(); ++itF) {
     const set<int>& scope = (*itF)->getScope();
     if (scope.size() == 0) {
-      m_nodes[m_elimOrder.back()]->addFunction(*itF);
+      m_nodes[m_elimOrder.back()]->addFunction(*itF);  // dummy variable
       continue;
     }
     vector<int>::const_iterator it = m_elimOrder.begin();
@@ -83,6 +83,11 @@ void Pseudotree::resetFunctionInfo(const vector<Function*>& fns) {
   }
 }
 
+void Pseudotree::addDomainInfo(const vector<val_t>& domains) {
+  assert(domains.size() == m_nodes.size());
+  for(size_t i = 0; i < domains.size(); ++i)
+    m_nodes.at(i)->setDomain(domains.at(i));
+}
 
 /* computes an elimination order into 'elim' and returns its tree width */
 int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
@@ -272,7 +277,7 @@ void Pseudotree::buildChain(Graph G, const vector<int>& elim, const int cachelim
   m_root->updateSubprobVars(m_nodes.size());
   m_size = m_root->getSubprobSize() -1; // -1 for bogus
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -367,7 +372,7 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
   m_root->updateSubprobVars(m_nodes.size());  // includes dummy
   m_size = m_root->getSubprobSize() - 1;  // -1 for dummy
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -377,8 +382,6 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 #endif
 
   return;
-//  cout << "Number of disconnected sub pseudo trees: " << roots.size() << endl;
-
 }
 
 
@@ -436,7 +439,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
     (*it)->orderChildren(m_subOrder);
   }
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   // compute depth->list<nodes> mapping
   m_levels.clear();
   m_levels.resize(m_height+2); // +2 bco. bogus node
@@ -448,8 +451,7 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
 }
 
 
-
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 /* a-priori computation of several complexity estimates, outputs various
  * results for increasing depth-based cutoff. Returns suggested optimal
  * cutoff depth (bad choice in practice) */
@@ -622,8 +624,78 @@ const set<int>& PseudotreeNode::updateSubprobVars(int numVars) {
   return m_subproblemVars;
 }
 
+#ifdef PARALLEL_STATIC
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+void Pseudotree::computeSubprobStats() {
+  vector<int> bogus;
+  m_root->computeStatsCluster(bogus);
+  m_root->computeStatsDomain(bogus);
+  m_root->computeStatsLeafDepth(bogus);
+  BOOST_FOREACH( PseudotreeNode* pt, m_nodes ) {
+    pt->computeStatsClusterCond();
+  }
+//  cout << * m_root->getSubprobStats() << endl;
+}
+
+void PseudotreeNode::computeStatsCluster(vector<int>& result) {
+  result.clear();
+  vector<int> chi;
+  BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+    pt->computeStatsCluster(chi);
+    copy(chi.begin(), chi.end(), back_inserter(result));
+  }
+  result.push_back(m_context.size());
+  m_subprobStats->setClusterStats(result);
+}
+
+void PseudotreeNode::computeStatsLeafDepth(vector<int>& result) {
+  result.clear();
+  if (m_children.empty()) {
+    result.push_back(1);
+  } else {
+    vector<int> chi;
+    BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+      pt->computeStatsLeafDepth(chi);
+      BOOST_FOREACH( int d, chi ) {
+        result.push_back(d+1);
+      }
+    }
+  }
+  m_subprobStats->setDepthStats(result);  // also sets leaf count
+}
+
+void PseudotreeNode::computeStatsDomain(vector<int>& result) {
+  result.clear();
+  vector<int> chi;  // to collect child domain stats
+  BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+    pt->computeStatsDomain(chi);
+    copy(chi.begin(), chi.end(), back_inserter(result));
+  }
+  result.push_back(m_domain);
+  m_subprobStats->setDomainStats(result);  // also set var count
+}
+
+void PseudotreeNode::computeStatsClusterCond() {
+  vector<int> result;
+  this->computeStatsClusterCondSub(m_context, result);
+  m_subprobStats->setClusterCondStats(result);
+}
+
+void PseudotreeNode::computeStatsClusterCondSub(
+    const set<int>& cond, vector<int>& result) const {
+  set<int> context_cond;
+  set_difference(m_context.begin(), m_context.end(), cond.begin(), cond.end(),
+                 inserter(context_cond, context_cond.begin()));
+  result.push_back(context_cond.size());
+  BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
+    pt->computeStatsClusterCondSub(cond, result);
+  }
+}
+
+#endif
+
+
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 /* computes subproblem complexity parameters for a particular pseudo tree node */
 void PseudotreeNode::initSubproblemComplexity() {
 
@@ -686,7 +758,7 @@ void PseudotreeNode::initSubproblemComplexity() {
 #endif /* PARALLEL */
 
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 /* compute upper bound on subproblem size, assuming conditioning on 'cond' */
 bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_t>* assig) const {
 

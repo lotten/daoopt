@@ -127,6 +127,12 @@ public:
   /* resets the queue/stack/etc. to the given node */
   virtual void reset(SearchNode* = NULL) = 0;
 
+#ifndef NO_HEURISTIC
+  /* call right before actually starting to search (since heuristic is not
+   * available during initSearch) */
+  void finalizeHeuristic();
+#endif
+
 #ifdef PARALLEL_DYNAMIC
   /* returns the cached lower/upper bounds on the first node at each depth */
 //  const vector<pair<double,double> >& getBounds() const { return m_bounds; }

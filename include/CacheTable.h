@@ -124,7 +124,7 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
   // create hash table if needed
   if (!m_tables[n]) {
     m_tables[n] = new context_hash_map;
-#if defined HASH_GOOGLE_DENSE | defined HASH_GOOGLE_SPARSE
+#if defined HASH_GOOGLE_DENSE || defined HASH_GOOGLE_SPARSE
     m_tables[n]->set_deleted_key(" ");
 #endif
 #ifdef HASH_GOOGLE_DENSE

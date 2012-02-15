@@ -28,7 +28,7 @@ string UAI2012::filename = "";
 
 #include "cvo/ARP/ARPall.hxx"
 
-#define VERSIONINFO "0.99.7-UAI12"
+#define VERSIONINFO "0.99.7d-UAI12"
 
 time_t _time_start, _time_pre;
 
@@ -86,7 +86,7 @@ bool Main::loadProblem() {
 #endif
 
   // Some statistics
-  cout << "Global constant:\t" << m_problem->getGlobalConstant() << endl;
+  cout << "Global constant:\t" << m_problem->globalConstInfo() << endl;
   cout << "Max. domain size:\t" << (int) m_problem->getK() << endl;
   cout << "Max. function arity:\t" << m_problem->getR() << endl;
 
@@ -239,7 +239,7 @@ bool Main::findOrLoadOrdering() {
     m_problem->saveOrdering(m_options->in_orderingFile, elim);
     cout << "Saved ordering to file " << m_options->in_orderingFile << endl;
   }
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 #if defined PARALLEL_STATIC
   if (!m_options->par_postOnly) // no need to write ordering in post processing
 #endif
@@ -260,7 +260,12 @@ bool Main::findOrLoadOrdering() {
   // Pseudo tree has dummy node after build(), add to problem
   m_problem->addDummy(); // add dummy variable to problem, to be in sync with pseudo tree
   m_pseudotree->resetFunctionInfo(m_problem->getFunctions());
-#if defined PARALLEL_DYNAMIC //or defined PARALLEL_STATIC
+  m_pseudotree->addDomainInfo(m_problem->getDomains());
+
+#if defined PARALLEL_STATIC
+  m_pseudotree->computeSubprobStats();
+#endif
+#if defined PARALLEL_DYNAMIC //|| defined PARALLEL_STATIC
   int cutoff = m_pseudotree->computeComplexities(m_options->threads);
   cout << "Suggested cutoff:\t" << cutoff << " (ignored)" << endl;
 //  if (opt.autoCutoff) {
@@ -288,6 +293,10 @@ bool Main::findOrLoadOrdering() {
 
 
 bool Main::runSLS() {
+#ifdef PARALLEL_STATIC
+  if (m_options->par_postOnly)
+    return true;  // skip SLS for static post mode
+#endif
 #ifdef ENABLE_SLS
   if (!m_options->in_subproblemFile.empty())
     return true;  // no SLS in case of subproblem processing
@@ -485,7 +494,10 @@ bool Main::compileHeuristic() {
 
 
 bool Main::runLDS() {
-
+#ifdef PARALLEL_STATIC
+  if (m_options->par_postOnly)
+    return true;  // skip LDS for static post mode
+#endif
   // Run LDS if specified
   if (m_options->lds != NONE) {
     cout << "Running LDS with limit " << m_options->lds << endl;
@@ -493,9 +505,10 @@ bool Main::runLDS() {
     LimitedDiscrepancy lds(m_problem.get(), m_pseudotree.get(), spaceLDS.get(),
                            m_heuristic.get(), m_options->lds);
     if (!m_options->in_subproblemFile.empty()) {
-      if (!lds.restrictSubproblem(m_options->in_subproblemFile))
+      if (!lds.restrictSubproblem(m_options->in_subproblemFile)) {
         err_txt("Subproblem restriction for LDS failed.");
         return false;
+      }
     }
 
     // load current best solution into LDS
@@ -507,12 +520,13 @@ bool Main::runLDS() {
       cout << "LDS: Initial solution loaded." << endl;
 
     BoundPropagator propLDS(m_problem.get(), spaceLDS.get(), false);  // doCaching = false
+    lds.finalizeHeuristic();
     SearchNode* n = lds.nextLeaf();
     while (n) {
       propLDS.propagate(n,true); // true = report solution
       n = lds.nextLeaf();
     }
-    cout << "LDS: explored " << spaceLDS->nodesOR << '/' << spaceLDS->nodesAND
+    cout << "LDS: explored " << spaceLDS->stats.numOR << '/' << spaceLDS->stats.numAND
          << " OR/AND nodes" << endl;
     cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
 
@@ -530,13 +544,25 @@ bool Main::runLDS() {
 
 bool Main::finishPreproc() {
 
-  // load current best solution from preprocessin into search instance
+  // load current best solution from preprocessing into search instance
   if (m_search->updateSolution(m_problem->getSolutionCost()
 #ifndef NO_ASSIGNMENT
       , m_problem->getSolutionAssg()
 #endif
   ))
     cout << "Initial problem lower bound: " << m_search->curLowerBound() << endl;
+
+#ifndef NO_HEURISTIC
+  m_search->finalizeHeuristic();
+#endif
+
+#ifdef PARALLEL_STATIC
+  if (m_options->par_preOnly) {
+    m_search->storeLowerBound();
+  } else if (m_options->par_postOnly) {
+    m_search->loadLowerBound();
+  }
+#endif
 
   // Record time after preprocessing
   time(&_time_pre);
@@ -658,12 +684,17 @@ bool Main::outputStats() const {
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   cout << "Condor jobs:   " << m_search->getSubproblemCount() << endl;
 #endif
-  cout << "OR nodes:      " << m_space->nodesOR << endl;
-  cout << "AND nodes:     " << m_space->nodesAND << endl;
+  cout << "OR nodes:      " << m_space->stats.numOR << endl;
+  cout << "AND nodes:     " << m_space->stats.numAND << endl;
 #if defined PARALLEL_STATIC
-  cout << "OR external:   " << m_space->nodesORext << endl;
-  cout << "AND external:  " << m_space->nodesANDext << endl;
+  cout << "OR external:   " << m_space->stats.numORext << endl;
+  cout << "AND external:  " << m_space->stats.numANDext << endl;
 #endif
+  cout << "Proc. nodes:   " << m_space->stats.numProcessed << endl;
+  cout << "Leaf nodes:    " << m_space->stats.numLeaf << endl;
+  cout << "Pruned nodes:  " << m_space->stats.numPruned << endl;
+  cout << "Deadend nodes: " << m_space->stats.numDead << endl;
+
 
 #ifdef PARALLEL_STATIC
   if (m_options->par_preOnly && m_solved) {
@@ -701,8 +732,8 @@ bool Main::outputStats() const {
   }
   cout << endl;
 
-  pair<size_t,size_t> noNodes = make_pair(m_space->nodesOR, m_space->nodesAND);
-  m_problem->outputAndSaveSolution(m_options->out_solutionFile, noNodes,
+//  pair<size_t,size_t> noNodes = make_pair(m_space->nodesOR, m_space->nodesAND);
+  m_problem->outputAndSaveSolution(m_options->out_solutionFile, & m_space->stats,
       m_search->getNodeProfile(), m_search->getLeafProfile());
 #ifdef PARALLEL_STATIC
   }
@@ -759,7 +790,7 @@ bool Main::start() const {
 bool Main::outputInfo() const {
   assert(m_options.get());
 
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   if (m_options->runTag == "") {
     m_options->runTag = "notag";
   }
@@ -773,7 +804,7 @@ bool Main::outputInfo() const {
   << "+ Suborder:\t" << m_options->subprobOrder << " ("
   << subprob_order[m_options->subprobOrder] <<")"<< endl
   << "+ Random seed:\t" << m_options->seed << endl
-#if defined PARALLEL_DYNAMIC or defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   << "+ Cutoff depth:\t" << m_options->cutoff_depth << endl
   << "+ Cutoff size:\t" << m_options->cutoff_size << endl
   << "+ Max. workers:\t" << m_options->threads << endl

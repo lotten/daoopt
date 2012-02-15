@@ -79,6 +79,13 @@ void Problem::removeEvidence() {
   }
   m_functions = new_funs;
 
+  // Create dummy function for global constant. Technically the field value needs
+  // to be reset to ELEM_ONE, but we keep it around for informational purposes --
+  // it should never get used in actual computations.
+  double* table1 = new double[1];
+  table1[0] = m_globalConstant;
+  Function* constFun = new FunctionBayes(m_nOrg, this, set<int>(), table1, 1);
+  m_functions.push_back(constFun);
 
   /*
   // === shrink more by eliminating certain vars ===
@@ -319,7 +326,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   m_n = x;
   m_domains.resize(m_n,UNKNOWN);
 #ifndef NO_ASSIGNMENT
-  m_curSolution.resize(m_n,UNKNOWN);
+//  m_curSolution.resize(m_n,UNKNOWN);
 #endif
   m_k = -1;
   for (int i=0; i<m_n; ++i) { // Domain sizes
@@ -451,7 +458,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 }
 
 
-void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
+void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodestats,
     const vector<count_t>& nodeProf, const vector<count_t>& leafProf, bool toScreen) const {
 
   bool writeFile = false;
@@ -468,20 +475,26 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     }
   }
 
-  cout << "s " << SCALE_LOG(m_curCost);
+  oss screen;
+  screen << "s " << SCALE_LOG(m_curCost);
 #ifndef NO_ASSIGNMENT
   int32_t assigSize = UNKNOWN;
   if (m_subprobOnly)
-    assigSize = (int32_t) m_curSolution.size() - 1; // -1 for dummy var
+    assigSize = (int32_t) m_curSolution.size();  // no dummy variable included
   else
     assigSize = (int32_t) m_nOrg;
-  cout << ' ' << assigSize;
+  screen << ' ' << assigSize;
 #endif
 
   if (writeFile) {
     BINWRITE(out, m_curCost); // mpe solution cost
-    BINWRITE(out, noNodes.first); // no. of OR nodes expanded
-    BINWRITE(out, noNodes.second); // no. of AND nodes expanded
+    count_t countOR = 0, countAND = 0;
+    if (nodestats) {
+      countOR = nodestats->numOR;
+      countAND = nodestats->numAND;
+    }
+    BINWRITE(out, countOR);
+    BINWRITE(out, countAND);
   }
 
 #ifndef NO_ASSIGNMENT
@@ -493,7 +506,7 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
   vector<val_t> outputAssig;
   assignmentForOutput(outputAssig);
   BOOST_FOREACH( int32_t v, outputAssig ) {
-    cout << ' ' << v;
+    screen << ' ' << v;
     if (writeFile) BINWRITE(out, v);
   }
 #endif
@@ -512,18 +525,20 @@ void Problem::outputAndSaveSolution(const string& file, pair<count_t,count_t> no
     }
   }
 
-  cout << endl;
+  screen << endl;
+  if (toScreen)
+    cout << screen.str();
   if (writeFile)
     out.close();
-
 }
 
 
 #ifndef NO_ASSIGNMENT
 void Problem::assignmentForOutput(vector<val_t>& assg) const {
-  if (m_subprobOnly)
+  if (m_subprobOnly) {
     assg = m_curSolution;
-  else {
+    // update: no need to remove dummy anymore
+  } else {
     assg.resize(m_nOrg, UNKNOWN);
     for (int i=0; i<m_nOrg; ++i) {
       map<int,int>::const_iterator itRen = m_old2new.find(i);
@@ -546,13 +561,22 @@ void Problem::updateSolution(double cost,
 #ifndef NO_ASSIGNMENT
     const vector<val_t>& sol,
 #endif
-    pair<size_t,size_t> nodes,
+    const SearchStats* nodestats,
     bool output) {
 
   if (ISNAN(cost))
     return;
 
 #ifndef NO_ASSIGNMENT
+  // check for complete assignment first
+  BOOST_FOREACH(val_t v, sol) {
+    if (v == NONE) {
+      myprint("Warning: skipping incomplete solution.\n");
+      DIAG(oss ss; ss << cost << " " << sol.size() << " " << sol << endl; myprint(ss.str()););
+      return;
+    }
+  }
+
   // use Kahan summation to compute exact solution cost
   // TODO (might not work in non-log scale?)
   if (cost != ELEM_ZERO && !m_subprobOnly) {
@@ -561,7 +585,8 @@ void Problem::updateSolution(double cost,
     BOOST_FOREACH( Function* f, m_functions ) {
       z = f->getValue(sol);
       if (z == ELEM_ZERO) {
-        myprint("Warning: skipping zero-cost solution.\n"); return;
+        myprint("Warning: skipping zero-cost solution.\n");
+        return;
       }
       y = z OP_DIVIDE comp;
       z = kahan OP_TIMES y;
@@ -578,8 +603,14 @@ void Problem::updateSolution(double cost,
   m_curCost = cost;
   if (cost == ELEM_ZERO) output = false;
   ostringstream ss;
-  if (output)
-    ss << "u " << nodes.first << ' ' <<  nodes.second << ' ' << SCALE_LOG(cost) ;
+  if (output) {
+    ss << "u ";
+    if (nodestats)
+      ss << nodestats->numOR << ' ' <<  nodestats->numAND << ' ';
+    else
+      ss << "0 0 ";
+    ss << SCALE_LOG(cost) ;
+  }
 
 #ifndef NO_ASSIGNMENT
   // save only the reduced solution
@@ -623,9 +654,7 @@ void Problem::writeUAI(const string& prob) const {
     out << ' ' << ((int) *it) ;
 
   // function information
-  // NOTE: introduces a dummy function to account for a possible global constant
-  // introduced by eliminating evidence and unary variables earlier
-  out << endl << m_functions.size()+1 << endl; // no. of functions +1 (for dummy function)
+  out << endl << m_functions.size() << endl;
   for (vector<Function*>::const_iterator it=m_functions.begin(); it!=m_functions.end(); ++it) {
     const set<int>& scope = (*it)->getScope();
     out << scope.size() << '\t'; // scope size
@@ -633,7 +662,6 @@ void Problem::writeUAI(const string& prob) const {
       out << *itS << ' '; // variables in scope
     out << endl;
   }
-  out << "0" << endl; // dummy function (constant, thus empty scope)
   out << endl;
 
   // write the function tables
@@ -644,13 +672,18 @@ void Problem::writeUAI(const string& prob) const {
       out << ' ' << SCALE_NORM( T[i] ); // table entries
     out << endl;
   }
-  // and the dummy function table
-  out << '1' << endl << ' ' << SCALE_NORM(m_globalConstant) << endl;
 
   // done
   out << endl;
   out.close();
 
+}
+
+
+void Problem::addDummy() {
+  m_n += 1;
+  m_hasDummy = true;
+  m_domains.push_back(1); // unary domain
 }
 
 
@@ -672,3 +705,4 @@ bool Problem::isEliminated(int i) const {
   return itRen == m_old2new.end();
 }
 #endif
+

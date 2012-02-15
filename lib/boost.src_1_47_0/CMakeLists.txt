@@ -1,0 +1,27 @@
+add_library(BoostProgOpt
+  ./program_options/src/value_semantic.cpp
+  ./program_options/src/cmdline.cpp
+  ./program_options/src/variables_map.cpp
+  ./program_options/src/utf8_codecvt_facet.cpp
+  ./program_options/src/options_description.cpp
+  ./program_options/src/positional_options.cpp
+  ./program_options/src/split.cpp
+  ./program_options/src/winmain.cpp
+  ./program_options/src/config_file.cpp
+  ./program_options/src/convert.cpp
+  ./program_options/src/parsers.cpp
+)
+
+if(WIN32)
+  add_library(BoostThread
+    ./thread/src/win32/tss_dll.cpp
+    ./thread/src/win32/thread.cpp
+    ./thread/src/win32/tss_pe.cpp
+    ./thread/src/tss_null.cpp
+  )
+else()
+  add_library(BoostThread
+    ./thread/src/pthread/thread.cpp
+    ./thread/src/pthread/once.cpp
+  )
+endif()

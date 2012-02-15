@@ -27,6 +27,7 @@
 #include "Function.h"
 #include "Graph.h"
 #include "MiniBucket.h"
+#include "SearchSpace.h"
 #include "_base.h"
 #include "gzstream.h"
 
@@ -68,7 +69,7 @@ protected:
 
 public:
   val_t getDomainSize(int i) const;
-  double getGlobalConstant() const;
+  double globalConstInfo() const;
 
   int getN() const { return m_n; }
   int getNOrg() const { return m_nOrg; }
@@ -120,7 +121,7 @@ public:
 #ifndef NO_ASSIGNMENT
       const vector<val_t>& sol,
 #endif
-      pair<size_t,size_t> nodes,
+      const SearchStats* nodestats = NULL,
       bool output = true);
 
   /* outputs the solution to the screen and, if file!="", writes it to file
@@ -131,7 +132,7 @@ public:
    *  - nodeProf and leafProf are the full and leaf node profiles
    *  - if toScreen==true, will skip the console output (file only)
    */
-  void outputAndSaveSolution(const string& file, pair<count_t,count_t> noNodes,
+  void outputAndSaveSolution(const string& file, const SearchStats* nodestats,
                              const vector<count_t>& nodeProf, const vector<count_t>& leafProf,
                              bool toScreen = true) const;
 
@@ -157,16 +158,9 @@ inline val_t Problem::getDomainSize(int i) const {
   return m_domains[i];
 }
 
-inline double Problem::getGlobalConstant() const {
+inline double Problem::globalConstInfo() const {
   return m_globalConstant;
 }
-
-inline void Problem::addDummy() {
-  m_n += 1;
-  m_hasDummy = true;
-  m_domains.push_back(1); // unary domain
-}
-
 
 inline Problem::Problem() :
     m_subprobOnly(false),

@@ -46,20 +46,14 @@ Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
 
 
 SearchNode* Search::initSearch() {
-  // Add initial set of dummy nodes.
   if (!m_space->root) {
-    // create root OR node (dummy variable)
+    // Create root OR node (dummy variable)
     PseudotreeNode* ptroot = m_pseudotree->getRoot();
     SearchNode* node = new SearchNodeOR(NULL, ptroot->getVar(), -1);
     m_space->root = node;
-
-    // create dummy AND node (domain size 1) with global constant as label
-    SearchNode* next = new SearchNodeAND(node, 0, m_problem->getGlobalConstant());
-    m_space->root->setChild(next);
-
-    return next;
+    return node;
   } else {
-    if (m_space->root->getChildCountAct())
+    if (m_space->root->getChildCountAct())  // TODO: not needed anymore?
       return m_space->root->getChildren()[0];
     else
       return m_space->root;
@@ -67,25 +61,23 @@ SearchNode* Search::initSearch() {
 }
 
 
+#ifndef NO_HEURISTIC
+void Search::finalizeHeuristic() {
+  assert(m_space && m_space->getTrueRoot());
+  heuristicOR(m_space->getTrueRoot());
+}
+#endif
+
+
 bool Search::doProcess(SearchNode* node) {
   assert(node);
   if (node->getType() == NODE_AND) {
+    // 0-labeled nodes should not get generated in the first place
+    assert(node->getLabel() != ELEM_ZERO);  // if this fires, something is wrong!
     DIAG( ostringstream ss; ss << *node << " (l=" << node->getLabel() << ")\n"; myprint(ss.str()) );
     int var = node->getVar();
     int val = node->getVal();
     m_assignment[var] = val; // record assignment
-
-    /* not required anymore, 0-label nodes won't be generated in the first place
-    // dead end (AND label = 0)?
-    if (node->getLabel() == ELEM_ZERO) {
-      node->setLeaf(); // mark as leaf
-      int depth = m_pseudotree->getNode(var)->getDepth();
-      m_leafProfile.at(depth) += 1; // count leaf node
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-      node->setSubLeaves(1);
-#emdof
-      return true; // and abort
-    } */
   } else { // NODE_OR
     DIAG( ostringstream ss; ss << *node << "\n"; myprint(ss.str()) );
   }
@@ -109,7 +101,8 @@ bool Search::doCaching(SearchNode* node) {
 
   } else { // OR node, try actual caching
 
-    if (!ptnode->getParent()) return false;
+    if (!ptnode->getParent() || !ptnode->getParent()->getParent())
+      return false;  // pseudo tree root or one of its direct children
 
     if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
       // add cache context information
@@ -165,6 +158,7 @@ bool Search::doPruning(SearchNode* node) {
   if (canBePruned(node)) {
     DIAG( myprint("\t !pruning \n") );
     node->setLeaf();
+    m_space->stats.numPruned += 1;
     node->setPruned();
     if (node->getType() == NODE_AND) {
       // count 1 leaf AND node
@@ -194,6 +188,7 @@ SearchNode* Search::nextLeaf() {
 
   SearchNode* node = this->nextNode();
   while (node) {
+    m_space->stats.numProcessed += 1;
     if (doProcess(node)) // initial processing
       { return node; }
     if (doCaching(node)) // caching?
@@ -209,49 +204,25 @@ SearchNode* Search::nextLeaf() {
 
 
 bool Search::canBePruned(SearchNode* n) const {
+  DIAG(oss ss; ss << "\tcanBePruned(" << *n << ")" << " h=" << n->getHeur() << endl; myprint(ss.str());)
 
-  // heuristic is upper bound, hence can use to prune if value=zero
-  if (n->getHeur() == ELEM_ZERO)
+  if (n->getHeur() == ELEM_ZERO)  // heuristic is upper bound, prune if zero
     return true;
 
-  SearchNode* curAND;
-  SearchNode* curOR;
-  double curPSTVal;
+  double curPSTVal = n->getHeur();  // includes label in case of AND node
+  SearchNode* curOR = (n->getType() == NODE_OR) ? n : n->getParent();
 
-  if (n->getType() == NODE_AND) {
-    curAND = n;
-    curOR = n->getParent();
-    curPSTVal = curAND->getHeur(); // includes label
-  } else { // NODE_OR
-    curAND = NULL;
-    curOR = n;
-    curPSTVal = curOR->getHeur(); // n->getHeur()
-  }
+  if (curPSTVal <= curOR->getValue())  // simple pruning case
+    return true;
 
-  DIAG( ostringstream ss; ss << "\tcanBePruned(" << *n << ")" << " h=" << n->getHeur() << endl; myprint(ss.str()); )
+  SearchNode* curAND = NULL;
 
-  list<SearchNode*> notOptOR; // marks nodes for tagging as possibly not optimal
+  while (curOR->getParent()) {  // climb all the way up to root node, if we have to
 
-  // up to root node, if we have to
-  while (curOR->getParent()) {
-    DIAG( ostringstream ss; ss << "\t ?PST root: " << *curOR << " pst=" << curPSTVal << " v=" << curOR->getValue() << endl; myprint(ss.str()); )
+    curAND = curOR->getParent();  // climb up one, update values
+    curPSTVal OP_TIMESEQ curAND->getLabel();  // collect AND node label
+    curPSTVal OP_TIMESEQ curAND->getSubSolved();  // incorporate already solved sibling OR nodes
 
-    //if ( fpLt(curPSTVal, curOR->getValue()) ) {
-    if ( curPSTVal <= curOR->getValue() ) {
-      for (list<SearchNode*>::iterator it=notOptOR.begin(); it!=notOptOR.end(); ++it)
-        (*it)->setNotOpt(); // mark as possibly not optimal
-      return true; // pruning is possible!
-    }
-
-    notOptOR.push_back(curOR);
-
-    // climb up, update values
-    curAND = curOR->getParent();
-
-    // collect AND node label
-    curPSTVal OP_TIMESEQ curAND->getLabel();
-    // incorporate already solved sibling OR nodes
-    curPSTVal OP_TIMESEQ curAND->getSubSolved();
     // incorporate new not-yet-solved sibling OR nodes through their heuristic
     NodeP* children = curAND->getChildren();
     for (size_t i = 0; i < curAND->getChildCountFull(); ++i) {
@@ -259,10 +230,19 @@ bool Search::canBePruned(SearchNode* n) const {
       else curPSTVal OP_TIMESEQ children[i]->getHeur();
     }
     curOR = curAND->getParent();
+
+    DIAG( ostringstream ss; ss << "\t ?PST root: " << *curOR << " pst=" << curPSTVal << " v=" << curOR->getValue() << endl; myprint(ss.str()); )
+
+    //if ( fpLt(curPSTVal, curOR->getValue()) ) {
+    if ( curPSTVal <= curOR->getValue() ) {
+      for (SearchNode* nn = (n->getType() == NODE_OR) ? n : n->getParent();
+           nn != curOR; nn = nn->getParent()->getParent())
+        nn->setNotOpt();  // mark possibly not optimally solved subproblems
+      return true;  // pruning is possible!
+    }
   }
 
-  // default, no pruning possible
-  return false;
+  return false;  // default, no pruning possible
 
 } // Search::canBePruned
 
@@ -295,7 +275,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->nodesAND += 1;
+  m_space->stats.numAND += 1;
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
@@ -330,6 +310,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
   if (chi.empty()) {
     n->setLeaf(); // terminal node
     n->setValue(ELEM_ONE);
+    m_space->stats.numLeaf += 1;
     if (depth!=-1) m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC
     n->setSubLeaves(1);
@@ -367,15 +348,15 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->nodesOR +=1 ;
+  m_space->stats.numOR += 1;
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
   int depth = ptnode->getDepth();
 
 #ifndef NO_HEURISTIC
-    // retrieve precomputed labels and heuristic values
-    double* heur = n->getHeurCache();
+  // retrieve precomputed labels and heuristic values
+  double* heur = n->getHeurCache();
 #endif
 
   for (val_t i=m_problem->getDomainSize(var)-1; i>=0; --i) {
@@ -387,6 +368,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
       d OP_TIMESEQ (*it)->getValue(m_assignment);
     if (d == ELEM_ZERO) {
+      m_space->nodesLeaf += 1;
       m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC
       n->addSubLeaves(1);
@@ -397,6 +379,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
 #else
     // early pruning if heuristic is zero (since it's an upper bound)
     if (heur[2*i] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
+      m_space->stats.numDead += 1;
       m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC
       n->addSubLeaves(1);
@@ -592,10 +575,10 @@ bool Search::loadInitialBound(string file) {
     // store solution/bound into search space and problem instance
 #ifdef NO_ASSIGNMENT
     this->updateSolution(bound);
-    m_problem->updateSolution(getCurOptValue(), make_pair(0,0), true);
+    m_problem->updateSolution(getCurOptValue(), NULL, true);
 #else
     this->updateSolution(bound, reduced);
-    m_problem->updateSolution(getCurOptValue(), getCurOptTuple(), make_pair(0,0), true);
+    m_problem->updateSolution(getCurOptValue(), getCurOptTuple(), NULL, true);
 #endif
 
 
@@ -628,48 +611,37 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
 
   // generate structure of bogus nodes to hold partial solution tree copied
   // from master search space
-
-  SearchNode* next = this->nextNode(); // dummy AND node on top of stack
-  SearchNode* node = NULL;
-
+  SearchNode *next = NULL, *node = NULL;
+  delete m_space->root;  // delete previous search space root
   int pstSize = pst.size() / 2;
+  int dummyVar = m_problem->getN() - 1;
 
   // build structure top-down, first entry in pst array is assumed to correspond to
   // highest OR value, last entry is the lowest AND label
   for (int i=0; i<pstSize; ++i) {
-
-    // add dummy OR node with proper value
-    node = next;
-    next = new SearchNodeOR(node, node->getVar(), -1) ;
+    // dummy OR node with solution bound from master PST
+    next = new SearchNodeOR(node, dummyVar, -1) ;
     next->setValue(pst.at(2*i));
-//    cout << " Added dummy OR node with value " << d1 << endl;
-    node->setChild(next);
-
+    DIAG(cout << "- Created  OR dummy with value " << pst.at(2*i) << endl;)
+    if (i > 0) node->setChild(next);
+    else m_space->root = next;
     node = next;
-    next = new SearchNodeAND(node, 0, pst.at(2*i+1)) ;
-//    cout << " Added dummy AND node with label " << d2 << endl;
-    node->setChild(next);
 
+    // dummy AND node with label from master PST
+    next = new SearchNodeAND(node, 0, pst.at(2*i+1)) ;
+    DIAG(cout << " -Created AND dummy with label " << pst.at(2*i+1) << endl;)
+    node->setChild(next);
+    node = next;
   }
 
-  // create another set of dummy nodes as a buffer for the subproblem
-  // value since the previous dummy nodes might have non-empty
-  // labels/values from the parent problem)
-  node = next;
-  next = new SearchNodeOR(node, node->getVar(), -1);
+  // create the OR node for the actual (non-dummy) subproblem root variable
+  next = new SearchNodeOR(node, rootVar, 0);
   node->setChild(next);
-
-  node = next;
-  next = new SearchNodeAND(node, 0); // label = ELEM_ONE !
-  node->setChild(next);
-
-  m_space->subproblemLocal = node; // dummy OR node
-
+  m_space->subproblemLocal = next;
   // empty existing queue/stack/etc. and add new node
-  this->reset(next); // dummy AND node
+  this->reset(next);
 
   return depth;
-
 }
 
 
@@ -795,7 +767,6 @@ bool Search::restrictSubproblem(string file) {
   cout << "Reading parent partial solution tree of size " << pstSize << endl;
 
   vector<double> pstVals(pstSize*2, ELEM_NAN);
-
   if (reverse) { // fill array in reverse
     int i=pstSize-1;
     while (i >= 0) {
@@ -815,12 +786,10 @@ bool Search::restrictSubproblem(string file) {
       i += 1;
     }
   }
-
   fs.close();
 
   // call function to actually condition this search instance
   int depth = this->restrictSubproblem(rootVar, assignment, pstVals);
-
   cout << "Restricted to subproblem with root node " << rootVar << " at depth " << depth  << endl;
 
   return true; // success

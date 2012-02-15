@@ -47,7 +47,7 @@ protected:
   /* for LDS */
 //  SearchSpace* m_ldsSpace;  // plain pointer to avoid destructor call
   scoped_ptr<LimitedDiscrepancy> m_ldsSearch;
-  scoped_ptr<BoundPropagator> m_ldsProp;
+//  scoped_ptr<BoundPropagator> m_ldsProp;
 
   /* for complexity prediction */
   scoped_ptr<LearningEngine> m_learner;
@@ -76,15 +76,6 @@ protected:
   SearchNode* nextNode();
   bool isMaster() const { return true; }
 
-/*
-public:
-  void setInitialSolution(double
-#ifndef NO_ASSIGNMENT
-   ,const vector<val_t>&
-#endif
-  ) const;
-*/
-
 protected:
   /* moves the frontier one step deeper by splitting the given node */
   bool deepenFrontier(SearchNode*, vector<SearchNode*>& out);
@@ -96,6 +87,11 @@ protected:
    * returns true if subproblem was solved fully */
   bool applyLDS(SearchNode*);
 
+  /* applies limited number of "full" AOBB node expansions to subproblem
+   * below node (max. nodeLimit expansions); returns true if subproblem
+   * was solved */
+  bool applyAOBB(SearchNode* node, count_t nodeLimit);
+
   /* compiles the name of a temporary file */
   string filename(const char* pre, const char* ext, int count = NONE) const;
   /* submits jobs to the grid system (Condor) */
@@ -105,11 +101,20 @@ protected:
 
   /* creates the encoding of subproblems for the condor submission */
   string encodeJobs(const vector<SearchNode*>&) const;
+  /* writes subproblem statistics to CSV file, solution node counts optional */
+  void writeStatsCSV(const vector<SearchNode*>& subprobs,
+                     const vector<pair<count_t, count_t> >* nodecounts = NULL) const;
+
+  /* clear stack for local solving */
+  void resetLocalStack(SearchNode* node = NULL);
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
 
-
 public:
+  /* stores the lower bound to file for subsequent retrieval */
+  bool storeLowerBound() const;
+  /* loads lower bound from file (post mode) */
+  bool loadLowerBound();
   /* performs subproblem sampling and learns a model to predict complexities */
   bool doLearning();
   /* computes the parallel frontier and , returns true iff successful */

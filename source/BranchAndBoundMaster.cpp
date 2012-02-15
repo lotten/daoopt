@@ -83,12 +83,12 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
     }
 
-  } while ( (sp.nodesAND < limitN) || (maxSubCount==0) ) ;
+  } while ( (sp.stats.numAND < limitN) || (maxSubCount==0) ) ;
 
-  limitN = sp.nodesAND;
+  limitN = sp.stats.numAND;
 
   // initialize stats using max. subproblem except for full leaf profile
-  m_spaceMaster->stats->init(maxSubRootDepth, maxSubRootHeight, maxSubCount, maxSubLeaves, maxSubLeafD, lbound, ubound);
+  m_spaceMaster->avgStats->init(maxSubRootDepth, maxSubRootHeight, maxSubCount, maxSubLeaves, maxSubLeafD, lbound, ubound);
 
   if (! bab.nextLeaf()) {
     this->updateSolution(bab.getCurOptValue()
