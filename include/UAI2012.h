@@ -30,16 +30,15 @@ struct UAI2012 {
 
   static string filename;  // filename for solution output
 
-  static void outputSolutionInt(const vector<int>& assignment) {
+  static void outputSolutionValT(const vector<val_t>& assignment) {
     assert(filename != "");
 
     // generate the solution file contents first
     ostringstream ss;
     ss <<  "MPE" << endl << "1" << endl;  // TODO: allow more than one evid. sample
     ss << assignment.size();
-    for (vector<int>::const_iterator it = assignment.begin();
-         it != assignment.end(); ++it) {
-      ss << " " << (*it);
+    BOOST_FOREACH(val_t v, assignment) {
+      ss << ' ' << (int) v;
     }
     ss << endl;
 
@@ -48,14 +47,6 @@ struct UAI2012 {
     outfile.open(filename.c_str(), ios::out | ios::trunc);
     outfile << ss.str();
     outfile.close();
-  }
-
-  static void outputSolutionValT(const vector<val_t>& assignment) {
-    vector<int> assigInt(assignment.size());
-    for (int i=0; i<assignment.size(); ++i) {
-      assigInt[i] = (int) assignment[i];
-    }
-    outputSolutionInt(assigInt);
   }
 
 };
