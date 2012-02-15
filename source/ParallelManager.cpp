@@ -500,6 +500,7 @@ bool ParallelManager::readExtResults() {
         ostringstream ss;
         ss << "Solution file " << id << " unavailable: " << solutionFile << endl;
         myerror(ss.str());
+        node->setNotOpt();  // to suppress CSV output
         success = false;
         continue; // skip rest of loop
       }
@@ -538,6 +539,7 @@ bool ParallelManager::readExtResults() {
       ss << "Solution file " << id << " length mismatch, got " << tup.size()
          << ", expected " << subsize << endl;
       myprint(ss.str());
+      node->setNotOpt();  // to suppress CSV output
       success = false;
       continue;
     }
@@ -615,6 +617,9 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
   for (size_t i = 0; i < subprobs.size(); ++i) {
     SearchNode* node = subprobs.at(i);
     assert(node);
+
+    if (node->isNotOpt())  // marked in readExtResults()
+      continue;  // skip problematic nodes in CSV output
 
     int rootVar = node->getVar();
     PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);

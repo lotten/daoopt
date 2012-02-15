@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.7c"
+#define VERSIONINFO "0.99.7d"
 
 time_t _time_start, _time_pre;
 
@@ -274,7 +274,7 @@ bool Main::initDataStructs() {
 
   // Heuristic is initialized here, built later in compileHeuristic()
 #ifdef NO_HEURISTIC
-  m_heuristic.reset(new Unheuristic);
+  m_heuristic.reset(new UnHeuristic);
 #else
   m_heuristic.reset(new MiniBucketElim(m_problem.get(), m_pseudotree.get(),
 				       m_options.get(), m_options->ibound) );
