@@ -60,7 +60,7 @@ inline void MiniBucket::addFunction(Function* f) {
   // insert function
   m_functions.push_back(f);
   // update joint scope
-  m_jointScope.insert(f->getScope().begin(), f->getScope().end() );
+  m_jointScope.insert(f->getScopeVec().begin(), f->getScopeVec().end() );
 }
 
 inline MiniBucket::MiniBucket(int v, int b, Problem* p) :

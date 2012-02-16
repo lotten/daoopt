@@ -45,13 +45,13 @@ int Pseudotree::restrictSubproblem(int i) {
   m_heightConditioned = m_root->updateDepthHeight(-1) - 1;
 
   // compute subproblem width (when conditioning on subproblem context)
-  const set<int>& condset = m_nodes[i]->getFullContext();
+  const vector<int>& condset = m_nodes[i]->m_contextV;
   stack<PseudotreeNode*> stck;
   stck.push(m_nodes[i]);
   while (stck.size()) {
     PseudotreeNode* n = stck.top();
     stck.pop();
-    int x = setminusSize(n->getFullContext(), condset);
+    int x = setminusSize(n->m_contextV, condset);
     m_widthConditioned = max(m_widthConditioned,x);
     for (vector<PseudotreeNode*>:: const_iterator it=n->getChildren().begin(); it!=n->getChildren().end(); ++it) {
       stck.push(*it);
@@ -59,7 +59,6 @@ int Pseudotree::restrictSubproblem(int i) {
   }
 
   return rootOldDepth;
-
 }
 
 void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
@@ -68,7 +67,7 @@ void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
     (*it)->resetFunctions();
   // generate new function mapping
   for (vector<Function*>::const_iterator itF=fns.begin(); itF!=fns.end(); ++itF) {
-    const set<int>& scope = (*itF)->getScope();
+    const set<int>& scope = (*itF)->getScopeSet();
     if (scope.size() == 0) {
       m_nodes[m_elimOrder.back()]->addFunction(*itF);  // dummy variable
       continue;
@@ -229,19 +228,21 @@ void Pseudotree::buildChain(Graph G, const vector<int>& elim, const int cachelim
 
   // compute contexts for adaptive caching
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it) {
-    const set<int>& ctxt = (*it)->getFullContext();
+    const set<int>& ctxt = (*it)->m_contextS;
     if (cachelimit == NONE || cachelimit >= (int) ctxt.size()) {
       (*it)->setCacheContext(ctxt);
       continue; // proceed to next node
     }
     int j = cachelimit;
     PseudotreeNode* p = (*it)->getParent();
+    set<int> newCacheCtxt;
     while (j--) { // note: cachelimit < ctxt.size()
       while (ctxt.find(p->getVar()) == ctxt.end() )
         p = p->getParent();
-      (*it)->addCacheContext(p->getVar());
+      newCacheCtxt.insert(p->getVar());
       p = p->getParent();
     }
+    (*it)->setCacheContext(newCacheCtxt);
     // find reset variable for current node's cache table
     while (ctxt.find(p->getVar()) == ctxt.end() )
       p = p->getParent();
@@ -315,19 +316,21 @@ void Pseudotree::build(Graph G, const vector<int>& elim, const int cachelimit) {
 
   // compute contexts for adaptive caching
   for (vector<PseudotreeNode*>::iterator it = m_nodes.begin(); it!=m_nodes.end(); ++it) {
-    const set<int>& ctxt = (*it)->getFullContext();
+    const set<int>& ctxt = (*it)->m_contextS;
     if (cachelimit == NONE || cachelimit >= (int) ctxt.size()) {
       (*it)->setCacheContext(ctxt);
       continue; // proceed to next node
     }
     int j = cachelimit;
     PseudotreeNode* p = (*it)->getParent();
+    set<int> newCacheCtxt;
     while (j--) { // note: cachelimit < ctxt.size()
       while (ctxt.find(p->getVar()) == ctxt.end() )
         p = p->getParent();
-      (*it)->addCacheContext(p->getVar());
+      newCacheCtxt.insert(p->getVar());
       p = p->getParent();
     }
+    (*it)->setCacheContext(newCacheCtxt);
     // find reset variable for current node's cache table
     while (ctxt.find(p->getVar()) == ctxt.end() )
       p = p->getParent();
@@ -411,11 +414,11 @@ Pseudotree::Pseudotree(const Pseudotree& pt) {
     int var = ptnPar->getVar();
     const vector<PseudotreeNode*>& childOrg = pt.m_nodes.at(var)->getChildren();
     for (vector<PseudotreeNode*>::const_iterator it=childOrg.begin(); it!=childOrg.end(); ++it) {
-       ptnNew = new PseudotreeNode(this, (*it)->getVar(), (*it)->getFullContext());
+       ptnNew = new PseudotreeNode(this, (*it)->getVar(), (*it)->m_contextS);
        m_nodes.at((*it)->getVar()) = ptnNew;
        ptnPar->addChild(ptnNew);
        ptnNew->setParent(ptnPar);
-       ptnNew->setCacheContext( (*it)->getCacheContext() );
+       ptnNew->setCacheContext( (*it)->m_cacheContextS );
        ptnNew->setCacheReset( (*it)->getCacheReset() );
        ptnNew->setFunctions( (*it)->getFunctions() );
 
@@ -583,7 +586,7 @@ int PseudotreeNode::updateDepthHeight(int d) {
 /* recursively finds and returns the max. width in this node's subproblem */
 int PseudotreeNode::updateSubWidth() {
 
-  m_subWidth = m_context.size();
+  m_subWidth = m_contextV.size();
 
   for (vector<PseudotreeNode*>::iterator it=m_children.begin(); it!=m_children.end(); ++it)
     m_subWidth = max(m_subWidth, (*it)->updateSubWidth());
@@ -594,24 +597,25 @@ int PseudotreeNode::updateSubWidth() {
 
 
 /* recursively updates the set of variables in the current subproblem */
-const set<int>& PseudotreeNode::updateSubprobVars(int numVars) {
+const vector<int>& PseudotreeNode::updateSubprobVars(int numVars) {
 
   // clear current set
   m_subproblemVars.clear();
   // add self
-  m_subproblemVars.insert(m_var);
+  m_subproblemVars.push_back(m_var);
 
   // iterate over children and collect their subproblem variables
   for (vector<PseudotreeNode*>::iterator it = m_children.begin(); it!=m_children.end(); ++it) {
-    const set<int>& childVars = (*it)->updateSubprobVars(numVars);
-    for (set<int>::const_iterator itC = childVars.begin(); itC!=childVars.end(); ++itC)
-      m_subproblemVars.insert(*itC);
+    const vector<int>& childVars = (*it)->updateSubprobVars(numVars);
+    for (vector<int>::const_iterator itC = childVars.begin(); itC!=childVars.end(); ++itC)
+      m_subproblemVars.push_back(*itC);
   }
+  sort(m_subproblemVars.begin(), m_subproblemVars.end());
 
   m_subproblemVarMap.clear();
   m_subproblemVarMap.resize(numVars, NONE);
   size_t i = 0;
-  for (set<int>::const_iterator it = m_subproblemVars.begin();
+  for (vector<int>::const_iterator it = m_subproblemVars.begin();
        it != m_subproblemVars.end(); ++it, ++i) {
     m_subproblemVarMap[*it] = i;
   }
@@ -644,7 +648,7 @@ void PseudotreeNode::computeStatsCluster(vector<int>& result) {
     pt->computeStatsCluster(chi);
     copy(chi.begin(), chi.end(), back_inserter(result));
   }
-  result.push_back(m_context.size());
+  result.push_back(m_contextV.size());
   m_subprobStats->setClusterStats(result);
 }
 
@@ -677,14 +681,14 @@ void PseudotreeNode::computeStatsDomain(vector<int>& result) {
 
 void PseudotreeNode::computeStatsClusterCond() {
   vector<int> result;
-  this->computeStatsClusterCondSub(m_context, result);
+  this->computeStatsClusterCondSub(m_contextS, result);
   m_subprobStats->setClusterCondStats(result);
 }
 
 void PseudotreeNode::computeStatsClusterCondSub(
     const set<int>& cond, vector<int>& result) const {
   set<int> context_cond;
-  set_difference(m_context.begin(), m_context.end(), cond.begin(), cond.end(),
+  set_difference(m_contextS.begin(), m_contextS.end(), cond.begin(), cond.end(),
                  inserter(context_cond, context_cond.begin()));
   result.push_back(context_cond.size());
   BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
@@ -708,7 +712,7 @@ void PseudotreeNode::initSubproblemComplexity() {
   bigint s = 0;
   PseudotreeNode* node = NULL;
 
-  const set<int>& ctxt = this->getFullContext();
+  const vector<int>& ctxt = this->getFullContextVec();
 
   while (!Q.empty()) {
     node = Q.front();
@@ -721,8 +725,8 @@ void PseudotreeNode::initSubproblemComplexity() {
     // compute parameters for current node
     int w2 = 0;
     bigint s2 = domains.at(node->getVar()); // own var is NOT in context
-    const set<int>& fullCtxt = node->getFullContext();
-    set<int>::const_iterator itFC = fullCtxt.begin(), itC = ctxt.begin();
+    const vector<int>& fullCtxt = node->getFullContextVec();
+    vector<int>::const_iterator itFC = fullCtxt.begin(), itC = ctxt.begin();
     while (itFC != fullCtxt.end() && itC != ctxt.end()) {
       if (*itFC == *itC) {
         ++itFC; ++itC;
@@ -742,7 +746,7 @@ void PseudotreeNode::initSubproblemComplexity() {
 
   // compute own cluster size only
   bigint ctxtsize = 1;
-  for (set<int>::const_iterator itb = ctxt.begin(); itb!=ctxt.end(); ++itb)
+  for (vector<int>::const_iterator itb = ctxt.begin(); itb!=ctxt.end(); ++itb)
     ctxtsize *= domains.at(*itb); // context variable
 
   // multiply by own domain size for cluster size
@@ -762,7 +766,7 @@ void PseudotreeNode::initSubproblemComplexity() {
 /* compute upper bound on subproblem size, assuming conditioning on 'cond' */
 bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_t>* assig) const {
 
-  set<int> cluster(this->getFullContext()); // get context
+  set<int> cluster(m_contextS); // get context
   cluster.insert(m_var); // add own variable to get cluster
   const vector<val_t>& doms = m_tree->m_problem->getDomains();
 
@@ -810,8 +814,8 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
 #ifdef DEBUG
     cout << "  Adding " << (*cand) << endl;
 #endif
-    const set<int>& cscope = cand->getScope();
-    for (set<int>::const_iterator itSc = cscope.begin(); itSc!=cscope.end(); ++itSc)
+    const vector<int>& cscope = cand->getScopeVec();
+    for (vector<int>::const_iterator itSc = cscope.begin(); itSc!=cscope.end(); ++itSc)
       uncovered.erase(*itSc);
 
   }
@@ -846,7 +850,7 @@ void Pseudotree::insertNewNode(const int i, const set<int>& N, list<PseudotreeNo
   // incorporate new pseudo tree node
   list<PseudotreeNode*>::iterator it = roots.begin();
   while (it != roots.end()) {
-    const set<int>& context = (*it)->getFullContext();
+    const set<int>& context = (*it)->m_contextS;
     if (context.find(i) != context.end()) {
       p->addChild(*it); // add child to current node
       (*it)->setParent(p); // set parent of previous node

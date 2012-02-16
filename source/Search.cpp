@@ -104,35 +104,34 @@ bool Search::doCaching(SearchNode* node) {
     if (!ptnode->getParent() || !ptnode->getParent()->getParent())
       return false;  // pseudo tree root or one of its direct children
 
-    if (ptnode->getFullContext().size() <= ptnode->getParent()->getFullContext().size()) {
+    if (ptnode->getFullContextVec().size() <= ptnode->getParent()->getFullContextVec().size()) {
       // add cache context information
-      addCacheContext(node,ptnode->getCacheContext());
+      addCacheContext(node,ptnode->getCacheContextVec());
       //DIAG( myprint( str("    Context set: ") + ptnode->getCacheContext() + "\n" ) );
       // try to get value from cache
-      try {
-        // will throw int(UNKNOWN) if not found
 #ifndef NO_ASSIGNMENT
-        pair<double,vector<val_t> > entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      const pair<const double, const vector<val_t> >& entry =
+          m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      if (!ISNAN(entry.first)) {
         node->setValue( entry.first ); // set value
         node->setOptAssig( entry.second ); // set assignment
 #else
-        double entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      const double entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      if (!ISNAN(entry)) {
         node->setValue( entry ); // set value
 #endif
         node->setLeaf(); // mark as leaf
 #ifdef DEBUG
-        {
-          ostringstream ss;
-          ss << "-Read " << *node << " with value " << node->getValue()
+        ostringstream ss;
+        ss << "-Read " << *node << " with value " << node->getValue()
 #ifndef NO_ASSIGNMENT
-          << " and opt. solution " << node->getOptAssig()
+        << " and opt. solution " << node->getOptAssig()
 #endif
-          << endl;
-          myprint(ss.str());
-        }
+        << endl;
+        myprint(ss.str());
 #endif
         return true;
-      } catch (...) { // cache lookup failed
+	  } else {
         node->setCachable(); // mark for caching later
       }
     }
@@ -453,11 +452,11 @@ double Search::heuristicOR(SearchNode* n) {
 
 
 #ifndef NO_CACHING
-void Search::addCacheContext(SearchNode* node, const set<int>& ctxt) const {
+void Search::addCacheContext(SearchNode* node, const vector<int>& ctxt) const {
 
   context_t sig;
   sig.reserve(ctxt.size());
-  for (set<int>::const_iterator itC=ctxt.begin(); itC!=ctxt.end(); ++itC) {
+  for (vector<int>::const_iterator itC=ctxt.begin(); itC!=ctxt.end(); ++itC) {
     sig.push_back(m_assignment[*itC]);
   }
 
@@ -472,11 +471,11 @@ void Search::addCacheContext(SearchNode* node, const set<int>& ctxt) const {
 
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-void Search::addSubprobContext(SearchNode* node, const set<int>& ctxt) const {
+void Search::addSubprobContext(SearchNode* node, const vector<int>& ctxt) const {
 
   context_t sig;
   sig.reserve(ctxt.size());
-  for (set<int>::const_iterator itC=ctxt.begin(); itC!=ctxt.end(); ++itC) {
+  for (vector<int>::const_iterator itC=ctxt.begin(); itC!=ctxt.end(); ++itC) {
     sig.push_back(m_assignment[*itC]);
   }
   node->setSubprobContext(sig);
@@ -604,8 +603,8 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
   m_leafProfile.resize(m_pseudotree->getHeightCond()+1);
 
   // set context assignment
-  const set<int>& context = m_pseudotree->getNode(rootVar)->getFullContext();
-  for (set<int>::const_iterator it = context.begin(); it!=context.end(); ++it) {
+  const vector<int>& context = m_pseudotree->getNode(rootVar)->getFullContextVec();
+  for (vector<int>::const_iterator it = context.begin(); it!=context.end(); ++it) {
     m_assignment[*it] = assig[*it];
   }
 
@@ -727,7 +726,7 @@ bool Search::restrictSubproblem(string file) {
 
   // context size
   BINREAD(fs, x);
-  const set<int>& context = m_pseudotree->getNode(rootVar)->getFullContext();
+  const vector<int>& context = m_pseudotree->getNode(rootVar)->getFullContextVec();
   if (x != (int) context.size()) {
     cerr << "ERROR reading subproblem specification, context size doesn't match." << endl;
     return false;
@@ -737,7 +736,7 @@ bool Search::restrictSubproblem(string file) {
   vector<val_t> assignment(m_problem->getN(), UNKNOWN);
   int z = UNKNOWN;
   cout << "Subproblem context:";
-  for (set<int>::const_iterator it = context.begin(); it!=context.end(); ++it) {
+  for (vector<int>::const_iterator it = context.begin(); it!=context.end(); ++it) {
     BINREAD(fs, z); // files always contain ints, convert to val_t
     y = (val_t) z;
     if (y<0 || y>=m_problem->getDomainSize(*it)) {

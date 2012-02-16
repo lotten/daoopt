@@ -247,7 +247,7 @@ bool ParallelManager::restoreFrontier() {
     syncAssignment(node);
     x = node->getVar();
     ptnode = m_pseudotree->getNode(x);
-    addSubprobContext(node,ptnode->getFullContext());
+    addSubprobContext(node,ptnode->getFullContextVec());
 
     // check against subproblems from saved list
     frontierCache::iterator lkup = subprobs.find(make_pair(x,node->getSubprobContext()));
@@ -698,12 +698,12 @@ string ParallelManager::encodeJobs(const vector<SearchNode*>& nodes) const {
     /* subproblem root variable */
     BINWRITE( subprobs, rootVar );
     /* subproblem context size */
-    const set<int>& ctxt = ptnode->getFullContext();
+    const vector<int>& ctxt = ptnode->getFullContextVec();
     int sz = ctxt.size();
     BINWRITE( subprobs, sz );
 
     /* write context instantiation */
-    for (set<int>::const_iterator it=ctxt.begin(); it!=ctxt.end(); ++it) {
+    for (vector<int>::const_iterator it=ctxt.begin(); it!=ctxt.end(); ++it) {
       z = (int) assign.at(*it);
       BINWRITE( subprobs, z);
     }

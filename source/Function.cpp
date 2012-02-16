@@ -28,12 +28,13 @@
 
 /* Constructor */
 Function::Function(const int& id, Problem* p, const set<int>& scope, double* T, const size_t& size) :
-  m_id(id), m_problem(p), m_table(T), m_tableSize(size), m_scope(scope) {
+  m_id(id), m_problem(p), m_table(T), m_tableSize(size),
+  m_scopeS(scope), m_scopeV(scope.begin(), scope.end()) {
 #ifdef PRECOMP_OFFSETS
   m_offsets.resize(scope.size());
   size_t offset = 1;
-  set<int>::reverse_iterator rit; vector<size_t>::reverse_iterator ritOff;
-  for (rit=m_scope.rbegin(), ritOff=m_offsets.rbegin(); rit!=m_scope.rend(); ++rit, ++ritOff) {
+  vector<int>::reverse_iterator rit; vector<size_t>::reverse_iterator ritOff;
+  for (rit=m_scopeV.rbegin(), ritOff=m_offsets.rbegin(); rit!=m_scopeV.rend(); ++rit, ++ritOff) {
     *ritOff = offset;
     offset *= m_problem->getDomainSize(*rit);
   }
@@ -46,13 +47,13 @@ double Function::getValue(const vector<val_t>& assignment) const {
 //  assert(isInstantiated(assignment)); // make sure scope is fully instantiated
 #ifdef PRECOMP_OFFSETS
   size_t idx = 0;
-  set<int>::const_iterator it=m_scope.begin();
+  vector<int>::const_iterator it=m_scopeV.begin();
   vector<size_t>::const_iterator itOff=m_offsets.begin();
-  for (; it!=m_scope.end(); ++it, ++itOff)
+  for (; it!=m_scopeV.end(); ++it, ++itOff)
     idx += assignment[*it] * (*itOff);
 #else
   size_t idx = 0, offset=1;
-  for (set<int>::reverse_iterator rit=m_scope.rbegin(); rit!=m_scope.rend(); ++rit) {
+  for (vector<int>::const_reverse_iterator rit=m_scopeV.rbegin(); rit!=m_scopeV.rend(); ++rit) {
     idx += assignment[*rit] * offset;
     offset *= m_problem->getDomainSize(*rit);
   }
@@ -64,16 +65,16 @@ double Function::getValue(const vector<val_t>& assignment) const {
 
 /* returns the table entry for the assignment (input is vector of pointers to val_t) */
 double Function::getValuePtr(const vector<val_t*>& tuple) const {
-  assert(tuple.size() == m_scope.size()); // make sure tuple size matches scope size
+  assert(tuple.size() == m_scopeV.size()); // make sure tuple size matches scope size
 #ifdef PRECOMP_OFFSETS
   size_t idx = 0;
-  for (size_t i=0; i<m_scope.size(); ++i)
+  for (size_t i=0; i<m_scopeV.size(); ++i)
     idx += *(tuple[i]) * m_offsets[i];
 #else
   size_t idx = 0, offset=1;
-  set<int>::reverse_iterator rit=m_scope.rbegin();
+  vector<int>::const_reverse_iterator rit=m_scopeV.rbegin();
   vector<val_t*>::const_reverse_iterator ritTup = tuple.rbegin();
-  for (; rit!=m_scope.rend(); ++rit,++ritTup) {
+  for (; rit!=m_scopeV.rend(); ++rit,++ritTup) {
     idx += *(*ritTup) * offset;
     offset *= m_problem->getDomainSize(*rit);
   }
@@ -84,14 +85,14 @@ double Function::getValuePtr(const vector<val_t*>& tuple) const {
 
 
 void Function::translateScope(const map<int, int>& translate) {
-  //cout << "Translating " << m_id << " :";
-  set<int> newScope;
-  for (set<int>::iterator it = m_scope.begin(); it != m_scope.end(); ++it) {
-    newScope.insert(translate.find(*it)->second);
-    //cout << ' ' << *it << "->" << translate.find(*it)->second;
+  vector<int> newScope;
+  for (vector<int>::iterator it = m_scopeV.begin(); it != m_scopeV.end(); ++it) {
+    newScope.push_back(translate.find(*it)->second);
   }
-  //cout << endl;
-  m_scope = newScope;
+  // sort(newScope.begin(), newScope.end());  // not necessary, since translation preserves order
+  m_scopeV.swap(newScope);
+  m_scopeS.clear();
+  m_scopeS.insert(m_scopeV.begin(), m_scopeV.end());
 }
 
 /* Main substitution function.
@@ -103,7 +104,7 @@ void Function::substitute_main(const map<int,val_t>& assignment, set<int>& newSc
   map<int,val_t> localElim; // variables in scope to be substituted
   newTableSize = 1; // size of resulting table
 
-  for (set<int>::const_iterator it=m_scope.begin(); it != m_scope.end(); ++it) {
+  for (vector<int>::const_iterator it=m_scopeV.begin(); it != m_scopeV.end(); ++it) {
     // assignment contains evidence and unary variables
     map<int,val_t>::const_iterator s = assignment.find(*it);
     if (s != assignment.end()) {
@@ -124,9 +125,9 @@ void Function::substitute_main(const map<int,val_t>& assignment, set<int>& newSc
 
   // Collect domain sizes of variables in scope and
   // compute resulting table size
-  vector<val_t> domains(m_scope.size(),UNKNOWN);
+  vector<val_t> domains(m_scopeV.size(),UNKNOWN);
   int i=0;
-  for (set<int>::iterator it=m_scope.begin(); it != m_scope.end(); ++it ) {
+  for (vector<int>::const_iterator it=m_scopeV.begin(); it != m_scopeV.end(); ++it ) {
     domains[i] = m_problem->getDomainSize(*it);
     ++i;
   }
@@ -135,12 +136,12 @@ void Function::substitute_main(const map<int,val_t>& assignment, set<int>& newSc
   newTable = new double[newTableSize];
 
   // keeps track of assignment while going over table
-  vector<val_t> tuple(m_scope.size(),0);
+  vector<val_t> tuple(m_scopeV.size(),0);
   size_t idx=0, newIdx=0;
   do {
     // does it match?
     bool match = true;
-    set<int>::iterator itSco = m_scope.begin();
+    vector<int>::const_iterator itSco = m_scopeV.begin();
     vector<val_t>::iterator itTup = tuple.begin();
     map<int,val_t>::iterator itEli = localElim.begin();
     for ( ; match && itEli != localElim.end(); ++itEli) {
@@ -163,7 +164,7 @@ Function* FunctionBayes::clone() const {
   double* newTable = new double[m_tableSize];
   for (size_t i=0; i<m_tableSize; ++i)
     newTable[i] = m_table[i];
-  Function* f = new FunctionBayes(m_id, m_problem, m_scope, newTable, m_tableSize );
+  Function* f = new FunctionBayes(m_id, m_problem, m_scopeS, newTable, m_tableSize );
   return f;
 }
 
@@ -204,11 +205,11 @@ size_t Function::getTightness(const set<int>& proj, const set<int>& cond,
     cout << "NULL" << endl;
 #endif
 
-  size_t arity = m_scope.size();
+  size_t arity = m_scopeV.size();
 
   // Compute intersection of scope and proj
   set<int> s;
-  set_intersection(m_scope.begin(), m_scope.end(), proj.begin(), proj.end(), inserter(s,s.begin()));
+  set_intersection(m_scopeS.begin(), m_scopeS.end(), proj.begin(), proj.end(), inserter(s,s.begin()));
 //  DIAG(cout << "Function::getTightness\tProjected to " << s << endl);
   assert(!s.empty()); // make sure function is relevant // TODO return 1?
 
@@ -228,7 +229,7 @@ size_t Function::getTightness(const set<int>& proj, const set<int>& cond,
     idxs.reserve(s.size());
     for (set<int>::iterator it = s.begin(); it != s.end(); ++it) {
       int c = 0;
-      for (set<int>::iterator itSc = m_scope.begin(); itSc != m_scope.end(); ++itSc) {
+      for (vector<int>::iterator itSc = m_scopeV.begin(); itSc != m_scopeV.end(); ++itSc) {
         if (*itSc==*it) { idxs.push_back(c); break; }
         ++c;
       }
@@ -237,7 +238,7 @@ size_t Function::getTightness(const set<int>& proj, const set<int>& cond,
     // keep track of the complete tuple (not projected)
     vector<val_t> vals(arity, 0);
     vector<val_t> doms; doms.reserve(arity);
-    for (set<int>::iterator itSc = m_scope.begin(); itSc != m_scope.end(); ++itSc)
+    for (vector<int>::iterator itSc = m_scopeV.begin(); itSc != m_scopeV.end(); ++itSc)
       doms.push_back(m_problem->getDomainSize(*itSc));
 
     set<size_t> positives; // collect the new indices (wrt. projected scope)
@@ -251,11 +252,11 @@ size_t Function::getTightness(const set<int>& proj, const set<int>& cond,
           // over the constraining assignment variables
           set<int>::const_iterator itCo = cond.begin();
           // over the current tuples
-          set<int>::const_iterator itSc = m_scope.begin();
+          vector<int>::const_iterator itSc = m_scopeV.begin();
           vector<val_t>::const_iterator itV = vals.begin();
           bool compatible = true;
 
-          while (compatible && itSc != m_scope.end() && itCo != cond.end() ) {
+          while (compatible && itSc != m_scopeV.end() && itCo != cond.end() ) {
 
             if (*itCo < *itSc) ++itCo;
             else if (*itSc < *itCo) ++itSc, ++itV;
@@ -306,11 +307,11 @@ bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
 
   bigint csize = 1;
 
-  set<int>::const_iterator it1 = m_scope.begin();
+  vector<int>::const_iterator it1 = m_scopeV.begin();
   set<int>::const_iterator it2 = uncovered.begin();
 
   // compute product of the newly covered domains
-  while (it1 != m_scope.end() && it2 != uncovered.end()) {
+  while (it1 != m_scopeV.end() && it2 != uncovered.end()) {
     if (*it1 < *it2)
       ++it1;
     else if (*it2 < *it1)
@@ -337,35 +338,35 @@ bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
 
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-double Function::getAverage(const set<int>& cond, const vector<val_t>& assig) {
+double Function::getAverage(const vector<int>& cond, const vector<val_t>& assig) {
 
   double sum = ELEM_ONE;
   size_t count = 0;
 
   // make sure assignment is actually specified
-  for (set<int>::const_iterator it=cond.begin(); it!=cond.end(); ++it) {
+  for (vector<int>::const_iterator it=cond.begin(); it!=cond.end(); ++it) {
     assert (assig.at(*it) != UNKNOWN );
   }
 
   // keep track of the complete tuple (i.e., tuple size = scope size)
-  vector<val_t> vals(m_scope.size(), 0);
+  vector<val_t> vals(m_scopeV.size(), 0);
   // cache domain sizes of scope variables
-  vector<val_t> doms; doms.reserve( m_scope.size() );
-  for (set<int>::iterator itSc = m_scope.begin(); itSc != m_scope.end(); ++itSc)
+  vector<val_t> doms; doms.reserve( m_scopeV.size() );
+  for (vector<int>::iterator itSc = m_scopeV.begin(); itSc != m_scopeV.end(); ++itSc)
     doms.push_back(m_problem->getDomainSize(*itSc));
 
   // iterate over all tuples
   for (size_t i=0; i<m_tableSize; increaseTuple(i,vals,doms) ) {
 
     // over the constraining assignment variables
-    set<int>::const_iterator itCo = cond.begin();
+    vector<int>::const_iterator itCo = cond.begin();
     // over the current tuples
-    set<int>::const_iterator itSc = m_scope.begin(); // should be kept in sync with the next
+    vector<int>::const_iterator itSc = m_scopeV.begin(); // should be kept in sync with the next
     vector<val_t>::const_iterator itV = vals.begin();
 
     bool compatible = true;
 
-    while (compatible && itSc != m_scope.end() && itCo != cond.end() ) {
+    while (compatible && itSc != m_scopeV.end() && itCo != cond.end() ) {
 
       if (*itCo < *itSc) ++itCo;
       else if (*itSc < *itCo) ++itSc, ++itV; // keep sync

@@ -111,6 +111,7 @@ protected:
   void removeAdjacency(const int& i, const int& j);
 
 public:
+  void addClique(const vector<int>& v);
   void addClique(const set<int>& s);
 
   // finds the connected components of the given set
@@ -264,7 +265,17 @@ inline void Graph::removeAdjacency(const int& i, const int& j) {
 }
 
 
-/* Adds the nodes in s to the graph and fully connects them */
+/* Adds the nodes to the graph and fully connects them */
+inline void Graph::addClique(const vector<int>& v) {
+  for (vector<int>::const_iterator it = v.begin(); it != v.end(); ++it) {
+    addNode(*it); // insert the node
+    vector<int>::const_iterator it2 = it;
+    while (++it2 != v.end()) {
+      addEdge(*it,*it2);
+    }
+  }
+}
+
 inline void Graph::addClique(const set<int>& s) {
   for (set<int>::const_iterator it = s.begin(); it != s.end(); ++it) {
     addNode(*it); // insert the node

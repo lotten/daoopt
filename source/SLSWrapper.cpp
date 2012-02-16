@@ -61,8 +61,8 @@ bool SLSWrapper::init(Problem* prob, int iter, int time) {
 
     sls4mpe::probTables[i]->init(fn->getArity());
     int j = 0;
-    for (set<int>::const_iterator it = fn->getScope().begin();
-         it != fn->getScope().end(); ++it, ++j)
+    for (vector<int>::const_iterator it = fn->getScopeVec().begin();
+         it != fn->getScopeVec().end(); ++it, ++j)
       sls4mpe::probTables[i]->setVar(j, *it);
 
     sls4mpe::probTables[i]->setNumEntries(fn->getTableSize());

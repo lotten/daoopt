@@ -29,7 +29,7 @@
 /* checks whether a function 'fits' in this MB */
 bool MiniBucket::allowsFunction(Function* f) {
 
-  const set<int>& a=m_jointScope, b=f->getScope();
+  const set<int>& a=m_jointScope, b=f->getScopeSet();
 
   set<int>::const_iterator ita=a.begin(),
     itb = b.begin() ;
@@ -80,7 +80,7 @@ Function* MiniBucket::eliminate(bool buildTable) {
   set<int>::const_iterator sit;
 
   for (fit = m_functions.begin(); fit != m_functions.end(); ++fit) {
-    scope.insert( (*fit)->getScope().begin() , (*fit)->getScope().end() );
+    scope.insert( (*fit)->getScopeVec().begin() , (*fit)->getScopeVec().end() );
   }
 
 #ifdef DEBUG
@@ -123,7 +123,7 @@ Function* MiniBucket::eliminate(bool buildTable) {
     iterators.reserve(m_functions.size());
     for (fit = m_functions.begin(); fit != m_functions.end(); ++fit) {
       // store begin() and end() for each function scope
-      iterators.push_back( make_pair( (*fit)->getScope().begin(), (*fit)->getScope().end() ) );
+      iterators.push_back( make_pair( (*fit)->getScopeSet().begin(), (*fit)->getScopeSet().end() ) );
     }
 
     // collect pointers to tuple values

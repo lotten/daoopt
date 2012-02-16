@@ -43,7 +43,8 @@ protected:
   double* m_table;        // the actual table of function values
   size_t  m_tableSize;    // size of the table
 
-  set<int> m_scope;       // Scope of the function
+  set<int> m_scopeS;      // Scope of the function as set
+  vector<int> m_scopeV;   // Scope in vector form
 
 #ifdef PRECOMP_OFFSETS
   vector<size_t> m_offsets;  // Precomputed offsets for value lookup
@@ -59,17 +60,18 @@ public:
   int getId() const { return m_id; }
   size_t getTableSize() const { return m_tableSize; }
   double* getTable() const { return m_table; }
-  const set<int>& getScope() const { return m_scope; }
-  int getArity() const { return m_scope.size(); }
+  const set<int>& getScopeSet() const { return m_scopeS; }
+  const vector<int>& getScopeVec() const { return m_scopeV; }
+  int getArity() const { return m_scopeV.size(); }
 
   /* returns true iff the function is constant */
   bool isConstant() const { return m_tableSize==1; }
 
   /* true iff var. i is in scope */
-  bool hasInScope(const int& i) const { return (m_scope.find(i) != m_scope.end()); }
+  bool hasInScope(const int& i) const { return (m_scopeS.find(i) != m_scopeS.end()); }
 
   /* true iff at least one var from S is in scope */
-  bool hasInScope(const set<int>& S) const { return !intersectionEmpty(S,m_scope); }
+  bool hasInScope(const set<int>& S) const { return !intersectionEmpty(S,m_scopeS); }
 
   /* generates a new (smaller) function with reduced scope and the <var,val>
    * pairs from the argument factored into the new table.
@@ -115,7 +117,7 @@ public:
                       const set<int>& cond, const vector<val_t>* assig = NULL);
   /* computes and returns the average value, conditioned on the variables indicated
    * in the set, where the actual assignments are pulled from the assignment vector */
-  double getAverage(const set<int>&, const vector<val_t>&);
+  double getAverage(const vector<int>&, const vector<val_t>&);
 
 #endif
 
@@ -157,7 +159,7 @@ inline Function::~Function() {
 }
 
 inline bool Function::isInstantiated(const vector<val_t>& assignment) const {
-  for (set<int>::const_iterator it=m_scope.begin(); it!=m_scope.end(); ++it) {
+  for (vector<int>::const_iterator it=m_scopeV.begin(); it!=m_scopeV.end(); ++it) {
     if (assignment[*it] == UNKNOWN)
       return false;
   }
@@ -178,7 +180,7 @@ inline FunctionBayes::FunctionBayes(const int& id, Problem* p, const set<int>& s
 
 /* cout operator */
 inline ostream& operator << (ostream& os, const Function& f) {
-  os << 'f' << f.getId() << ':' << f.getScope();
+  os << 'f' << f.getId() << ':' << f.getScopeSet();
   return os;
 }
 

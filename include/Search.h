@@ -187,11 +187,11 @@ protected:
    * between the Cache and the Subprob version is that Cache might only be the partial
    * context (for adaptive caching) */
 #ifndef NO_CACHING
-  void addCacheContext(SearchNode*, const set<int>&) const;
+  void addCacheContext(SearchNode*, const vector<int>&) const;
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   /* see comment above */
-  void addSubprobContext(SearchNode*, const set<int>&) const;
+  void addSubprobContext(SearchNode*, const vector<int>&) const;
 #endif
 #ifdef PARALLEL_DYNAMIC
   /* adds PST information for advanced pruning in (external) subproblem */
