@@ -155,7 +155,7 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
           itB!=minibuckets.end(); ++itB)
     {
       Function* newf = itB->eliminate(computeTables); // process the minibucket
-      const set<int>& newscope = newf->getScope();
+      const set<int>& newscope = newf->getScopeSet();
       memSize += newf->getTableSize();
       // go up in tree to find target bucket
       PseudotreeNode* n = m_pseudotree->getNode(*itV)->getParent();
@@ -305,10 +305,10 @@ bool MiniBucketElim::writeToFile(string fn) const {
 
 
       // scope
-      size_t sz3 = f->getScope().size();
+      size_t sz3 = f->getScopeVec().size();
       out.write((char*)&( sz3 ), sizeof( sz3 ));
  // scope size
-      for (set<int>::const_iterator it=f->getScope().begin(); it!=f->getScope().end(); ++it) {
+      for (vector<int>::const_iterator it=f->getScopeVec().begin(); it!=f->getScopeVec().end(); ++it) {
         x = *it;
         out.write((char*)&( x ), sizeof( x ));
  // vars from scope

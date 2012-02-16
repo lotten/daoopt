@@ -133,9 +133,9 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
   }
   // this will write only if entry not present yet
 #ifndef NO_ASSIGNMENT
-  m_tables[n]->insert( make_pair(ctxt, make_pair(v,sol) ) );
+  m_tables[n]->insert( context_hash_map::value_type(ctxt, make_pair(v,sol) ) );
 #else
-  m_tables[n]->insert( make_pair(ctxt, v) );
+  m_tables[n]->insert( context_hash_map::value_type(ctxt, v) );
 #endif
 }
 

@@ -90,7 +90,7 @@ bool Main::findOrLoadOrdering() {
   Graph g(m_problem->getN());
   const vector<Function*>& fns = m_problem->getFunctions();
   for (vector<Function*>::const_iterator it = fns.begin(); it != fns.end(); ++it) {
-    g.addClique((*it)->getScope());
+    g.addClique((*it)->getScopeVec());
   }
   cout << "Graph with " << g.getStatNodes() << " nodes and "
        << g.getStatEdges() << " edges created." << endl;

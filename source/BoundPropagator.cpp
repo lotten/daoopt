@@ -274,7 +274,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
   DIAG(ostringstream ss; ss << "< REC opt. assignment from " << *start << " to " << *end << endl; myprint(ss.str());)
 
   int endVar = end->getVar();
-  const set<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
+  const vector<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
 
   // get variable map for end node
   const vector<int>& endVarMap = m_space->pseudotree->getNode(endVar)->getSubprobVarMap();
@@ -294,8 +294,8 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
 
     if (cur->getOptAssig().size()) {
       // check previously saved partial assignment
-      const set<int>& curSubprob = m_space->pseudotree->getNode(cur->getVar())->getSubprobVars();
-      set<int>::const_iterator itVar = curSubprob.begin();
+      const vector<int>& curSubprob = m_space->pseudotree->getNode(cur->getVar())->getSubprobVars();
+      vector<int>::const_iterator itVar = curSubprob.begin();
       vector<val_t>::const_iterator itVal = cur->getOptAssig().begin();
 
       for(; itVar!= curSubprob.end(); ++itVar, ++itVal ) {

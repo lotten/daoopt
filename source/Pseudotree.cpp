@@ -68,7 +68,7 @@ void Pseudotree::addFunctionInfo(const vector<Function*>& fns) {
     (*it)->resetFunctions();
   // generate new function mapping
   for (vector<Function*>::const_iterator itF=fns.begin(); itF!=fns.end(); ++itF) {
-    const set<int>& scope = (*itF)->getScope();
+    const set<int>& scope = (*itF)->getScopeSet();
     if (scope.size() == 0) {
       m_nodes[m_elimOrder.back()]->addFunction(*itF);  // dummy variable
       continue;
@@ -594,24 +594,25 @@ int PseudotreeNode::updateSubWidth() {
 
 
 /* recursively updates the set of variables in the current subproblem */
-const set<int>& PseudotreeNode::updateSubprobVars(int numVars) {
+const vector<int>& PseudotreeNode::updateSubprobVars(int numVars) {
 
   // clear current set
   m_subproblemVars.clear();
   // add self
-  m_subproblemVars.insert(m_var);
+  m_subproblemVars.push_back(m_var);
 
   // iterate over children and collect their subproblem variables
   for (vector<PseudotreeNode*>::iterator it = m_children.begin(); it!=m_children.end(); ++it) {
-    const set<int>& childVars = (*it)->updateSubprobVars(numVars);
-    for (set<int>::const_iterator itC = childVars.begin(); itC!=childVars.end(); ++itC)
-      m_subproblemVars.insert(*itC);
+    const vector<int>& childVars = (*it)->updateSubprobVars(numVars);
+    for (vector<int>::const_iterator itC = childVars.begin(); itC!=childVars.end(); ++itC)
+      m_subproblemVars.push_back(*itC);
   }
+  sort(m_subproblemVars.begin(), m_subproblemVars.end());
 
   m_subproblemVarMap.clear();
   m_subproblemVarMap.resize(numVars, NONE);
   size_t i = 0;
-  for (set<int>::const_iterator it = m_subproblemVars.begin();
+  for (vector<int>::const_iterator it = m_subproblemVars.begin();
        it != m_subproblemVars.end(); ++it, ++i) {
     m_subproblemVarMap[*it] = i;
   }
