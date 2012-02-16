@@ -33,9 +33,9 @@
 
 //typedef hash_map <context_t, double> context_hash_map;
 #ifndef NO_ASSIGNMENT
-typedef hash_map <context_t, pair<double,vector<val_t> > > context_hash_map;
+typedef hash_map <const context_t, const pair<const double, const vector<val_t> > > context_hash_map;
 #else
-typedef hash_map <context_t, double > context_hash_map;
+typedef hash_map <const context_t, const double > context_hash_map;
 #endif
 
 class CacheTable {
@@ -48,14 +48,20 @@ private:
 #endif
   vector< context_hash_map* > m_tables;
 
-public:
-
+protected:
 #ifndef NO_ASSIGNMENT
-  virtual void write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int);
-  virtual pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int);
+  static const pair<const double, const vector<val_t> > NOT_FOUND;
 #else
-  virtual void write(int n, size_t inst, const context_t& ctxt, double v) throw (int);
-  virtual double read(int n, size_t inst, const context_t& ctxt) const throw (int);
+  static const double NOT_FOUND;
+#endif
+
+public:
+#ifndef NO_ASSIGNMENT
+  virtual bool write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol);
+  virtual const pair<const double, const vector<val_t> >& read(int n, size_t inst, const context_t& ctxt) const;
+#else
+  virtual bool write(int n, size_t inst, const context_t& ctxt, double v);
+  virtual const double read(int n, size_t inst, const context_t& ctxt) const;
 #endif
 
   virtual void reset(int n);
@@ -81,11 +87,11 @@ class UnCacheTable : public CacheTable  {
 public:
 
 #ifndef NO_ASSIGNMENT
-  void write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int) {throw UNKNOWN;}
-  pair<double, vector<val_t> > read(int n, size_t inst, const context_t& ctxt) const throw (int) {throw UNKNOWN;}
+  bool write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) { return false; }
+  const pair<const double, const vector<val_t> >& read(int n, size_t inst, const context_t& ctxt) const { return NOT_FOUND; }
 #else
-  void write(int n, size_t inst, const context_t& ctxt, double v) throw (int) {throw UNKNOWN;}
-  double read(int n, size_t inst, const context_t& ctxt) const throw (int) {throw UNKNOWN;}
+  bool write(int n, size_t inst, const context_t& ctxt, double v) { return false; }
+  const double read(int n, size_t inst, const context_t& ctxt) const { return NOT_FOUND; }
 #endif
 
   void reset(int n) {}
@@ -110,16 +116,20 @@ public:
 /* inserts a value into the respective cache table, throws an int if
  * insert non successful (memory limit or index out of bounds) */
 #ifndef NO_ASSIGNMENT
-inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) throw (int) {
+inline bool CacheTable::write(int n, size_t inst, const context_t& ctxt, double v, const vector<val_t>& sol) {
 #else
-inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double v) throw (int) {
+inline bool CacheTable::write(int n, size_t inst, const context_t& ctxt, double v) {
 #endif
   assert(n < m_size);
 #ifdef PARALLEL_DYNAMIC
   // check instance counter
   if (m_instCounter[n] != inst)
-    throw UNKNOWN; // mismatch, don't cache
+    return false; // mismatch, don't cache
 #endif
+
+  // NaN is reserved, replace with zero
+  if (ISNAN(v))
+    v = -ELEM_ZERO;
 
   // create hash table if needed
   if (!m_tables[n]) {
@@ -137,29 +147,30 @@ inline void CacheTable::write(int n, size_t inst, const context_t& ctxt, double 
 #else
   m_tables[n]->insert( context_hash_map::value_type(ctxt, v) );
 #endif
+  return true;
 }
 
 
 /* tries to read a value from a table, throws an int (UNKNOWN) if not found */
 #ifndef NO_ASSIGNMENT
-inline pair<double, vector<val_t> > CacheTable::read(int n, size_t inst, const context_t& ctxt) const throw (int) {
+inline const pair<const double, const vector<val_t> >& CacheTable::read(int n, size_t inst, const context_t& ctxt) const {
 #else
-inline double CacheTable::read(int n, size_t inst, const context_t& ctxt) const throw (int) {
+inline const double CacheTable::read(int n, size_t inst, const context_t& ctxt) const {
 #endif
 
   assert(n < m_size);
   // does cache table exist?
   if (!m_tables[n])
-    throw UNKNOWN;
+    return NOT_FOUND;
 #ifdef PARALLEL_DYNAMIC
   // check instance counter
   if (m_instCounter[n] != inst)
-    throw UNKNOWN; // mismatch, abort
+    return NOT_FOUND; // mismatch, abort
 #endif
   // look for actual entry
   context_hash_map::const_iterator it = m_tables[n]->find(ctxt);
   if (it == m_tables[n]->end())
-    throw UNKNOWN;
+    return NOT_FOUND;
   return it->second;
 }
 
@@ -171,7 +182,7 @@ inline void CacheTable::reset(int n) {
     delete m_tables[n];
     m_tables[n] = NULL;
     m_full = false;
-//    cout << "Reset cache table " << n << endl;
+    DIAG(oss ss;  ss << "Reset cache table " << n << endl; myprint(ss.str());)
   }
 #ifdef PARALLEL_DYNAMIC
   // increase instant counter to invalidate late result reports

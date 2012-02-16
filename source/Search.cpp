@@ -109,30 +109,29 @@ bool Search::doCaching(SearchNode* node) {
       addCacheContext(node,ptnode->getCacheContext());
       //DIAG( myprint( str("    Context set: ") + ptnode->getCacheContext() + "\n" ) );
       // try to get value from cache
-      try {
-        // will throw int(UNKNOWN) if not found
 #ifndef NO_ASSIGNMENT
-        pair<double,vector<val_t> > entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      const pair<const double, const vector<val_t> >& entry =
+          m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      if (!ISNAN(entry.first)) {
         node->setValue( entry.first ); // set value
         node->setOptAssig( entry.second ); // set assignment
 #else
-        double entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      const double entry = m_space->cache->read(var, node->getCacheInst(), node->getCacheContext());
+      if (!ISNAN(entry)) {
         node->setValue( entry ); // set value
 #endif
         node->setLeaf(); // mark as leaf
 #ifdef DEBUG
-        {
-          ostringstream ss;
-          ss << "-Read " << *node << " with value " << node->getValue()
+        ostringstream ss;
+        ss << "-Read " << *node << " with value " << node->getValue()
 #ifndef NO_ASSIGNMENT
-          << " and opt. solution " << node->getOptAssig()
+        << " and opt. solution " << node->getOptAssig()
 #endif
-          << endl;
-          myprint(ss.str());
-        }
+        << endl;
+        myprint(ss.str());
 #endif
         return true;
-      } catch (...) { // cache lookup failed
+	  } else {
         node->setCachable(); // mark for caching later
       }
     }

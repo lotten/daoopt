@@ -11,6 +11,7 @@ CPP_SRCS += \
 ../source/BranchAndBoundMaster.cpp \
 ../source/BranchAndBoundRotate.cpp \
 ../source/BranchAndBoundSampler.cpp \
+../source/CacheTable.cpp \
 ../source/Function.cpp \
 ../source/Graph.cpp \
 ../source/LearningEngine.cpp \
@@ -42,6 +43,7 @@ OBJS += \
 ./source/BranchAndBoundMaster.o \
 ./source/BranchAndBoundRotate.o \
 ./source/BranchAndBoundSampler.o \
+./source/CacheTable.o \
 ./source/Function.o \
 ./source/Graph.o \
 ./source/LearningEngine.o \
@@ -73,6 +75,7 @@ CPP_DEPS += \
 ./source/BranchAndBoundMaster.d \
 ./source/BranchAndBoundRotate.d \
 ./source/BranchAndBoundSampler.d \
+./source/CacheTable.d \
 ./source/Function.d \
 ./source/Graph.d \
 ./source/LearningEngine.d \
