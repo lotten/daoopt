@@ -11,6 +11,7 @@ CPP_SRCS += \
 ../source/BranchAndBoundMaster.cpp \
 ../source/BranchAndBoundRotate.cpp \
 ../source/BranchAndBoundSampler.cpp \
+../source/CacheTable.cpp \
 ../source/Function.cpp \
 ../source/Graph.cpp \
 ../source/LearningEngine.cpp \
@@ -32,7 +33,6 @@ CPP_SRCS += \
 ../source/Statistics.cpp \
 ../source/SubprobStats.cpp \
 ../source/SubproblemCondor.cpp \
-../source/hash.cpp \
 ../source/utils.cpp 
 
 OBJS += \
@@ -43,6 +43,7 @@ OBJS += \
 ./source/BranchAndBoundMaster.o \
 ./source/BranchAndBoundRotate.o \
 ./source/BranchAndBoundSampler.o \
+./source/CacheTable.o \
 ./source/Function.o \
 ./source/Graph.o \
 ./source/LearningEngine.o \
@@ -64,7 +65,6 @@ OBJS += \
 ./source/Statistics.o \
 ./source/SubprobStats.o \
 ./source/SubproblemCondor.o \
-./source/hash.o \
 ./source/utils.o 
 
 CPP_DEPS += \
@@ -75,6 +75,7 @@ CPP_DEPS += \
 ./source/BranchAndBoundMaster.d \
 ./source/BranchAndBoundRotate.d \
 ./source/BranchAndBoundSampler.d \
+./source/CacheTable.d \
 ./source/Function.d \
 ./source/Graph.d \
 ./source/LearningEngine.d \
@@ -96,7 +97,6 @@ CPP_DEPS += \
 ./source/Statistics.d \
 ./source/SubprobStats.d \
 ./source/SubproblemCondor.d \
-./source/hash.d \
 ./source/utils.d 
 
 

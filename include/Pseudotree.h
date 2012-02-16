@@ -152,6 +152,8 @@ public:
 /* represents a single problem variable in the pseudotree */
 class PseudotreeNode {
 
+  friend class Pseudotree;
+
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 protected:
   /* internal container class for subproblem complexity information */
@@ -193,10 +195,13 @@ protected:
 #ifdef PARALLEL_STATIC
   SubprobStats* m_subprobStats;
 #endif
-  set<int> m_subproblemVars; // The variables in the subproblem (including self)
+  vector<int> m_subproblemVars; // The variables in the subproblem (including self)
   vector<int> m_subproblemVarMap; // Maps variables to their index in subprob assignment
-  set<int> m_context; // The node's full OR context (!doesn't include own variable!)
-  set<int> m_cacheContext; // The (possibly smaller) context for (adaptive) caching
+  // Maintain contexts as both set and vector -- speedup is worth space overhead.
+  set<int> m_contextS; // The node's full OR context (!doesn't include own variable!)
+  vector<int> m_contextV; // OR context as vector
+  set<int> m_cacheContextS; // The (possibly smaller) context for (adaptive) caching
+  vector<int> m_cacheContextV; // caching context as vector
   list<int> m_cacheResetList; // List of var's whose cache tables need to be reset when this
                               // var's search node is expanded (for adaptive caching)
   list<Function*> m_functions; // The functions that will be fully instantiated at this point
@@ -215,13 +220,11 @@ public:
   static bool compGreater(PseudotreeNode* a, PseudotreeNode* b);
   static bool compLess(PseudotreeNode* a, PseudotreeNode* b);
 
-  void setFullContext(const set<int>& c) { m_context = c; }
-  void addFullContext(int v) { m_context.insert(v); }
-  const set<int>& getFullContext() const { return m_context; }
+  void setFullContext(const set<int>& c);
+  const vector<int>& getFullContextVec() const { return m_contextV; }
 
-  void setCacheContext(const set<int>& c) { m_cacheContext = c; }
-  void addCacheContext(int i) { m_cacheContext.insert(i); }
-  const set<int>& getCacheContext() const { return m_cacheContext; }
+  void setCacheContext(const set<int>& c);
+  const vector<int>& getCacheContextVec() const { return m_cacheContextV; }
 
   void setCacheReset(const list<int>& l) { m_cacheResetList = l; }
   void addCacheReset(int i) { m_cacheResetList.push_back(i); }
@@ -241,7 +244,7 @@ public:
   int getSubWidth() const { return m_subWidth; }
 
   size_t getSubprobSize() const { return m_subproblemVars.size(); }
-  const set<int>& getSubprobVars() const { return m_subproblemVars; }
+  const vector<int>& getSubprobVars() const { return m_subproblemVars; }
   const vector<int>& getSubprobVarMap() const { return m_subproblemVarMap; }
   void setSubprobVarMap(const vector<int>& map) { m_subproblemVarMap = map; }
 
@@ -256,7 +259,7 @@ public:
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void initSubproblemComplexity();
 #endif
-  const set<int>& updateSubprobVars(int numVars);
+  const vector<int>& updateSubprobVars(int numVars);
   int updateDepthHeight(int d);
   int updateSubWidth();
 
@@ -347,9 +350,22 @@ inline Pseudotree::~Pseudotree() {
 
 /* PseudotreeNode inlines */
 
+
+inline void PseudotreeNode::setFullContext(const set<int>& c) {
+  m_contextS = c;
+  vector<int> newV(c.begin(), c.end());
+  m_contextV.swap(newV);
+}
+
+inline void PseudotreeNode::setCacheContext(const set<int>& c) {
+  m_cacheContextS = c;
+  vector<int> newV(c.begin(), c.end());
+  m_cacheContextV.swap(newV);
+}
+
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 inline bigint PseudotreeNode::computeHWB(const vector<val_t>* assig) {
-  return computeSubCompDet(this->getFullContext(), assig);
+  return computeSubCompDet(m_contextS, assig);
 }
 #endif /* PARALLEL MODE */
 
@@ -357,14 +373,17 @@ inline bigint PseudotreeNode::computeHWB(const vector<val_t>* assig) {
 /* Constructor */
 inline PseudotreeNode::PseudotreeNode(Pseudotree* t, int v, const set<int>& s) :
 #if defined PARALLEL_DYNAMIC
-  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_context(s) {}
+  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL),
+  m_contextS(s), m_contextV(s.begin(), s.end()) {}
 #elif defined PARALLEL_STATIC
-  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_subprobStats(NULL), m_context(s)
+  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_complexity(NULL), m_subprobStats(NULL),
+  m_contextS(s), m_contextV(s.begin(), s.end())
 {
   m_subprobStats = new SubprobStats();
 }
 #else
-  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t), m_context(s) {}
+  m_domain(UNKNOWN), m_var(v), m_depth(UNKNOWN), m_subHeight(UNKNOWN), m_parent(NULL), m_tree(t),
+  m_contextS(s), m_contextV(s.begin(), s.end()) {}
 #endif
 
 inline PseudotreeNode::~PseudotreeNode()  {

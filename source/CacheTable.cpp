@@ -1,5 +1,5 @@
 /*
- * hash.h
+ * CacheTable.cpp
  *
  *  Copyright (C) 2008-2012 Lars Otten
  *  This file is part of DAOOPT.
@@ -16,30 +16,18 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with DAOOPT.  If not, see <http://www.gnu.org/licenses/>.
- *  
- *  Created on: Apr 7, 2009
+ *
+ *  Created on: Feb 15, 2012
  *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
-#ifndef HASH_H_
-#define HASH_H_
+#include "CacheTable.h"
 
-#include <stddef.h>
+#ifndef NO_ASSIGNMENT
+  const pair<const double, const vector<val_t> > CacheTable::NOT_FOUND = make_pair(ELEM_NAN, vector<val_t>());
+#else
+  const double CacheTable::NOT_FOUND = ELEM_NAN;
+#endif
 
-/* The mixing step */
-#define mix(a,b,c) \
-{ \
-  a=a-b;  a=a-c;  a=a^(c>>13); \
-  b=b-c;  b=b-a;  b=b^(a<<8);  \
-  c=c-a;  c=c-b;  c=c^(b>>13); \
-  a=a-b;  a=a-c;  a=a^(c>>12); \
-  b=b-c;  b=b-a;  b=b^(a<<16); \
-  c=c-a;  c=c-b;  c=c^(b>>5);  \
-  a=a-b;  a=a-c;  a=a^(c>>3);  \
-  b=b-c;  b=b-a;  b=b^(a<<10); \
-  c=c-a;  c=c-b;  c=c^(b>>15); \
-}
 
-size_t hash2(register unsigned char *k, size_t length, size_t initval);
 
-#endif /* HASH_H_ */

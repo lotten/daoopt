@@ -204,6 +204,25 @@ inline int setminusSize(const set<int>& a, const set<int>& b) {
   return s;
 }
 
+inline int setminusSize(const vector<int>& a, const vector<int>& b) {
+  vector<int>::const_iterator ita = a.begin();
+  vector<int>::const_iterator itb = b.begin();
+  int s = 0;
+  while (ita != a.end() && itb != b.end()) {
+    if (*ita == *itb) {
+      ++ita; ++itb;
+    } else if (*ita < *itb) {
+      ++s; ++ita;
+    } else { // *ita > *itb
+      ++itb;
+    }
+  }
+  while (ita != a.end()) {
+    ++s; ++ita;
+  }
+  return s;
+}
+
 
 /* hex output of values (e.g., doubles) */
 template<typename _T>

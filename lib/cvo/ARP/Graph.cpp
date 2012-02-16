@@ -359,7 +359,7 @@ move_on :
 }
 
 
-int ARE::Graph::Create(int nNodes, std::vector<std::set<int> > & fn_signatures)
+int ARE::Graph::Create(int nNodes, const std::vector<const std::vector<int>* > & fn_signatures)
 {
 	Destroy() ;
 
@@ -399,7 +399,7 @@ int ARE::Graph::Create(int nNodes, std::vector<std::set<int> > & fn_signatures)
 
 	_nEdges = 0 ;
 	for (i = 0 ; i < fn_signatures.size() ; i++) {
-		const std::set<int> & fn_signature = fn_signatures[i] ;
+		const std::vector<int> & fn_signature = * fn_signatures[i] ;
 		n = (fn_signature.size() * (fn_signature.size() - 1)) ;
 		if (n <= 0) 
 			continue ;
@@ -420,11 +420,11 @@ int ARE::Graph::Create(int nNodes, std::vector<std::set<int> > & fn_signatures)
 
 	n = 0 ;
 	for (i = 0 ; i < fn_signatures.size() ; i++) {
-		const std::set<int> & fn_signature = fn_signatures[i] ;
+		const std::vector<int> & fn_signature = * fn_signatures[i] ;
 		// enumerate all pairs of vars
-		for (set<int>::iterator it1 = fn_signature.begin() ; it1 != fn_signature.end() ; it1++) {
+		for (vector<int>::const_iterator it1 = fn_signature.begin() ; it1 != fn_signature.end() ; it1++) {
 			u = *it1 ;
-			for (set<int>::iterator it2 = fn_signature.begin() ; it2 != fn_signature.end() ; it2++) {
+			for (vector<int>::const_iterator it2 = fn_signature.begin() ; it2 != fn_signature.end() ; it2++) {
 				v = *it2 ;
 				if (it1 == it2 || u == v) continue ;
 				// check if u is already adjacent to v

@@ -28,7 +28,7 @@ string UAI2012::filename = "";
 
 #include "cvo/ARP/ARPall.hxx"
 
-#define VERSIONINFO "0.99.7d-UAI12"
+#define VERSIONINFO "0.99.7f-UAI12"
 
 time_t _time_start, _time_pre;
 
@@ -99,7 +99,7 @@ bool Main::findOrLoadOrdering() {
   Graph g(m_problem->getN());
   const vector<Function*>& fns = m_problem->getFunctions();
   for (vector<Function*>::const_iterator it = fns.begin(); it != fns.end(); ++it) {
-    g.addClique((*it)->getScope());
+    g.addClique((*it)->getScopeVec());
   }
   cout << "Graph with " << g.getStatNodes() << " nodes and "
        << g.getStatEdges() << " edges created." << endl;
@@ -110,9 +110,9 @@ bool Main::findOrLoadOrdering() {
   scoped_ptr<ARE::AdjVarMemoryDynamicManager> cvoTempAdjVarSpace;
 
   if (m_options->order_cvo) {
-    vector<set<int> > fn_signatures;
+    vector< const vector<int>* > fn_signatures;
     BOOST_FOREACH( Function* f, m_problem->getFunctions() )
-      { fn_signatures.push_back(f->getScope()); }
+      { fn_signatures.push_back(& f->getScopeVec()); }
 
     cvoMasterGraph.reset(new ARE::Graph);
     cvoMasterGraph->Create(m_problem->getN(), fn_signatures);

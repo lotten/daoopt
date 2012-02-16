@@ -72,7 +72,7 @@ void Problem::removeEvidence() {
       delete new_fn;
     } else {
       new_funs.push_back(new_fn); // record new function
-      new_r = max(new_r, (int) new_fn->getScope().size());
+      new_r = max(new_r, (int) new_fn->getScopeVec().size());
     }
     delete fn; // delete old function
 
@@ -656,9 +656,9 @@ void Problem::writeUAI(const string& prob) const {
   // function information
   out << endl << m_functions.size() << endl;
   for (vector<Function*>::const_iterator it=m_functions.begin(); it!=m_functions.end(); ++it) {
-    const set<int>& scope = (*it)->getScope();
+    const vector<int>& scope = (*it)->getScopeVec();
     out << scope.size() << '\t'; // scope size
-    for (set<int>::const_iterator itS=scope.begin(); itS!=scope.end(); ++itS)
+    for (vector<int>::const_iterator itS=scope.begin(); itS!=scope.end(); ++itS)
       out << *itS << ' '; // variables in scope
     out << endl;
   }

@@ -93,24 +93,22 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
 #ifndef NO_CACHING
           // prev is OR node, try to cache
           if (m_doCaching && prev->isCachable() && !prev->isNotOpt() ) {
-            try {
 #ifndef NO_ASSIGNMENT
-              m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue(), prev->getOptAssig() );
+            if (m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue(), prev->getOptAssig() ) )
 #else
-              m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue() );
+            if (m_space->cache->write(prev->getVar(), prev->getCacheInst(), prev->getCacheContext(), prev->getValue() ) )
 #endif
+            {
 #ifdef DEBUG
-              {
-                ostringstream ss;
-                ss << "-Cached " << *prev << " with value " << prev->getValue()
+              ostringstream ss;
+              ss << "-Cached " << *prev << " with value " << prev->getValue()
 #ifndef NO_ASSIGNMENT
-                << " and opt. solution " << prev->getOptAssig()
+              << " and opt. solution " << prev->getOptAssig()
 #endif
-                << endl;
-                myprint(ss.str());
-              }
+              << endl;
+              myprint(ss.str());
 #endif
-            } catch (...) { /* wrong cache instance counter */ }
+            }
           }
 #endif
           highestDelete = make_pair(cur,prev);
@@ -274,7 +272,7 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
   DIAG(ostringstream ss; ss << "< REC opt. assignment from " << *start << " to " << *end << endl; myprint(ss.str());)
 
   int endVar = end->getVar();
-  const set<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
+  const vector<int>& endSubprob = m_space->pseudotree->getNode(endVar)->getSubprobVars();
 
   // get variable map for end node
   const vector<int>& endVarMap = m_space->pseudotree->getNode(endVar)->getSubprobVarMap();
@@ -294,8 +292,8 @@ void BoundPropagator::propagateTuple(SearchNode* start, SearchNode* end) {
 
     if (cur->getOptAssig().size()) {
       // check previously saved partial assignment
-      const set<int>& curSubprob = m_space->pseudotree->getNode(cur->getVar())->getSubprobVars();
-      set<int>::const_iterator itVar = curSubprob.begin();
+      const vector<int>& curSubprob = m_space->pseudotree->getNode(cur->getVar())->getSubprobVars();
+      vector<int>::const_iterator itVar = curSubprob.begin();
       vector<val_t>::const_iterator itVal = cur->getOptAssig().begin();
 
       for(; itVar!= curSubprob.end(); ++itVar, ++itVal ) {
