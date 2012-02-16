@@ -338,13 +338,13 @@ bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
 
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-double Function::getAverage(const set<int>& cond, const vector<val_t>& assig) {
+double Function::getAverage(const vector<int>& cond, const vector<val_t>& assig) {
 
   double sum = ELEM_ONE;
   size_t count = 0;
 
   // make sure assignment is actually specified
-  for (set<int>::const_iterator it=cond.begin(); it!=cond.end(); ++it) {
+  for (vector<int>::const_iterator it=cond.begin(); it!=cond.end(); ++it) {
     assert (assig.at(*it) != UNKNOWN );
   }
 
@@ -359,7 +359,7 @@ double Function::getAverage(const set<int>& cond, const vector<val_t>& assig) {
   for (size_t i=0; i<m_tableSize; increaseTuple(i,vals,doms) ) {
 
     // over the constraining assignment variables
-    set<int>::const_iterator itCo = cond.begin();
+    vector<int>::const_iterator itCo = cond.begin();
     // over the current tuples
     vector<int>::const_iterator itSc = m_scopeV.begin(); // should be kept in sync with the next
     vector<val_t>::const_iterator itV = vals.begin();

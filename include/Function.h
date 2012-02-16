@@ -117,7 +117,7 @@ public:
                       const set<int>& cond, const vector<val_t>* assig = NULL);
   /* computes and returns the average value, conditioned on the variables indicated
    * in the set, where the actual assignments are pulled from the assignment vector */
-  double getAverage(const set<int>&, const vector<val_t>&);
+  double getAverage(const vector<int>&, const vector<val_t>&);
 
 #endif
 

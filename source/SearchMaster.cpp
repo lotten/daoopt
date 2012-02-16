@@ -280,7 +280,7 @@ bool SearchMaster::doParallelize(SearchNode* node) {
 
     count_t estN = estimate;
 
-    addSubprobContext(node,ptnode->getFullContext()); // set subproblem context to node
+    addSubprobContext(node,ptnode->getFullContextVec()); // set subproblem context to node
 //        addPSTlist(node); // to allow pruning in the worker
     node->setExtern();
     node->clearHeurCache(); // clear precomputed heuristic values for AND children
@@ -338,7 +338,7 @@ double SearchMaster::estimateIncrement(SearchNode* node) const {
   double est = ELEM_ONE;
 
   stack<PseudotreeNode*> stck; stck.push(ptnode);
-  const set<int>& ctxt = ptnode->getFullContext();
+  const vector<int>& ctxt = ptnode->getFullContextVec();
 
   while (stck.size()) {
     PseudotreeNode* ptn = stck.top();
