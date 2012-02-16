@@ -307,7 +307,7 @@ bigfloat Function::gainRatio(const set<int>& uncovered, const set<int>& proj,
 
   bigint csize = 1;
 
-  set<int>::const_iterator it1 = m_scopeV.begin();
+  vector<int>::const_iterator it1 = m_scopeV.begin();
   set<int>::const_iterator it2 = uncovered.begin();
 
   // compute product of the newly covered domains

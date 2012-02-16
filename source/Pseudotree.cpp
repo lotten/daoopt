@@ -811,8 +811,8 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
 #ifdef DEBUG
     cout << "  Adding " << (*cand) << endl;
 #endif
-    const set<int>& cscope = cand->getScope();
-    for (set<int>::const_iterator itSc = cscope.begin(); itSc!=cscope.end(); ++itSc)
+    const vector<int>& cscope = cand->getScopeVec();
+    for (vector<int>::const_iterator itSc = cscope.begin(); itSc!=cscope.end(); ++itSc)
       uncovered.erase(*itSc);
 
   }
