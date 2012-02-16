@@ -32,7 +32,6 @@ CPP_SRCS += \
 ../source/Statistics.cpp \
 ../source/SubprobStats.cpp \
 ../source/SubproblemCondor.cpp \
-../source/hash.cpp \
 ../source/utils.cpp 
 
 OBJS += \
@@ -64,7 +63,6 @@ OBJS += \
 ./source/Statistics.o \
 ./source/SubprobStats.o \
 ./source/SubproblemCondor.o \
-./source/hash.o \
 ./source/utils.o 
 
 CPP_DEPS += \
@@ -96,7 +94,6 @@ CPP_DEPS += \
 ./source/Statistics.d \
 ./source/SubprobStats.d \
 ./source/SubproblemCondor.d \
-./source/hash.d \
 ./source/utils.d 
 
 
