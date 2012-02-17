@@ -388,7 +388,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     SearchNodeAND* c = new SearchNodeAND(n, i, d);
 #else
     // early pruning if heuristic is zero (since it's an upper bound)
-    if (heur[2*i] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
+    if (heur[2*i+1] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
       m_space->stats.numDead += 1;
       m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC

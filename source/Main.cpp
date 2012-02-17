@@ -77,7 +77,7 @@ bool Main::loadProblem() {
 #endif
 
   // Some statistics
-  cout << "Global constant:\t" << m_problem->globalConstInfo() << endl;
+  cout << "Global constant:\t" << SCALE_LOG(m_problem->globalConstInfo()) << endl;
   cout << "Max. domain size:\t" << (int) m_problem->getK() << endl;
   cout << "Max. function arity:\t" << m_problem->getR() << endl;
 
