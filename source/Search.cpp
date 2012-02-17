@@ -278,7 +278,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-  int depth = ptnode->getDepth();
+  int depth = n->getDepth();
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   n->setSubCount(1);
@@ -291,11 +291,22 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
   {
     int vChild = (*it)->getVar();
     SearchNodeOR* c = new SearchNodeOR(n, vChild, depth+1);
+    chi.push_back(c);
 #ifndef NO_HEURISTIC
     // Compute and set heuristic estimate, includes child labels
-    heuristicOR(c);
+    if (heuristicOR(c) == ELEM_ZERO) {  // dead end, clean up and exit
+      for (vector<NodeP>::iterator it=chi.begin(); it!=chi.end(); ++it)
+        delete (*it);
+      n->setLeaf();
+      n->setValue(ELEM_ZERO);
+      m_space->stats.numLeaf += 1;
+      if (depth!=-1) m_leafProfile[depth] += 1;
+#if defined PARALLEL_DYNAMIC
+      n->setSubLeaves(1);
 #endif
-    chi.push_back(c);
+      return true;
+    }
+#endif
 
 #ifndef NO_HEURISTIC
     // store initial lower bound on subproblem (needed for master init.)
@@ -350,8 +361,8 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
   m_space->stats.numOR += 1;
 
   int var = n->getVar();
-  PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-  int depth = ptnode->getDepth();
+  int depth = n->getDepth();
+//  PseudotreeNode* ptnode = m_pseudotree->getNode(var);
 
 #ifndef NO_HEURISTIC
   // retrieve precomputed labels and heuristic values
@@ -396,7 +407,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
 //  n->clearHeurCache();
 #endif
 
-  if (chi.empty()) {
+  if (chi.empty()) {  // should never happen
     n->setLeaf();
     n->setValue(ELEM_ZERO);
     return true; // no children
