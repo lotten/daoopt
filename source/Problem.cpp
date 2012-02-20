@@ -129,6 +129,10 @@ void Problem::removeEvidence() {
   m_domains = new_domains;
   m_n = new_n;
   m_k = new_k;
+#ifndef NO_ASSIGNMENT
+  m_curSolution.resize(m_n,UNKNOWN);
+#endif
+
 
   // translate scopes of the new functions
   for (fi=m_functions.begin(); fi!=m_functions.end(); ++fi)
@@ -332,7 +336,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   m_n = x;
   m_domains.resize(m_n,UNKNOWN);
 #ifndef NO_ASSIGNMENT
-//  m_curSolution.resize(m_n,UNKNOWN);
+  m_curSolution.resize(m_n,UNKNOWN);
 #endif
   m_k = -1;
   for (int i=0; i<m_n; ++i) { // Domain sizes
@@ -589,6 +593,7 @@ void Problem::updateSolution(double cost,
       z = f->getValue(sol);
       if (z == ELEM_ZERO) {
         myprint("Warning: skipping zero-cost solution.\n");
+        DIAG(oss ss; ss << cost << " " << sol.size() << " " << sol << endl; myprint(ss.str()););
         return;
       }
       y = z OP_DIVIDE comp;

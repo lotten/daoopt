@@ -324,8 +324,10 @@ bool ParallelManager::findFrontier() {
 
     syncAssignment(node);
     deepenFrontier(node,newNodes);
-    for (vector<SearchNode*>::iterator it=newNodes.begin(); it!=newNodes.end(); ++it)
+    for (vector<SearchNode*>::iterator it=newNodes.begin(); it!=newNodes.end(); ++it) {
+      (*it)->setInitialBound(lowerBound(*it));  // store bound at time of evaluation
       m_open.push(make_pair(evaluate(*it),*it) );
+    }
     newNodes.clear();
 
   }
@@ -500,7 +502,7 @@ bool ParallelManager::readExtResults() {
         ostringstream ss;
         ss << "Solution file " << id << " unavailable: " << solutionFile << endl;
         myerror(ss.str());
-        node->setNotOpt();  // to suppress CSV output
+        node->setErrExt();  // to suppress CSV output
         success = false;
         continue; // skip rest of loop
       }
@@ -539,7 +541,7 @@ bool ParallelManager::readExtResults() {
       ss << "Solution file " << id << " length mismatch, got " << tup.size()
          << ", expected " << subsize << endl;
       myprint(ss.str());
-      node->setNotOpt();  // to suppress CSV output
+      node->setErrExt();  // to suppress CSV output
       success = false;
       continue;
     }
@@ -604,6 +606,7 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     << "root" << '\t' << "ibnd"
     << '\t' << "lb" << '\t' << "ub"
     << '\t' << "rPruned" << '\t' << "rDead" << '\t' << "rLeaf"
+    << '\t' << "avgNodeD" << '\t' << "avgLeafD" << '\t' << "avgBraDg"
     << '\t' << "D";
   BOOST_FOREACH( const string& s, SubprobStats::legend ) {
     csv << '\t' << s;
@@ -618,7 +621,7 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     SearchNode* node = subprobs.at(i);
     assert(node);
 
-    if (node->isNotOpt())  // marked in readExtResults()
+    if (node->isErrExt())  // marked in readExtResults()
       continue;  // skip problematic nodes in CSV output
 
     int rootVar = node->getVar();
@@ -628,7 +631,7 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     SubprobFeatures* dynamicFeatures = node->getSubprobFeatures();
 
     int depth = ptnode->getDepth();
-    double lb = lowerBound(node);
+    double lb = node->getInitialBound(); //lowerBound(node);
     double ub = node->getHeur();
     double estimate = evaluate(node);
 
@@ -638,6 +641,9 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
       << '\t' << dynamicFeatures->ratioPruned
       << '\t' << dynamicFeatures->ratioDead
       << '\t' << dynamicFeatures->ratioLeaf
+      << '\t' << dynamicFeatures->avgNodeDepth
+      << '\t' << dynamicFeatures->avgLeafDepth
+      << '\t' << dynamicFeatures->avgBranchDeg
       << '\t' << depth;
     BOOST_FOREACH ( double d, stats->getAll() ) {
       csv << '\t' << d;
@@ -805,11 +811,12 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
     DIAG( for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {oss ss; ss << "\t  " << *it << ": " << *(*it) << endl; myprint(ss.str());} )
     for (vector<SearchNode*>::iterator it=chi2.begin(); it!=chi2.end(); ++it) {
 
-      // Apply LDS if mini buckets are accurate, fully propagated
+      // Apply LDS if mini buckets are accurate
       if (applyLDS(*it)) {
-//        m_ldsProp->propagate(*it,true);
+        m_prop.propagate(*it, true);
         continue; // skip to next
       }
+      // Apply AOBB to sample dynamic features
       if (applyAOBB(*it, m_options->aobbLookahead)) {
         m_prop.propagate(*it, true);
         continue;
@@ -845,10 +852,11 @@ double ParallelManager::evaluate(const SearchNode* node) const {
   int w = ptnode->getSubWidth();
   int n = ptnode->getSubprobSize();
 
-  double L = lowerBound(node);
+  double L = node->getInitialBound();
   double U = node->getHeur();
 
-  double z = 2*(U-L) + h + 0.5 * log10(n);
+  double z = (L == ELEM_ZERO) ? 0.0 : 2*(U-L);
+  z += h + 0.5 * log10(n);
   // for pdb1e5k
 //  double z = -19.922 - 5.489*(U-L) + 2.548*d + 0.148*(U-L)*h - 0.204*U;
   // for pdb1tfe
@@ -928,27 +936,41 @@ bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
   bool complete = false;
 
   this->resetLocalStack(node);
+  // copy current node profiles and search stats
+  vector<size_t> startNodeP = m_nodeProfile;
+  vector<size_t> startLeafP = m_leafProfile;
   SearchStats startStats = m_space->stats;
-  SearchStats& endStats = m_space->stats;
-//  size_t countStart = m_space->stats.numProcessed;
-  size_t countProc = 0;
 
   SearchNode* n = this->nextLeaf();
+  SearchStats& currStats = m_space->stats;
+  size_t countProc = 0;
   while (n) {
     m_prop.propagate(n, true, node);
     n = this->nextLeaf();
-    countProc = endStats.numProcessed - startStats.numProcessed;
+    countProc = currStats.numProcessed - startStats.numProcessed;
     if (countProc > countLimit)
       break;
   }
 
   // compute features
-  node->getSubprobFeatures()->ratioPruned =
-      (endStats.numPruned - startStats.numPruned) * 1.0 / countProc;
-  node->getSubprobFeatures()->ratioDead =
-      (endStats.numDead - startStats.numDead) * 1.0 / countProc;
-  node->getSubprobFeatures()->ratioLeaf =
-      (endStats.numLeaf - startStats.numLeaf) * 1.0 / countProc;
+  SubprobFeatures* features = node->getSubprobFeatures();
+  features->ratioPruned =
+      (currStats.numPruned - startStats.numPruned) * 1.0 / countProc;
+  features->ratioDead =
+      (currStats.numDead - startStats.numDead) * 1.0 / countProc;
+  features->ratioLeaf =
+      (currStats.numLeaf - startStats.numLeaf) * 1.0 / countProc;
+
+  features->avgNodeDepth = computeAvgDepth(startNodeP, m_nodeProfile, node->getDepth());
+  features->avgLeafDepth = computeAvgDepth(startLeafP, m_leafProfile, node->getDepth());
+  features->avgBranchDeg = pow(countProc, 1.0 / features->avgLeafDepth);
+
+  size_t sumNodeP = 0;
+  for (int d = node->getDepth(); d < m_nodeProfile.size(); ++d)
+    sumNodeP += m_nodeProfile[d] - startNodeP[d];
+
+  cout << "processed " << countProc << " sumNodeProf " << sumNodeP
+       << " avgBra " << features->avgBranchDeg << endl;
 
   complete = (n == NULL);
   node->clearChildren();
@@ -968,10 +990,10 @@ bool ParallelManager::applyLDS(SearchNode* node) {
   m_ldsSearch->reset(node);
   SearchNode* n = m_ldsSearch->nextLeaf();
   while (n) {
-    m_prop.propagate(n,true); //,node);
+    m_ldsProp->propagate(n,true,node);
     n = m_ldsSearch->nextLeaf();
   }
-  DIAG(oss ss; ss << "Subproblem " << *node << " solved by LDS << endl"; myprint(ss.str());)
+  DIAG(oss ss; ss << "Subproblem " << *node << " solved by LDS" << endl; myprint(ss.str());)
   return true;
 }
 
@@ -989,6 +1011,17 @@ string ParallelManager::filename(const char* pre, const char* ext, int count) co
   ss << ext;
 
   return ss.str();
+}
+
+
+double ParallelManager::computeAvgDepth(const vector<size_t>& before, const vector<size_t>& after, int offset) {
+  size_t leafCount = 0;
+  for (size_t d = offset; d < before.size(); ++d)
+    leafCount += after[d] - before[d];
+  double avg = 0.0;
+  for (size_t d = offset; d < before.size(); ++d)
+    avg += (after[d] - before[d]) * (d - offset) * 1.0 / leafCount;
+  return avg;
 }
 
 
@@ -1013,7 +1046,7 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* spa
 //  m_ldsSpace = new SearchSpace(m_pseudotree, m_options);
 //  m_ldsSpace->root = m_space->root;
   m_ldsSearch.reset(new LimitedDiscrepancy(prob, pt, m_space, heur, 0));
-//  m_ldsProp.reset(new BoundPropagator(prob, m_space, false));
+  m_ldsProp.reset(new BoundPropagator(prob, m_space, false));  // important: no caching
 
   // Set up subproblem sampler and complexity prediction
   m_sampleSpace.reset(new SearchSpace(pt, m_options));

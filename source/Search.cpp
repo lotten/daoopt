@@ -297,6 +297,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     if (heuristicOR(c) == ELEM_ZERO) {  // dead end, clean up and exit
       for (vector<NodeP>::iterator it=chi.begin(); it!=chi.end(); ++it)
         delete (*it);
+      chi.clear();
       n->setLeaf();
       n->setValue(ELEM_ZERO);
       m_space->stats.numLeaf += 1;
@@ -310,7 +311,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
 #ifndef NO_HEURISTIC
     // store initial lower bound on subproblem (needed for master init.)
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC //|| defined PARALLEL_STATIC
     c->setInitialBound(lowerBound(c));
 #endif
 #endif

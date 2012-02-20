@@ -28,12 +28,14 @@
 
 #ifdef PARALLEL_STATIC
 
-/* stores dynamic subproblem features (associated with specific
- * search node) */
+/* stores dynamic subproblem features (associated with specific search node) */
 struct SubprobFeatures {
   double ratioPruned;  // ratio of heuristically pruned nodes
   double ratioDead;    // ratio of dead-end nodes (0-valued)
   double ratioLeaf;    // ratio of leaf nodes (pseudotree leaf)
+  double avgNodeDepth; // average node depth in subproblem search space
+  double avgLeafDepth; // average leaf depth in subproblem search space
+  double avgBranchDeg; // average branching factor in subproblem search space
   SubprobFeatures();
 };
 
@@ -93,7 +95,8 @@ ostream& operator << (ostream& os, const SubprobStats& stats);
 /* Inline functions */
 
 inline SubprobFeatures::SubprobFeatures() :
-    ratioPruned(UNKNOWN), ratioDead(UNKNOWN), ratioLeaf(UNKNOWN)
+    ratioPruned(UNKNOWN), ratioDead(UNKNOWN), ratioLeaf(UNKNOWN),
+    avgNodeDepth(UNKNOWN), avgLeafDepth(UNKNOWN), avgBranchDeg(UNKNOWN)
 { /* empty */ }
 
 inline double SubprobStats::getStats(double* xs, int idx) const {

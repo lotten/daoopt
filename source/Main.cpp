@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "0.99.7f"
+#define VERSIONINFO "0.99.7g"
 
 time_t _time_start, _time_pre;
 
