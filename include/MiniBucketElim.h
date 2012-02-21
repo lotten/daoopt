@@ -44,11 +44,11 @@ protected:
   double m_globalUB;             // The global upper bound
 
   // The augmented buckets that will store the minibucket functions (but not the original ones)
-  vector<list<Function*> > m_augmented;
+  vector<vector<Function*> > m_augmented;
   // Precompute and store, for each variable v, the relevant intermediate functions that are
   // generated in a pseudotree descendant and passed to an ancestor of v
   // (points to the same function objects as m_augmented)
-  vector<list<Function*> > m_intermediate;
+  vector<vector<Function*> > m_intermediate;
 
 protected:
   // Computes a dfs order of the pseudo tree, for building the bucket structure
@@ -75,6 +75,8 @@ public:
 
   // computes the heuristic for variable var given a (partial) assignment
   double getHeur(int var, const vector<val_t>& assignment) const;
+  // computes heuristic values for all instantiations of var, given context assignment
+  void getHeurAll(int var, const vector<val_t>& assignment, vector<double>& out) const;
 
   // reset the i-bound
   void setIbound(int ibound) { m_ibound = ibound; }
@@ -110,8 +112,8 @@ inline MiniBucketElim::MiniBucketElim(Problem* p, Pseudotree* pt,
 
 inline MiniBucketElim::~MiniBucketElim() {
   // make sure to delete each function only once
-  for (vector<list<Function*> >::iterator it=m_augmented.begin() ;it!=m_augmented.end(); ++it)
-    for (list<Function*>::iterator it2=it->begin(); it2!=it->end(); ++it2)
+  for (vector<vector<Function*> >::iterator it=m_augmented.begin() ;it!=m_augmented.end(); ++it)
+    for (vector<Function*>::iterator it2=it->begin(); it2!=it->end(); ++it2)
       delete (*it2);
 }
 

@@ -224,7 +224,7 @@ bool ParallelManager::restoreFrontier() {
 
 #ifndef NO_HEURISTIC
   // precompute heuristic of initial dummy OR node (couldn't be done earlier)
-  heuristicOR(node);
+  assignCostsOR(node);
 #endif
 
   stack<SearchNode*> dfs;
@@ -295,7 +295,7 @@ bool ParallelManager::findFrontier() {
 
 #ifndef NO_HEURISTIC
   // precompute heuristic of initial dummy OR node (couldn't be done earlier)
-  heuristicOR(node);
+  assignCostsOR(node);
 #endif
 
   // intermediate container for expanding nodes into
@@ -965,12 +965,14 @@ bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
   features->avgLeafDepth = computeAvgDepth(startLeafP, m_leafProfile, node->getDepth());
   features->avgBranchDeg = pow(countProc, 1.0 / features->avgLeafDepth);
 
+  /*
   size_t sumNodeP = 0;
   for (int d = node->getDepth(); d < m_nodeProfile.size(); ++d)
     sumNodeP += m_nodeProfile[d] - startNodeP[d];
 
   cout << "processed " << countProc << " sumNodeProf " << sumNodeP
        << " avgBra " << features->avgBranchDeg << endl;
+  */
 
   complete = (n == NULL);
   node->clearChildren();
