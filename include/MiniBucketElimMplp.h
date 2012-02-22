@@ -44,6 +44,10 @@ public:
 		return res;
 	}
 
+  void getHeurAll(int var, const vector<val_t>& assignment, vector<double>& out) const {
+    assert(false);  // TODO not implemented
+  }
+
   // reset the i-bound
   void setIbound(int ibound) { _mbe.setIBound(ibound); }
   // gets the i-bound

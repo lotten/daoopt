@@ -28,7 +28,7 @@ string UAI2012::filename = "";
 
 #include "cvo/ARP/ARPall.hxx"
 
-#define VERSIONINFO "0.99.7f-UAI12"
+#define VERSIONINFO "0.99.7g-UAI12"
 
 time_t _time_start, _time_pre;
 
@@ -86,7 +86,7 @@ bool Main::loadProblem() {
 #endif
 
   // Some statistics
-  cout << "Global constant:\t" << m_problem->globalConstInfo() << endl;
+  cout << "Global constant:\t" << SCALE_LOG(m_problem->globalConstInfo()) << endl;
   cout << "Max. domain size:\t" << (int) m_problem->getK() << endl;
   cout << "Max. function arity:\t" << m_problem->getR() << endl;
 

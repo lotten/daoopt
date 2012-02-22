@@ -64,7 +64,7 @@ SearchNode* Search::initSearch() {
 #ifndef NO_HEURISTIC
 void Search::finalizeHeuristic() {
   assert(m_space && m_space->getTrueRoot());
-  heuristicOR(m_space->getTrueRoot());
+  assignCostsOR(m_space->getTrueRoot());
 }
 #endif
 
@@ -278,7 +278,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-  int depth = ptnode->getDepth();
+  int depth = n->getDepth();
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   n->setSubCount(1);
@@ -291,15 +291,27 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
   {
     int vChild = (*it)->getVar();
     SearchNodeOR* c = new SearchNodeOR(n, vChild, depth+1);
+    chi.push_back(c);
 #ifndef NO_HEURISTIC
     // Compute and set heuristic estimate, includes child labels
-    heuristicOR(c);
+    if (assignCostsOR(c) == ELEM_ZERO) {  // dead end, clean up and exit
+      for (vector<NodeP>::iterator it=chi.begin(); it!=chi.end(); ++it)
+        delete (*it);
+      chi.clear();
+      n->setLeaf();
+      n->setValue(ELEM_ZERO);
+      m_space->stats.numLeaf += 1;
+      if (depth!=-1) m_leafProfile[depth] += 1;
+#if defined PARALLEL_DYNAMIC
+      n->setSubLeaves(1);
 #endif
-    chi.push_back(c);
+      return true;
+    }
+#endif
 
 #ifndef NO_HEURISTIC
     // store initial lower bound on subproblem (needed for master init.)
-#if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+#if defined PARALLEL_DYNAMIC //|| defined PARALLEL_STATIC
     c->setInitialBound(lowerBound(c));
 #endif
 #endif
@@ -350,8 +362,8 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
   m_space->stats.numOR += 1;
 
   int var = n->getVar();
-  PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-  int depth = ptnode->getDepth();
+  int depth = n->getDepth();
+//  PseudotreeNode* ptnode = m_pseudotree->getNode(var);
 
 #ifndef NO_HEURISTIC
   // retrieve precomputed labels and heuristic values
@@ -377,7 +389,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     SearchNodeAND* c = new SearchNodeAND(n, i, d);
 #else
     // early pruning if heuristic is zero (since it's an upper bound)
-    if (heur[2*i] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
+    if (heur[2*i+1] == ELEM_ZERO) { // 2*i=heuristic, 2*i+1=label
       m_space->stats.numDead += 1;
       m_leafProfile[depth] += 1;
 #if defined PARALLEL_DYNAMIC
@@ -396,7 +408,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
 //  n->clearHeurCache();
 #endif
 
-  if (chi.empty()) {
+  if (chi.empty()) {  // should never happen
     n->setLeaf();
     n->setValue(ELEM_ZERO);
     return true; // no children
@@ -414,41 +426,56 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
 } // Search::generateChildrenOR
 
 
-double Search::heuristicOR(SearchNode* n) {
+/* define the following to enable fetching of function values in bulk */
+//#define GET_VALUE_BULK
+double Search::assignCostsOR(SearchNode* n) {
 
   int v = n->getVar();
-  double d;
-  double* dv = new double[m_problem->getDomainSize(v)*2];
+  int vDomain = m_problem->getDomainSize(v);
+  double* dv = new double[vDomain*2];
+  for (int i=0; i<vDomain; ++i) dv[2*i+1] = ELEM_ONE;
   double h = ELEM_ZERO; // the new OR nodes h value
-  const list<Function*>& funs = m_pseudotree->getFunctions(v);
+  const vector<Function*>& funs = m_pseudotree->getFunctions(v);
 
+#ifdef GET_VALUE_BULK
+  m_costTmp.clear();
+  m_costTmp.resize(vDomain, ELEM_ONE);
+  for (vector<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it) {
+    (*it)->getValues(m_assignment, v, m_costTmp);
+    for (int i=0; i<vDomain; ++i)
+      dv[2*i+1] OP_TIMESEQ m_costTmp[i];
+  }
+
+  m_heuristic->getHeurAll(v, m_assignment, m_costTmp);
+  for (int i=0; i<vDomain; ++i) {
+    dv[2*i] = dv[2*i+1] OP_TIMES m_costTmp[i];
+    h = max(h, dv[2*i]);
+  }
+#else
+  double d;
   for (val_t i=0;i<m_problem->getDomainSize(v);++i) {
     m_assignment[v] = i;
-
     // compute heuristic value
     dv[2*i] = m_heuristic->getHeur(v,m_assignment);
-
     // precompute label value
     d = ELEM_ONE;
-    for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
-    {
+    for (vector<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
       d OP_TIMESEQ (*it)->getValue(m_assignment);
-    }
 
     // store label and heuristic into cache table
     dv[2*i+1] = d; // label
     dv[2*i] OP_TIMESEQ d; // heuristic
-
     if (dv[2*i] > h)
         h = dv[2*i]; // keep max. for OR node heuristic
   }
+#endif
 
   n->setHeur(h);
   n->setHeurCache(dv);
 
   return h;
 
-} // Search::heuristicOR
+} // Search::assignCostsOR
 
 
 #ifndef NO_CACHING

@@ -120,7 +120,7 @@ public:
   void computeSubprobStats();
 #endif
 
-  const list<Function*>& getFunctions(int i) const;
+  const vector<Function*>& getFunctions(int i) const;
 
   /* restricts to a subproblem rooted at variable i, returns the depth
    * of var i in the overall pseudo tree */
@@ -204,7 +204,7 @@ protected:
   vector<int> m_cacheContextV; // caching context as vector
   list<int> m_cacheResetList; // List of var's whose cache tables need to be reset when this
                               // var's search node is expanded (for adaptive caching)
-  list<Function*> m_functions; // The functions that will be fully instantiated at this point
+  vector<Function*> m_functions; // The functions that will be fully instantiated at this point
   vector<PseudotreeNode*> m_children; // The node's children
 
 public:
@@ -231,9 +231,9 @@ public:
   const list<int>& getCacheReset() const { return m_cacheResetList; }
 
   void addFunction(Function* f) { m_functions.push_back(f); }
-  void setFunctions(const list<Function*>& l) { m_functions = l; }
+  void setFunctions(const vector<Function*>& l) { m_functions = l; }
   void resetFunctions() { m_functions.clear(); }
-  const list<Function*>& getFunctions() const { return m_functions; }
+  const vector<Function*>& getFunctions() const { return m_functions; }
 
   void setDomain(val_t d) { m_domain = d; }
   val_t getDomain() const { return m_domain; }
@@ -302,7 +302,7 @@ inline PseudotreeNode* Pseudotree::getNode(int i) const {
   return m_nodes[i];
 }
 
-inline const list<Function*>& Pseudotree::getFunctions(int i) const {
+inline const vector<Function*>& Pseudotree::getFunctions(int i) const {
   assert (i < (int) m_nodes.size());
   return m_nodes[i]->getFunctions();
 }

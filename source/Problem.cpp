@@ -131,10 +131,22 @@ void Problem::removeEvidence() {
   m_domains = new_domains;
   m_n = new_n;
   m_k = new_k;
+#ifndef NO_ASSIGNMENT
+  m_curSolution.resize(m_n,UNKNOWN);
+#endif
+
 
   // translate scopes of the new functions
   for (fi=m_functions.begin(); fi!=m_functions.end(); ++fi)
     (*fi)->translateScope(m_old2new);
+
+  /*
+  cout << "Remapped variables:";
+  typedef std::map<int,int>::value_type mtype;
+  BOOST_FOREACH( mtype t, m_old2new )
+    cout << ' ' << t.first << "->" << t.second;
+  cout << endl;
+  */
 
   // update function information
   m_c = m_functions.size();
@@ -326,7 +338,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   m_n = x;
   m_domains.resize(m_n,UNKNOWN);
 #ifndef NO_ASSIGNMENT
-//  m_curSolution.resize(m_n,UNKNOWN);
+  m_curSolution.resize(m_n,UNKNOWN);
 #endif
   m_k = -1;
   for (int i=0; i<m_n; ++i) { // Domain sizes
@@ -535,21 +547,25 @@ void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodes
 
 #ifndef NO_ASSIGNMENT
 void Problem::assignmentForOutput(vector<val_t>& assg) const {
+  assignmentForOutput(m_curSolution, assg);
+}
+
+void Problem::assignmentForOutput(const vector<val_t>& inAssg, vector<val_t>& outAssg) const {
   if (m_subprobOnly) {
-    assg = m_curSolution;
+    outAssg = inAssg;
     // update: no need to remove dummy anymore
   } else {
-    assg.resize(m_nOrg, UNKNOWN);
+    outAssg.resize(m_nOrg, UNKNOWN);
     for (int i=0; i<m_nOrg; ++i) {
       map<int,int>::const_iterator itRen = m_old2new.find(i);
       if (itRen != m_old2new.end()) {  // var part of solution
-        assg.at(i) = m_curSolution.at(itRen->second);
+        outAssg.at(i) = inAssg.at(itRen->second);
       } else {
         map<int,val_t>::const_iterator itEvid = m_evidence.find(i);
         if (itEvid != m_evidence.end())  // var part of evidence
-          assg.at(i) = itEvid->second;
+          outAssg.at(i) = itEvid->second;
         else  // var had unary domain
-          assg.at(i) = 0;
+          outAssg.at(i) = 0;
       }
     }
   }
@@ -586,6 +602,7 @@ void Problem::updateSolution(double cost,
       z = f->getValue(sol);
       if (z == ELEM_ZERO) {
         myprint("Warning: skipping zero-cost solution.\n");
+        DIAG(oss ss; ss << cost << " " << sol.size() << " " << sol << endl; myprint(ss.str()););
         return;
       }
       y = z OP_DIVIDE comp;

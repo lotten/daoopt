@@ -65,6 +65,7 @@ protected:
 
   vector<SearchNode*> m_expand;  // Reusable vector for node expansions (to avoid repeated
                                  // (de)allocation of memory)
+  vector<double>      m_costTmp; // Reusable vector for cost calculations
 
 #ifdef PARALLEL_DYNAMIC
   /* keeps tracks up lower/upper bound on first OR node generated for
@@ -173,10 +174,10 @@ protected:
   /* checks if the node can be pruned (only meant for AND nodes) */
   bool canBePruned(SearchNode*) const;
 
-  /* computes the heuristic of a new OR node, which requires precomputing
+  /* computes the heuristic of a new OR node, which includes precomputing
    * its child AND nodes' heuristic and label values, which are cached
    * for their explicit generation */
-  double heuristicOR(SearchNode*);
+  double assignCostsOR(SearchNode*);
 
   /* returns the current lower bound on the subproblem solution rooted at
    * n, taking into account solutions to parent problems (or the dummy partial

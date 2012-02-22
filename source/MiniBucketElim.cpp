@@ -50,7 +50,7 @@ double MiniBucketElim::getHeur(int var, const vector<val_t>& assignment) const {
   double h = ELEM_ONE;
 
   // go over augmented and intermediate lists and combine all values
-  list<Function*>::const_iterator itF = m_augmented[var].begin();
+  vector<Function*>::const_iterator itF = m_augmented[var].begin();
   for (; itF!=m_augmented[var].end(); ++itF) {
     h OP_TIMESEQ (*itF)->getValue(assignment);
   }
@@ -64,12 +64,30 @@ double MiniBucketElim::getHeur(int var, const vector<val_t>& assignment) const {
 }
 
 
+void MiniBucketElim::getHeurAll(int var, const vector<val_t>& assignment, vector<double>& out) const {
+  out.clear();
+  out.resize(m_problem->getDomainSize(var), ELEM_ONE);
+  vector<double> funVals;
+  vector<Function*>::const_iterator itF;
+  for (itF = m_augmented[var].begin(); itF!=m_augmented[var].end(); ++itF) {
+    (*itF)->getValues(assignment, var, funVals);
+    for (size_t i=0; i<out.size(); ++i)
+      out[i] OP_TIMESEQ funVals[i];
+  }
+  for (itF = m_intermediate[var].begin(); itF!=m_intermediate[var].end(); ++itF) {
+    (*itF)->getValues(assignment, var, funVals);
+    for (size_t i=0; i<out.size(); ++i)
+      out[i] OP_TIMESEQ funVals[i];
+  }
+}
+
+
 void MiniBucketElim::reset() {
 
-  vector<list<Function*> > empty;
+  vector<vector<Function*> > empty;
   m_augmented.swap(empty);
 
-  vector<list<Function*> > empty2;
+  vector<vector<Function*> > empty2;
   m_intermediate.swap(empty2);
 
 }
@@ -101,7 +119,7 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
 
     // collect relevant functions in funs
     vector<Function*> funs;
-    const list<Function*>& fnlist = m_pseudotree->getNode(*itV)->getFunctions();
+    const vector<Function*>& fnlist = m_pseudotree->getFunctions(*itV);
     funs.insert(funs.end(), fnlist.begin(), fnlist.end());
     funs.insert(funs.end(), m_augmented[*itV].begin(), m_augmented[*itV].end());
 #ifdef DEBUG
@@ -179,8 +197,8 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
 
   // clean up for estimation mode
   if (!computeTables) {
-    for (vector<list<Function*> >::iterator itA = m_augmented.begin(); itA!=m_augmented.end(); ++itA)
-      for (list<Function*>::iterator itB = itA->begin(); itB!=itA->end(); ++itB)
+    for (vector<vector<Function*> >::iterator itA = m_augmented.begin(); itA!=m_augmented.end(); ++itA)
+      for (vector<Function*>::iterator itB = itA->begin(); itB!=itA->end(); ++itB)
         delete *itB;
     m_augmented.clear();
     m_augmented.clear();
@@ -236,8 +254,8 @@ size_t MiniBucketElim::limitSize(size_t memlimit, const vector<val_t> * assignme
 
 size_t MiniBucketElim::getSize() const {
   size_t S = 0;
-  for (vector<list<Function*> >::const_iterator it=m_augmented.begin(); it!= m_augmented.end(); ++it) {
-    for (list<Function*>::const_iterator itF=it->begin(); itF!=it->end(); ++itF)
+  for (vector<vector<Function*> >::const_iterator it=m_augmented.begin(); it!= m_augmented.end(); ++it) {
+    for (vector<Function*>::const_iterator itF=it->begin(); itF!=it->end(); ++itF)
       S += (*itF)->getTableSize();
   }
   return S;
@@ -294,7 +312,7 @@ bool MiniBucketElim::writeToFile(string fn) const {
     size_t sz2 = m_augmented[i].size();
     out.write((char*)&( sz2 ), sizeof( sz2 ));
 
-    list<Function*>::const_iterator itF = m_augmented[i].begin();
+    vector<Function*>::const_iterator itF = m_augmented[i].begin();
     for (size_t j=0; j<sz2; ++j, ++itF) {
       const Function* f = *itF;
       funcMap.insert(make_pair(f,funcMap.size()));
@@ -331,7 +349,7 @@ bool MiniBucketElim::writeToFile(string fn) const {
     size_t sz2 = m_intermediate[i].size();
     out.write((char*)&( sz2 ), sizeof( sz2 ));
 
-    list<Function*>::const_iterator itF = m_intermediate[i].begin();
+    vector<Function*>::const_iterator itF = m_intermediate[i].begin();
     for (size_t j=0; j<sz2; ++j, ++itF) {
       y = funcMap.find(*itF)->second;
       out.write((char*) &( y ), sizeof(y));

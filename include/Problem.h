@@ -114,6 +114,7 @@ public:
   const vector<val_t>& getSolutionAssg() const { return m_curSolution; }
   /* compute the assignment for output (might add evidence back in) */
   void assignmentForOutput(vector<val_t>&) const;
+  void assignmentForOutput(const vector<val_t>& in, vector<val_t>& out) const;
 #endif
 
   /* report an updated solution */

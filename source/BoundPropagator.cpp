@@ -80,7 +80,8 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
         if ( ISNAN(d) ) {// || d == ELEM_ZERO ) { // not all OR children solved yet, propagation stops here
           prop = false;
 #ifndef NO_ASSIGNMENT
-          propagateTuple(n,cur); // save (partial) opt. subproblem solution at current AND node
+//          if (n->getValue() > ELEM_ZERO)  // TODO required?
+            propagateTuple(n,cur); // save (partial) opt. subproblem solution at current AND node
 #endif
         }
 
@@ -155,7 +156,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
         else
           cur->setValue( OP_PLUS(d,cur->getValue()) );
 #else
-        if ( ISNAN( cur->getValue() ) || d > cur->getValue()) {
+        if (/*d > ELEM_ZERO &&*/ (ISNAN( cur->getValue() ) || d > cur->getValue())) {
           cur->setValue(d); // update max. value
         } else {
           prop = false; // no more value propagation upwards in this call
@@ -185,9 +186,10 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
 
 #ifndef NO_ASSIGNMENT
       // save opt. tuple, will be needed for caching later
-      if ( prop && cur->isCachable() && !cur->isNotOpt() ) {
+      if ( m_doCaching && prop && cur->isCachable() && !cur->isNotOpt() ) {
         DIAG(myprint("< Cachable OR node found\n"));
-        propagateTuple(n, cur);
+//        if (n->getValue() > ELEM_ZERO)  // TODO required?
+          propagateTuple(n, cur);
       }
 #endif
 
