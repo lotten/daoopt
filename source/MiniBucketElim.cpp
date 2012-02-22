@@ -119,7 +119,7 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
 
     // collect relevant functions in funs
     vector<Function*> funs;
-    const list<Function*>& fnlist = m_pseudotree->getNode(*itV)->getFunctions();
+    const vector<Function*>& fnlist = m_pseudotree->getFunctions(*itV);
     funs.insert(funs.end(), fnlist.begin(), fnlist.end());
     funs.insert(funs.end(), m_augmented[*itV].begin(), m_augmented[*itV].end());
 #ifdef DEBUG

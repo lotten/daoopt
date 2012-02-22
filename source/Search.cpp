@@ -435,12 +435,12 @@ double Search::assignCostsOR(SearchNode* n) {
   double* dv = new double[vDomain*2];
   for (int i=0; i<vDomain; ++i) dv[2*i+1] = ELEM_ONE;
   double h = ELEM_ZERO; // the new OR nodes h value
-  const list<Function*>& funs = m_pseudotree->getFunctions(v);
+  const vector<Function*>& funs = m_pseudotree->getFunctions(v);
 
 #ifdef GET_VALUE_BULK
   m_costTmp.clear();
   m_costTmp.resize(vDomain, ELEM_ONE);
-  for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it) {
+  for (vector<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it) {
     (*it)->getValues(m_assignment, v, m_costTmp);
     for (int i=0; i<vDomain; ++i)
       dv[2*i+1] OP_TIMESEQ m_costTmp[i];
