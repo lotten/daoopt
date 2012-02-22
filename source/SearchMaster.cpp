@@ -343,7 +343,7 @@ double SearchMaster::estimateIncrement(SearchNode* node) const {
   while (stck.size()) {
     PseudotreeNode* ptn = stck.top();
     stck.pop();
-    for ( list<Function*>::const_iterator it=ptn->getFunctions().begin(); it!=ptn->getFunctions().end(); ++it) {
+    for ( vector<Function*>::const_iterator it=ptn->getFunctions().begin(); it!=ptn->getFunctions().end(); ++it) {
 #ifdef USE_LOG
       double e2 = (*it)->getAverage(ctxt,m_assignment);
 //      DIAG (cout << *(*it) << ": " << SCALE_LOG(e2) << " (" << SCALE_NORM(e2) << ")" << endl );
