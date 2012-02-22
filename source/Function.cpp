@@ -63,6 +63,38 @@ double Function::getValue(const vector<val_t>& assignment) const {
 }
 
 
+/* evalates function for all values of var and writes results into out */
+void Function::getValues(const vector<val_t>& assignment, int var, vector<double>& out) {
+  out.resize((int) m_problem->getDomainSize(var));
+  // compute fixed portion of index, cache offset for var
+  size_t idx = 0, varOffset = 0;
+#ifdef PRECOMP_OFFSETS
+  vector<int>::const_iterator it=m_scopeV.begin();
+  vector<size_t>::const_iterator itOff=m_offsets.begin();
+  for (; it!=m_scopeV.end(); ++it, ++itOff) {
+    if (*it != var)
+      idx += assignment[*it] * (*itOff);
+    else
+      varOffset = *itOff;
+  }
+#else
+  size_t offset = 1;
+  for (vector<int>::const_reverse_iterator rit=m_scopeV.rbegin(); rit!=m_scopeV.rend(); ++rit) {
+    if (*rit != var)
+      idx += assignment[*rit] * offset;
+    else
+      varOffset = offset;
+    offset *= m_problem->getDomainSize(*rit);
+  }
+#endif
+  // look up and store entries for each value of var
+  for (size_t i=0; i < out.size(); ++i) {
+    out[i] = m_table[idx];
+    idx += varOffset;
+  }
+}
+
+
 /* returns the table entry for the assignment (input is vector of pointers to val_t) */
 double Function::getValuePtr(const vector<val_t*>& tuple) const {
   assert(tuple.size() == m_scopeV.size()); // make sure tuple size matches scope size

@@ -89,6 +89,11 @@ public:
    */
   virtual double getHeur(int var, const std::vector<val_t>& assignment) const = 0;
 
+  /* same as above, but writes heuristic values for all instantiations
+   * of var into out. */
+  virtual void getHeurAll(int var, const std::vector<val_t>& assignment,
+      std::vector<double>& out) const = 0;
+
   /* Returns true if the heuristic is provably accurate. Default false,
    * override in child class.
    */

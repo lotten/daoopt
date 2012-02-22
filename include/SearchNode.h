@@ -37,6 +37,7 @@ class PseudotreeNode;
 #define FLAG_EXTERN 4 // subproblem was processed externally (in parallel setting)
 #define FLAG_PRUNED 8 // subproblem below was pruned
 #define FLAG_NOTOPT 16 // subproblem possibly not optimally solved (-> don't cache)
+#define FLAG_ERR_EXT 32 // found an issue with externally solved subproblem
 
 class SearchNode;
 
@@ -153,6 +154,8 @@ public:
   bool isPruned() const { return m_flags & FLAG_PRUNED; }
   void setNotOpt() { m_flags |= FLAG_NOTOPT; }
   bool isNotOpt() const { return m_flags & FLAG_NOTOPT; }
+  void setErrExt() { m_flags |= FLAG_ERR_EXT; }
+  bool isErrExt() const { return m_flags & FLAG_ERR_EXT; }
 
   virtual void setHeurCache(double* d) = 0;
   virtual double* getHeurCache() const = 0;

@@ -47,7 +47,7 @@ protected:
   /* for LDS */
 //  SearchSpace* m_ldsSpace;  // plain pointer to avoid destructor call
   scoped_ptr<LimitedDiscrepancy> m_ldsSearch;
-//  scoped_ptr<BoundPropagator> m_ldsProp;
+  scoped_ptr<BoundPropagator> m_ldsProp;  // need separate to disable caching
 
   /* for complexity prediction */
   scoped_ptr<LearningEngine> m_learner;
@@ -109,6 +109,9 @@ protected:
   void resetLocalStack(SearchNode* node = NULL);
   /* solves a subproblem locally through AOBB */
   void solveLocal(SearchNode*);
+
+  /* computes the average depth of nodes / leaves, minus the given offset */
+  double computeAvgDepth(const vector<size_t>&, const vector<size_t>&, int offset);
 
 public:
   /* stores the lower bound to file for subsequent retrieval */
