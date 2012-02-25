@@ -574,12 +574,14 @@ void Problem::updateSolution(double cost,
   if (ISNAN(cost))
     return;
 
+  double costCheck = ELEM_ZERO;
 #ifndef NO_ASSIGNMENT
   // check for complete assignment first
   BOOST_FOREACH(val_t v, sol) {
     if (v == NONE) {
-      myprint("Warning: skipping incomplete solution.\n");
-      DIAG(oss ss; ss << cost << " " << sol.size() << " " << sol << endl; myprint(ss.str()););
+      oss ss; ss << "Warning: skipping incomplete solution, reported " << cost;
+      DIAG(ss << " " << sol.size() << " " << sol;)
+      ss << endl; myprint(ss.str());
       return;
     }
   }
@@ -587,29 +589,39 @@ void Problem::updateSolution(double cost,
   // use Kahan summation to compute exact solution cost
   // TODO (might not work in non-log scale?)
   if (cost != ELEM_ZERO && !m_subprobOnly) {
-    double kahan = ELEM_ONE, comp = ELEM_ONE;  // used across loop iterations
+    costCheck = ELEM_ONE; double comp = ELEM_ONE;  // used across loop iterations
     double y, z;  // reset for each loop iteration
     BOOST_FOREACH( Function* f, m_functions ) {
       z = f->getValue(sol);
-      if (z == ELEM_ZERO) {
-        myprint("Warning: skipping zero-cost solution.\n");
-        DIAG(oss ss; ss << cost << " " << sol.size() << " " << sol << endl; myprint(ss.str()););
-        return;
-      }
+//      if (z == ELEM_ZERO) {
+//        oss ss; ss << "Warning: skipping zero-cost solution. Reported cost: " << cost;
+//        DIAG(ss << " " << sol.size() << " " << sol;)
+//        ss << endl; myprint(ss.str());
+//        return;
+//      }
       y = z OP_DIVIDE comp;
-      z = kahan OP_TIMES y;
-      comp = (z OP_DIVIDE kahan) OP_DIVIDE y;
-      kahan = z;
+      z = costCheck OP_TIMES y;
+      comp = (z OP_DIVIDE costCheck) OP_DIVIDE y;
+      costCheck = z;
     }
-//    if (cost != kahan) cout << cost << " " << kahan << " " << abs(kahan-cost) << endl;
-    cost = kahan;  // use Kahan sum
+    if (1e-3 < abs(cost-costCheck)) {
+      oss ss; ss << "Warning: solution cost " << costCheck << " differs significantly"
+		 << ", reported " << cost << endl;
+      myprint(ss.str());
+    }
   }
+#else
+  costCheck = cost;
 #endif
 
-  if (ISNAN(cost) || (!ISNAN(m_curCost) && cost <= m_curCost))  // TODO cost =?= ELEM_ZERO )
+  if (ISNAN(costCheck) || (!ISNAN(m_curCost) && costCheck <= m_curCost)) { // TODO costCheck =?= ELEM_ZERO )
+    oss ss; ss << "Warning: Discarding solution with cost " << costCheck << ", reported: " << cost;
+    DIAG(ss << " " << sol.size() << " " << sol;)
+    ss << endl; myprint(ss.str());
     return;
-  m_curCost = cost;
-  if (cost == ELEM_ZERO) output = false;
+  }
+  m_curCost = costCheck;
+  if (costCheck == ELEM_ZERO) output = false;
   ostringstream ss;
   if (output) {
     ss << "u ";
@@ -617,7 +629,7 @@ void Problem::updateSolution(double cost,
       ss << nodestats->numOR << ' ' <<  nodestats->numAND << ' ';
     else
       ss << "0 0 ";
-    ss << SCALE_LOG(cost) ;
+    ss << SCALE_LOG(costCheck) ;
   }
 
 #ifndef NO_ASSIGNMENT
