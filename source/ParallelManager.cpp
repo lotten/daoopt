@@ -847,23 +847,46 @@ double ParallelManager::evaluate(const SearchNode* node) const {
 
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-  int d = ptnode->getDepth();
-  int h = ptnode->getSubHeight();
-  int w = ptnode->getSubWidth();
-  int n = ptnode->getSubprobSize();
+  const SubprobStats* stats = ptnode->getSubprobStats();
+  const SubprobFeatures* feats = node->getSubprobFeatures();
 
-  double L = node->getInitialBound();
-  double U = node->getHeur();
+  // "dynamic subproblem features
+  double ub = node->getHeur(),
+         lb = node->getInitialBound();
+  double rPruned = feats->ratioPruned,
+         rLeaf = feats->ratioLeaf,
+         rDead = feats->ratioLeaf;
+  double avgNodeD = feats->avgNodeDepth,
+         avgLeafD = feats->avgLeafDepth,
+         avgBraDg = feats->avgBranchDeg;
 
-  double z = (L == ELEM_ZERO) ? 0.0 : 2*(U-L);
-  z += h + 0.5 * log10(n);
-  // for pdb1e5k
-//  double z = -19.922 - 5.489*(U-L) + 2.548*d + 0.148*(U-L)*h - 0.204*U;
-  // for pdb1tfe
-//  double z = 0.866 + 6.539*(U-L) - 0.141*(U-L)*h - 0.193*L - 0.176*h;
-  // for pdb1j98
-//  double z = 7.679*w + 0.014*n + 0.329*(U-L) - 0.009*(U-L)*h - 2.329*d
-//    - 2.005*h - 0.348*L - 28.602*log10(n);
+  // "static" subproblem properties
+  double D = node->getDepth(),
+         Vars = ptnode->getSubprobSize(),
+         Leafs = stats->getLeafCount();
+  double Wmax = stats->getClusterStats(stats->MAX),
+         Wavg = stats->getClusterStats(stats->AVG),
+         Wsdv = stats->getClusterStats(stats->SDV),
+         Wmed = stats->getClusterStats(stats->MED);
+  double WCmax = stats->getClusterCondStats(stats->MAX),
+         WCavg = stats->getClusterCondStats(stats->AVG),
+         WCsdv = stats->getClusterCondStats(stats->SDV),
+         WCmed = stats->getClusterCondStats(stats->MED);
+  double Kmax = stats->getDepthStats(stats->MAX),
+         Kavg = stats->getDepthStats(stats->AVG),
+         Ksdv = stats->getDepthStats(stats->SDV);
+  double Hmax = stats->getDepthStats(stats->MAX),
+         Havg = stats->getDepthStats(stats->AVG),
+         Hsdv = stats->getDepthStats(stats->SDV),
+         Hmed = stats->getDepthStats(stats->MED);
+
+  /*
+  double z = (lb == ELEM_ZERO) ? 0.0 : 2*(ub-lb);
+  z += Hmax + 0.5 * log10(Vars);
+  */
+
+  double z = // from LassoLars(alpha=0.001, normalize=True, fit_intercept=False), stats3.csv (4600 samples)
+      0.00144 * lb*lb  - 0.00134  * lb*avgNodeD  - 0.00962  * ub*(ub-lb)  - 0.03766 * ub*rPruned  - 0.00566 * ub*avgLeafD  + 0.00256  * ub*Vars  - 0.06061  * ub*Wmax  + 0.01577  * ub*WCmax  - 0.00284 * ub*Havg  + 0.11317  * ub-lb*avgNodeD  - 0.09876 * (ub-lb)*avgLeafD  + 0.01903 * (ub-lb)*D  + 0.00217  * (ub-lb)*Vars  - 0.01307 * (ub-lb)*Leafs  - 0.01797  * (ub-lb)*Wmax  + 0.03154 * (ub-lb)*WCmax  - 0.00227  * (ub-lb)*Havg  - 0.00954 * rPruned*Vars  + 0.04717 * rPruned*Hmax  + 0.02503 * rDead*Vars  + 0.00012 * rLeaf*Vars  + 0.01730 * avgNodeD*avgNodeD  - 0.04324  * avgNodeD*avgLeafD  - 0.09762  * avgNodeD*D  + 0.00239 * avgNodeD*Vars  - 0.03318  * avgNodeD*Wmax  - 0.02509* avgNodeD*Hmax  + 0.03100  * avgNodeD*Hmed  + 0.02819  * avgLeafD*avgLeafD  + 0.10540  * avgLeafD*D  - 0.00515 * avgLeafD*Vars  + 0.00282  * avgLeafD*Leafs  + 0.07349 * avgLeafD*Wmax  - 0.03486  * avgLeafD*WCmax  + 0.01079 * avgLeafD*Havg  - 0.07081  * avgBraDg*Leafs  - 0.02872 * D*D  - 0.00984  * D*Leafs  + 0.00073  * Vars*Vars  - 0.00017  * Vars*Wmed  - 0.07097  * Vars*WCavg  + 0.03487 * Vars*WCsdv  + 0.00607 * Vars*Ksdv  + 0.00508  * Vars*Hmax  - 0.00791  * Vars*Hmed  - 0.00369  * Leafs*Leafs  + 0.00442  * Leafs*Hmax  - 0.01998 * Wmax*Hmed  - 0.01152  * WCmax*Hmed  + 0.00362 * Hmax*Hmax;
 
   DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()))
 

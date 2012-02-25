@@ -53,7 +53,7 @@
 #endif
 
 #ifndef PARALLEL_STATIC
-//#define PARALLEL_STATIC
+#define PARALLEL_STATIC
 #endif
 
 /*****************************************************************/

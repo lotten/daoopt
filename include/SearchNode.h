@@ -116,6 +116,7 @@ public:
 #endif
 #ifdef PARALLEL_STATIC
   virtual SubprobFeatures* getSubprobFeatures() { assert(false); return NULL; }  // OR only
+  virtual const SubprobFeatures* getSubprobFeatures() const { assert(false); return NULL; }
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   virtual void setSubprobContext(const context_t&) = 0;
@@ -271,6 +272,7 @@ public:
 
 #ifdef PARALLEL_STATIC
   SubprobFeatures* getSubprobFeatures() { return &m_subprobFeatures; }
+  const SubprobFeatures* getSubprobFeatures() const { return &m_subprobFeatures; }
 #endif
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
