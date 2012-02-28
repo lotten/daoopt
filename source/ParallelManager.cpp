@@ -872,9 +872,9 @@ double ParallelManager::evaluate(const SearchNode* node) const {
          WCavg = stats->getClusterCondStats(stats->AVG),
          WCsdv = stats->getClusterCondStats(stats->SDV),
          WCmed = stats->getClusterCondStats(stats->MED);
-  double Kmax = stats->getDepthStats(stats->MAX),
-         Kavg = stats->getDepthStats(stats->AVG),
-         Ksdv = stats->getDepthStats(stats->SDV);
+  double Kmax = stats->getDomainStats(stats->MAX),
+         Kavg = stats->getDomainStats(stats->AVG),
+         Ksdv = stats->getDomainStats(stats->SDV);
   double Hmax = stats->getDepthStats(stats->MAX),
          Havg = stats->getDepthStats(stats->AVG),
          Hsdv = stats->getDepthStats(stats->SDV),
@@ -885,8 +885,18 @@ double ParallelManager::evaluate(const SearchNode* node) const {
   z += Hmax + 0.5 * log10(Vars);
   */
 
-  double z = // from LassoLars(alpha=0.001, normalize=True, fit_intercept=False), stats3.csv (4600 samples)
-      0.00144 * lb*lb  - 0.00134  * lb*avgNodeD  - 0.00962  * ub*(ub-lb)  - 0.03766 * ub*rPruned  - 0.00566 * ub*avgLeafD  + 0.00256  * ub*Vars  - 0.06061  * ub*Wmax  + 0.01577  * ub*WCmax  - 0.00284 * ub*Havg  + 0.11317  * ub-lb*avgNodeD  - 0.09876 * (ub-lb)*avgLeafD  + 0.01903 * (ub-lb)*D  + 0.00217  * (ub-lb)*Vars  - 0.01307 * (ub-lb)*Leafs  - 0.01797  * (ub-lb)*Wmax  + 0.03154 * (ub-lb)*WCmax  - 0.00227  * (ub-lb)*Havg  - 0.00954 * rPruned*Vars  + 0.04717 * rPruned*Hmax  + 0.02503 * rDead*Vars  + 0.00012 * rLeaf*Vars  + 0.01730 * avgNodeD*avgNodeD  - 0.04324  * avgNodeD*avgLeafD  - 0.09762  * avgNodeD*D  + 0.00239 * avgNodeD*Vars  - 0.03318  * avgNodeD*Wmax  - 0.02509* avgNodeD*Hmax  + 0.03100  * avgNodeD*Hmed  + 0.02819  * avgLeafD*avgLeafD  + 0.10540  * avgLeafD*D  - 0.00515 * avgLeafD*Vars  + 0.00282  * avgLeafD*Leafs  + 0.07349 * avgLeafD*Wmax  - 0.03486  * avgLeafD*WCmax  + 0.01079 * avgLeafD*Havg  - 0.07081  * avgBraDg*Leafs  - 0.02872 * D*D  - 0.00984  * D*Leafs  + 0.00073  * Vars*Vars  - 0.00017  * Vars*Wmed  - 0.07097  * Vars*WCavg  + 0.03487 * Vars*WCsdv  + 0.00607 * Vars*Ksdv  + 0.00508  * Vars*Hmax  - 0.00791  * Vars*Hmed  - 0.00369  * Leafs*Leafs  + 0.00442  * Leafs*Hmax  - 0.01998 * Wmax*Hmed  - 0.01152  * WCmax*Hmed  + 0.00362 * Hmax*Hmax;
+
+  double z =
+      // LassoLars(alpha=0.01), degree=1, stats4.csv (10603 samples)
+      //+ ( 1.64620e-04 * (ub))  + ( 3.83243e-01 * (ub-lb))  + ( 6.77123e-02 * (avgNodeD))  - ( 4.05910e-02 * (D))  + ( 3.78208e-03 * (Vars))  - ( 7.44384e-03 * (Leafs))  + ( 4.63889e-01 * (Wavg))  + ( 2.47618e-01 * (Wsdv))  - ( 1.68938e-01 * (WCmax))  + ( 9.91102e-02 * (Havg))  - ( 2.57769e-01 * (Hsdv));
+      // LassoLars(alpha=0.01), degree=2, stats4.csv (10603 samples)
+      - ( 1.06230e-03 * (lb)*(avgNodeD))  + ( 1.69370e-03 * (lb)*(avgLeafD))  + ( 1.39504e-03 * (lb)*(Vars))  - ( 7.41810e-03 * (lb)*(Leafs))  - ( 2.40857e-04 * (lb)*(Hmax))  - ( 3.04937e-03 * (ub)*(ub))  - ( 7.36406e-04 * (ub)*(ub-lb))  + ( 9.39502e-04 * (ub)*(D))  - ( 8.06125e-04 * (ub)*(WCsdv))  - ( 1.54377e-02 * (ub-lb)*(ub-lb))  + ( 3.90821e-04 * (ub-lb)*(avgNodeD))  + ( 1.20563e-02 * (ub-lb)*(D))  - ( 6.50204e-04 * (ub-lb)*(Vars))  + ( 2.60533e-04 * (ub-lb)*(Leafs))  - ( 3.72410e-02 * (ub-lb)*(WCmax))  + ( 1.00336e-02 * (ub-lb)*(Hmax))  + ( 7.41045e-03 * (ub-lb)*(Hsdv))  + ( 8.60623e-03 * (ub-lb)*(Hmed))  - ( 9.21925e-04 * (rPruned)*(Vars))  + ( 1.46400e-02 * (rDead)*(Vars))  + ( 2.89068e-03 * (rLeaf)*(Vars))  + ( 1.43511e-03 * (avgNodeD)*(avgNodeD))  - ( 5.70504e-04 * (avgNodeD)*(Vars))  + ( 1.68691e-03 * (avgNodeD)*(Leafs))  - ( 1.79182e-03 * (avgNodeD)*(Hmed))  + ( 3.72780e-04 * (avgLeafD)*(D))  + ( 4.70759e-04 * (avgLeafD)*(Vars))  - ( 1.65965e-03 * (avgLeafD)*(Leafs))  + ( 1.51711e-03 * (avgLeafD)*(Wmax))  + ( 5.29760e-03 * (avgLeafD)*(Wsdv))  - ( 1.72148e-03 * (avgLeafD)*(Hmax))  + ( 1.15015e-02 * (avgLeafD)*(Havg))  - ( 7.82195e-03 * (avgLeafD)*(Hmed))  - ( 5.89913e-03 * (avgBraDg)*(Vars))  + ( 4.15688e-03 * (D)*(D))  + ( 1.90502e-04 * (D)*(Vars))  - ( 4.01007e-05 * (D)*(Leafs))  + ( 1.07401e-02 * (D)*(WCmax))  + ( 9.35496e-05 * (Vars)*(Vars))  - ( 1.28385e-03 * (Vars)*(Wmax))  - ( 1.09807e-04 * (Vars)*(Wmed))  + ( 1.14059e-03 * (Vars)*(WCmax))  + ( 3.61452e-03 * (Vars)*(WCavg))  + ( 2.92006e-04 * (Vars)*(WCsdv))  - ( 1.12599e-02 * (Vars)*(Ksdv))  + ( 1.38700e-04 * (Vars)*(Havg))  - ( 4.01527e-04 * (Vars)*(Hsdv))  - ( 4.28666e-04 * (Vars)*(Hmed))  - ( 1.19686e-03 * (Leafs)*(Leafs))  - ( 8.13292e-03 * (Leafs)*(WCmax))  + ( 3.42008e-03 * (Leafs)*(Havg))  - ( 5.46289e-03 * (Wmax)*(Hmax))  + ( 1.62756e-02 * (WCmax)*(WCmax))  + ( 4.64474e-05 * (Hmed)*(Hmed));
+
+
+  if (z < 0.0 || z > 100.0) {
+    oss ss; ss << "evaluate: unreasonable estimate for node " << *node << ": " << z << endl;
+    myprint(ss.str());
+  }
 
   DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()))
 
