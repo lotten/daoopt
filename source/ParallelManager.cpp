@@ -313,8 +313,7 @@ bool ParallelManager::findFrontier() {
 
     // check for fixed-depth cutoff
     if (m_options->cutoff_depth != NONE) {
-      PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
-      int d = ptnode->getDepth();
+      int d = node->getDepth();
       if (d == m_options->cutoff_depth) {
         node->setExtern();
         m_external.push_back(node);
@@ -842,8 +841,8 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
 double ParallelManager::evaluate(const SearchNode* node) const {
   assert(node && node->getType() == NODE_OR);
 
-  if (m_options->cutoff_depth != NONE)
-    return 0.0;
+  //if (m_options->cutoff_depth != NONE)
+  //  return 0.0;
 
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
