@@ -124,7 +124,7 @@ bool ParallelManager::doLearning() {
   }
 
   // collect samples
-  int sampleCount = 0;
+  size_t sampleCount = 0;
   for (; sampleCount < sampleSizes.size(); ++sampleCount) {
     m_sampleSearch->reset();
     prop.resetSubCount();
@@ -632,7 +632,7 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     int depth = ptnode->getDepth();
     double lb = node->getInitialBound(); //lowerBound(node);
     double ub = node->getHeur();
-    double estimate = evaluate(node);
+    double estimate = node->getComplexityEstimate();
 
     csv // << i << '\t'
       << rootVar << '\t' << m_options->ibound
@@ -838,11 +838,8 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
 }
 
 
-double ParallelManager::evaluate(const SearchNode* node) const {
+double ParallelManager::evaluate(SearchNode* node) const {
   assert(node && node->getType() == NODE_OR);
-
-  //if (m_options->cutoff_depth != NONE)
-  //  return 0.0;
 
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
@@ -884,7 +881,6 @@ double ParallelManager::evaluate(const SearchNode* node) const {
   z += Hmax + 0.5 * log10(Vars);
   */
 
-
   double z =
       // LassoLars(alpha=0.01), degree=1, stats4.csv (10603 samples)
       //+ ( 1.64620e-04 * (ub))  + ( 3.83243e-01 * (ub-lb))  + ( 6.77123e-02 * (avgNodeD))  - ( 4.05910e-02 * (D))  + ( 3.78208e-03 * (Vars))  - ( 7.44384e-03 * (Leafs))  + ( 4.63889e-01 * (Wavg))  + ( 2.47618e-01 * (Wsdv))  - ( 1.68938e-01 * (WCmax))  + ( 9.91102e-02 * (Havg))  - ( 2.57769e-01 * (Hsdv));
@@ -897,10 +893,13 @@ double ParallelManager::evaluate(const SearchNode* node) const {
     myprint(ss.str());
   }
 
-  DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()))
+  node->setComplexityEstimate(z);
+  DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()));
 
-  return z;
-
+  if (m_options->cutoff_depth != NONE)
+    return 0.0;  // don't return estimate for fixed-cutoff mode (to avoid ordering subproblems)
+  else
+    return z;
 }
 
 
