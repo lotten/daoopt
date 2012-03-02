@@ -321,6 +321,15 @@ bool ParallelManager::findFrontier() {
       }
     }
 
+    // check for complexity lower bound parameter
+    if (m_options->cutoff_size != NONE) {
+      if (eval < log10(m_options->cutoff_size) + 5) { // command line argument times 10^5
+        node->setExtern();
+        m_external.push_back(node);
+        continue;
+      }
+    }
+
     syncAssignment(node);
     deepenFrontier(node,newNodes);
     for (vector<SearchNode*>::iterator it=newNodes.begin(); it!=newNodes.end(); ++it) {
@@ -332,7 +341,7 @@ bool ParallelManager::findFrontier() {
   }
 
   // move from open stack to external queue
-  m_external.reserve(m_open.size());
+  m_external.reserve(m_external.size() + m_open.size());
   while (m_open.size()) {
     m_open.top().second->setExtern();
     m_external.push_back(m_open.top().second);
