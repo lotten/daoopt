@@ -80,7 +80,7 @@ protected:
   /* moves the frontier one step deeper by splitting the given node */
   bool deepenFrontier(SearchNode*, vector<SearchNode*>& out);
   /* evaluates a node (wrt. order in the queue) */
-  double evaluate(const SearchNode*) const;
+  double evaluate(SearchNode*) const;
   /* filters out easy subproblems */
   bool isEasy(const SearchNode*) const;
   /* applies LDS to the subproblem, i.e. mini bucket forward pass;

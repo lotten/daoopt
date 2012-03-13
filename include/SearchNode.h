@@ -104,6 +104,9 @@ public:
 
   virtual void setInitialBound(double d) = 0;
   virtual double getInitialBound() const = 0;
+
+  virtual void setComplexityEstimate(double d) = 0;
+  virtual double getComplexityEstimate() const = 0;
 #endif
 #ifdef PARALLEL_DYNAMIC
   count_t getSubLeaves() const { return m_subLeaves; }
@@ -116,6 +119,7 @@ public:
 #endif
 #ifdef PARALLEL_STATIC
   virtual SubprobFeatures* getSubprobFeatures() { assert(false); return NULL; }  // OR only
+  virtual const SubprobFeatures* getSubprobFeatures() const { assert(false); return NULL; }
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   virtual void setSubprobContext(const context_t&) = 0;
@@ -204,6 +208,8 @@ public:
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setInitialBound(double d) { assert(false); }
   double getInitialBound() const { assert(false); return 0.0; }
+  void setComplexityEstimate(double d) { assert(false); }
+  double getComplexityEstimate() const { assert(false); return 0.0; }
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setSubprobContext(const context_t& t) { assert(false); }
@@ -230,6 +236,7 @@ protected:
 #endif
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   double m_initialBound; // the lower bound when the node was first generated
+  double m_complexityEstimate; // subproblem complexity estimate
 #endif
   double* m_heurCache;   // Stores the precomputed heuristic values of the AND children
   context_t m_cacheContext; // Stores the context (for caching)
@@ -271,11 +278,16 @@ public:
 
 #ifdef PARALLEL_STATIC
   SubprobFeatures* getSubprobFeatures() { return &m_subprobFeatures; }
+  const SubprobFeatures* getSubprobFeatures() const { return &m_subprobFeatures; }
 #endif
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   void setInitialBound(double d) { m_initialBound = d; }
   double getInitialBound() const { return m_initialBound; }
+
+  void setComplexityEstimate(double d) { m_complexityEstimate = d; }
+  double getComplexityEstimate() const { return m_complexityEstimate; }
+
 #endif
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
@@ -377,6 +389,9 @@ inline SearchNodeAND::SearchNodeAND(SearchNode* parent, val_t val, double label)
 
 inline SearchNodeOR::SearchNodeOR(SearchNode* parent, int var, int depth) :
   SearchNode(parent), m_var(var), m_depth(depth), m_heurCache(NULL) //, m_cacheContext(NULL)
+#if defined PARALLE_STATIC || defined PARALLEL_DYNAMIC
+  , m_initialBound(ELEM_NAN), m_complexityEstimate(ELEM_NAN)
+#endif
   { /* empty */ }
 
 

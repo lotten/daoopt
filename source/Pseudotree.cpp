@@ -777,7 +777,7 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
   set_difference(cluster.begin(), cluster.end(), cond.begin(), cond.end(), inserter(vars,vars.begin()) );
 
   // collect all relevant functions by going up in the PTree
-  list<Function*> funcs( this->getFunctions() );
+  vector<Function*> funcs( this->getFunctions() );
   for (PseudotreeNode* node = this->getParent(); node; node = node->getParent() )
     funcs.insert( funcs.end(), node->getFunctions().begin(), node->getFunctions().end() );
 
@@ -795,11 +795,11 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
   while (!uncovered.empty()) {
     bigfloat ratio = 1;//, ctemp = 1;
     Function* cand = NULL;
-    list<Function*>::iterator candIt = funcs.begin();
+    vector<Function*>::iterator candIt = funcs.begin();
 
 //    DIAG(cout << "  Uncovered: " << uncovered << endl);
 
-    for (list<Function*>::iterator itF = funcs.begin(); itF!= funcs.end(); ++itF) {
+    for (vector<Function*>::iterator itF = funcs.begin(); itF!= funcs.end(); ++itF) {
       bigfloat rtemp = (*itF)->gainRatio(uncovered, cluster, cond, assig);
 //      DIAG( cout << "   Ratio for " << (*(*itF)) <<": " << rtemp << endl );
       if (rtemp != UNKNOWN && rtemp < ratio)

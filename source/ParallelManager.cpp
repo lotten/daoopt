@@ -124,7 +124,7 @@ bool ParallelManager::doLearning() {
   }
 
   // collect samples
-  int sampleCount = 0;
+  size_t sampleCount = 0;
   for (; sampleCount < sampleSizes.size(); ++sampleCount) {
     m_sampleSearch->reset();
     prop.resetSubCount();
@@ -313,9 +313,17 @@ bool ParallelManager::findFrontier() {
 
     // check for fixed-depth cutoff
     if (m_options->cutoff_depth != NONE) {
-      PseudotreeNode* ptnode = m_pseudotree->getNode(node->getVar());
-      int d = ptnode->getDepth();
+      int d = node->getDepth();
       if (d == m_options->cutoff_depth) {
+        node->setExtern();
+        m_external.push_back(node);
+        continue;
+      }
+    }
+
+    // check for complexity lower bound parameter
+    if (m_options->cutoff_size != NONE) {
+      if (eval < log10(m_options->cutoff_size) + 5) { // command line argument times 10^5
         node->setExtern();
         m_external.push_back(node);
         continue;
@@ -333,7 +341,7 @@ bool ParallelManager::findFrontier() {
   }
 
   // move from open stack to external queue
-  m_external.reserve(m_open.size());
+  m_external.reserve(m_external.size() + m_open.size());
   while (m_open.size()) {
     m_open.top().second->setExtern();
     m_external.push_back(m_open.top().second);
@@ -633,7 +641,7 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     int depth = ptnode->getDepth();
     double lb = node->getInitialBound(); //lowerBound(node);
     double ub = node->getHeur();
-    double estimate = evaluate(node);
+    double estimate = node->getComplexityEstimate();
 
     csv // << i << '\t'
       << rootVar << '\t' << m_options->ibound
@@ -839,36 +847,68 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
 }
 
 
-double ParallelManager::evaluate(const SearchNode* node) const {
+double ParallelManager::evaluate(SearchNode* node) const {
   assert(node && node->getType() == NODE_OR);
-
-  if (m_options->cutoff_depth != NONE)
-    return 0.0;
 
   int var = node->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
-  int d = ptnode->getDepth();
-  int h = ptnode->getSubHeight();
-  int w = ptnode->getSubWidth();
-  int n = ptnode->getSubprobSize();
+  const SubprobStats* stats = ptnode->getSubprobStats();
+  const SubprobFeatures* feats = node->getSubprobFeatures();
 
-  double L = node->getInitialBound();
-  double U = node->getHeur();
+  // "dynamic subproblem features
+  double ub = node->getHeur(),
+         lb = node->getInitialBound();
+  double rPruned = feats->ratioPruned,
+         rLeaf = feats->ratioLeaf,
+         rDead = feats->ratioLeaf;
+  double avgNodeD = feats->avgNodeDepth,
+         avgLeafD = feats->avgLeafDepth,
+         avgBraDg = feats->avgBranchDeg;
 
-  double z = (L == ELEM_ZERO) ? 0.0 : 2*(U-L);
-  z += h + 0.5 * log10(n);
-  // for pdb1e5k
-//  double z = -19.922 - 5.489*(U-L) + 2.548*d + 0.148*(U-L)*h - 0.204*U;
-  // for pdb1tfe
-//  double z = 0.866 + 6.539*(U-L) - 0.141*(U-L)*h - 0.193*L - 0.176*h;
-  // for pdb1j98
-//  double z = 7.679*w + 0.014*n + 0.329*(U-L) - 0.009*(U-L)*h - 2.329*d
-//    - 2.005*h - 0.348*L - 28.602*log10(n);
+  // "static" subproblem properties
+  double D = node->getDepth(),
+         Vars = ptnode->getSubprobSize(),
+         Leafs = stats->getLeafCount();
+  double Wmax = stats->getClusterStats(stats->MAX),
+         Wavg = stats->getClusterStats(stats->AVG),
+         Wsdv = stats->getClusterStats(stats->SDV),
+         Wmed = stats->getClusterStats(stats->MED);
+  double WCmax = stats->getClusterCondStats(stats->MAX),
+         WCavg = stats->getClusterCondStats(stats->AVG),
+         WCsdv = stats->getClusterCondStats(stats->SDV),
+         WCmed = stats->getClusterCondStats(stats->MED);
+  double Kmax = stats->getDomainStats(stats->MAX),
+         Kavg = stats->getDomainStats(stats->AVG),
+         Ksdv = stats->getDomainStats(stats->SDV);
+  double Hmax = stats->getDepthStats(stats->MAX),
+         Havg = stats->getDepthStats(stats->AVG),
+         Hsdv = stats->getDepthStats(stats->SDV),
+         Hmed = stats->getDepthStats(stats->MED);
 
-  DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()))
+  /*
+  double z = (lb == ELEM_ZERO) ? 0.0 : 2*(ub-lb);
+  z += Hmax + 0.5 * log10(Vars);
+  */
 
-  return z;
+  double z =
+      // LassoLars(alpha=0.01), degree=1, stats4.csv (10603 samples)
+      //+ ( 1.64620e-04 * (ub))  + ( 3.83243e-01 * (ub-lb))  + ( 6.77123e-02 * (avgNodeD))  - ( 4.05910e-02 * (D))  + ( 3.78208e-03 * (Vars))  - ( 7.44384e-03 * (Leafs))  + ( 4.63889e-01 * (Wavg))  + ( 2.47618e-01 * (Wsdv))  - ( 1.68938e-01 * (WCmax))  + ( 9.91102e-02 * (Havg))  - ( 2.57769e-01 * (Hsdv));
+      // LassoLars(alpha=0.01), degree=2, stats4.csv (10603 samples)
+      - ( 1.06230e-03 * (lb)*(avgNodeD))  + ( 1.69370e-03 * (lb)*(avgLeafD))  + ( 1.39504e-03 * (lb)*(Vars))  - ( 7.41810e-03 * (lb)*(Leafs))  - ( 2.40857e-04 * (lb)*(Hmax))  - ( 3.04937e-03 * (ub)*(ub))  - ( 7.36406e-04 * (ub)*(ub-lb))  + ( 9.39502e-04 * (ub)*(D))  - ( 8.06125e-04 * (ub)*(WCsdv))  - ( 1.54377e-02 * (ub-lb)*(ub-lb))  + ( 3.90821e-04 * (ub-lb)*(avgNodeD))  + ( 1.20563e-02 * (ub-lb)*(D))  - ( 6.50204e-04 * (ub-lb)*(Vars))  + ( 2.60533e-04 * (ub-lb)*(Leafs))  - ( 3.72410e-02 * (ub-lb)*(WCmax))  + ( 1.00336e-02 * (ub-lb)*(Hmax))  + ( 7.41045e-03 * (ub-lb)*(Hsdv))  + ( 8.60623e-03 * (ub-lb)*(Hmed))  - ( 9.21925e-04 * (rPruned)*(Vars))  + ( 1.46400e-02 * (rDead)*(Vars))  + ( 2.89068e-03 * (rLeaf)*(Vars))  + ( 1.43511e-03 * (avgNodeD)*(avgNodeD))  - ( 5.70504e-04 * (avgNodeD)*(Vars))  + ( 1.68691e-03 * (avgNodeD)*(Leafs))  - ( 1.79182e-03 * (avgNodeD)*(Hmed))  + ( 3.72780e-04 * (avgLeafD)*(D))  + ( 4.70759e-04 * (avgLeafD)*(Vars))  - ( 1.65965e-03 * (avgLeafD)*(Leafs))  + ( 1.51711e-03 * (avgLeafD)*(Wmax))  + ( 5.29760e-03 * (avgLeafD)*(Wsdv))  - ( 1.72148e-03 * (avgLeafD)*(Hmax))  + ( 1.15015e-02 * (avgLeafD)*(Havg))  - ( 7.82195e-03 * (avgLeafD)*(Hmed))  - ( 5.89913e-03 * (avgBraDg)*(Vars))  + ( 4.15688e-03 * (D)*(D))  + ( 1.90502e-04 * (D)*(Vars))  - ( 4.01007e-05 * (D)*(Leafs))  + ( 1.07401e-02 * (D)*(WCmax))  + ( 9.35496e-05 * (Vars)*(Vars))  - ( 1.28385e-03 * (Vars)*(Wmax))  - ( 1.09807e-04 * (Vars)*(Wmed))  + ( 1.14059e-03 * (Vars)*(WCmax))  + ( 3.61452e-03 * (Vars)*(WCavg))  + ( 2.92006e-04 * (Vars)*(WCsdv))  - ( 1.12599e-02 * (Vars)*(Ksdv))  + ( 1.38700e-04 * (Vars)*(Havg))  - ( 4.01527e-04 * (Vars)*(Hsdv))  - ( 4.28666e-04 * (Vars)*(Hmed))  - ( 1.19686e-03 * (Leafs)*(Leafs))  - ( 8.13292e-03 * (Leafs)*(WCmax))  + ( 3.42008e-03 * (Leafs)*(Havg))  - ( 5.46289e-03 * (Wmax)*(Hmax))  + ( 1.62756e-02 * (WCmax)*(WCmax))  + ( 4.64474e-05 * (Hmed)*(Hmed));
 
+
+  if (z < 0.0 || z > 100.0) {
+    oss ss; ss << "evaluate: unreasonable estimate for node " << *node << ": " << z << endl;
+    myprint(ss.str());
+  }
+
+  node->setComplexityEstimate(z);
+  DIAG(oss ss; ss<< "eval " << *node << " : "<< z<< endl; myprint(ss.str()));
+
+  if (m_options->cutoff_depth != NONE)
+    return 0.0;  // don't return estimate for fixed-cutoff mode (to avoid ordering subproblems)
+  else
+    return z;
 }
 
 
