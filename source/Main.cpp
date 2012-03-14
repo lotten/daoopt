@@ -590,6 +590,11 @@ bool Main::runSearchWorker() {
 
 
 bool Main::outputStats() const {
+  if (m_options->nosearch) {
+     cout << "Found '--nosearch', full search skipped, exiting." << endl;
+     return true;
+  }
+
   // Output cache statistics
   m_space->cache->printStats();
 

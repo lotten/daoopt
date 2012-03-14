@@ -525,8 +525,6 @@ bool ParallelManager::readExtResults() {
     BINREAD(in, nodesOR);
     BINREAD(in, nodesAND);
 
-    nodecounts.push_back(make_pair(nodesOR, nodesAND));
-
     m_space->stats.numORext += nodesOR;
     m_space->stats.numANDext += nodesAND;
 
@@ -574,6 +572,8 @@ bool ParallelManager::readExtResults() {
     // done reading input file
     in.close();
 
+    // remember node counts
+    nodecounts.push_back(make_pair(nodesOR, nodesAND));
     // Write subproblem solution value and tuple into search node
     node->setValue(optCost);
 #ifndef NO_ASSIGNMENT
@@ -603,8 +603,16 @@ bool ParallelManager::readExtResults() {
 
 void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
                                     const vector<pair<count_t, count_t> >* counts) const {
-  if (counts)
-    assert(subprobs.size() == counts->size());
+  if (counts) {
+    size_t subprobCount = 0;
+    BOOST_FOREACH( SearchNode* n, subprobs ) {
+      if (!n->isErrExt()) subprobCount += 1;
+    }
+    if (subprobCount != counts->size()) {
+      err_txt("Node counts mismatch, skipping CSV output.");
+      return;
+    }
+  }
 
   // open CSV file for stats
   string csvfile = filename(PREFIX_STATS,".csv");
@@ -625,12 +633,13 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
   }
   csv << endl;
 
-  for (size_t i = 0; i < subprobs.size(); ++i) {
-    SearchNode* node = subprobs.at(i);
-    assert(node);
+  vector<SearchNode*>::const_iterator itSub = subprobs.begin();
+  vector<pair<count_t, count_t> >::const_iterator itCnt;
+  if (counts) itCnt = counts->begin();
 
-    if (node->isErrExt())  // marked in readExtResults()
-      continue;  // skip problematic nodes in CSV output
+  for (size_t i = 0; itSub != subprobs.end(); ++itSub, ++i) {
+    SearchNode* node = *itSub;
+    assert(node);
 
     int rootVar = node->getVar();
     PseudotreeNode* ptnode = m_pseudotree->getNode(rootVar);
@@ -658,9 +667,15 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     }
     csv << '\t' << estimate;
 
-    if (counts)  // solution node counts, if available
-      csv << '\t' << counts->at(i).first  // OR nodes
-          << '\t' << counts->at(i).second;  // AND nodes
+    if (counts) { // solution node counts, if available
+      if (node->isErrExt()) {
+        csv << "\tNA\tNA"; // no counts for this node
+      } else {
+        csv << '\t' << itCnt->first  // OR nodes
+            << '\t' << itCnt->second;  // AND nodes
+        ++itCnt;
+      }
+    }
 
     csv << endl;
   }
