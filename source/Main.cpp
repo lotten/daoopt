@@ -348,7 +348,7 @@ bool Main::compileHeuristic() {
   else {
     time(&_time_pre);
     bool mbFromFile = false;
-    if (m_options->in_minibucketFile.empty()) {
+    if (!m_options->in_minibucketFile.empty()) {
       mbFromFile = m_heuristic->readFromFile(m_options->in_minibucketFile);
       sz = m_heuristic->getSize();
     }
@@ -466,7 +466,8 @@ bool Main::finishPreproc() {
     cout << "Initial problem lower bound: " << m_search->curLowerBound() << endl;
 
 #ifndef NO_HEURISTIC
-  m_search->finalizeHeuristic();
+  if (!m_options->nosearch)
+    m_search->finalizeHeuristic();
 #endif
 
 #ifdef PARALLEL_STATIC
