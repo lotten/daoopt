@@ -64,7 +64,16 @@ SearchNode* Search::initSearch() {
 #ifndef NO_HEURISTIC
 void Search::finalizeHeuristic() {
   assert(m_space && m_space->getTrueRoot());
-  assignCostsOR(m_space->getTrueRoot());
+
+  SearchNode* root = m_space->getTrueRoot();
+  root->setHeur(m_heuristic->getGlobalUB());
+
+  SearchNode* next = new SearchNodeAND(root, 0, m_problem->globalConstInfo());
+  root->setChild(next);
+
+  this->reset(next);
+
+//  assignCostsOR(m_space->getTrueRoot());  // can cause trouble with Alex's mini buckets
 }
 #endif
 
