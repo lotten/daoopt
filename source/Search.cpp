@@ -459,7 +459,7 @@ double Search::assignCostsOR(SearchNode* n) {
     dv[2*i] = m_heuristic->getHeur(v,m_assignment);
     // precompute label value
     d = ELEM_ONE;
-    for (list<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
+    for (vector<Function*>::const_iterator it = funs.begin(); it != funs.end(); ++it)
       d OP_TIMESEQ (*it)->getValue(m_assignment);
 
     // store label and heuristic into cache table

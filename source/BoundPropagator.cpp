@@ -156,8 +156,14 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
         else
           cur->setValue( OP_PLUS(d,cur->getValue()) );
 #else
-        if (/*d > ELEM_ZERO &&*/ (ISNAN( cur->getValue() ) || d > cur->getValue())) {
+        if ((ISNAN( cur->getValue() ) || d > cur->getValue()) && !prev->isNotOpt()) {
           cur->setValue(d); // update max. value
+#ifndef NO_ASSIGNMENT
+          if (m_doCaching && cur->isCachable()) {
+            DIAG(myprint("< Cachable OR node found\n"));
+            propagateTuple(n, cur);
+          }
+#endif
         } else {
           prop = false; // no more value propagation upwards in this call
         }
@@ -183,15 +189,6 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
 #endif
         }
       }
-
-#ifndef NO_ASSIGNMENT
-      // save opt. tuple, will be needed for caching later
-      if ( m_doCaching && prop && cur->isCachable() && !cur->isNotOpt() ) {
-        DIAG(myprint("< Cachable OR node found\n"));
-//        if (n->getValue() > ELEM_ZERO)  // TODO required?
-          propagateTuple(n, cur);
-      }
-#endif
 
       // Stop at subproblem root node (if defined)
       if (cur == m_space->subproblemLocal) {

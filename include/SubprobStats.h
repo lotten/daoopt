@@ -100,7 +100,7 @@ inline SubprobFeatures::SubprobFeatures() :
 { /* empty */ }
 
 inline double SubprobStats::getStats(double* xs, int idx) const {
-  assert (xs  && idx >= 0 && idx < 4);
+  assert (xs  && idx >= 0 && idx < 5);
   return xs[idx];
 }
 
