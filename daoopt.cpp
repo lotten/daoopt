@@ -31,31 +31,31 @@ int main(int argc, char** argv) {
   Main main;
 
   if (!main.start())
-    exit(0);
+    exit(1);
   if (!main.parseOptions(argc, argv))
-    exit(0);
+    exit(1);
   if (!main.outputInfo())
-    exit(0);
+    exit(1);
   if (!main.loadProblem())
-    exit(0);
+    exit(1);
   if (!main.preprocessHeuristic())
-    exit(0);
+    exit(1);
   if (!main.runSLS())
-    exit(0);
+    exit(1);
   if (!main.findOrLoadOrdering())
-    exit(0);
+    exit(1);
   if (!main.initDataStructs())
-    exit(0);
+    exit(1);
   if (!main.compileHeuristic())
-    exit(0);
+    exit(1);
   if (!main.runLDS())
-    exit(0);
+    exit(1);
   if (!main.finishPreproc())
-    exit(0);
+    exit(1);
   if (!main.runSearch())
-    exit(0);
+    exit(1);
   if (!main.outputStats())
-    exit(0);
+    exit(1);
 
   return 0;
 

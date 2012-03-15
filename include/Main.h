@@ -114,7 +114,7 @@ inline Main::Main() : m_solved(false) {
 
 inline bool Main::runSearch() {
   if (m_options->nosearch)
-    return false;
+    return true;
   if (m_solved)
     return true;
   cout << "--- Starting search ---" << endl;
