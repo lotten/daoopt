@@ -597,6 +597,8 @@ bool Main::outputStats() const {
 
   // Output cache statistics
   m_space->cache->printStats();
+  // Output search stats
+  m_search->printStats();
 
   cout << endl << "--------- Search done ---------" << endl;
   cout << "Problem name:  " << m_problem->getName() << endl;
@@ -722,16 +724,19 @@ bool Main::outputInfo() const {
   << "+ Memory limit:\t" << m_options->memlimit << endl
   << "+ Suborder:\t" << m_options->subprobOrder << " ("
   << subprob_order[m_options->subprobOrder] <<")"<< endl
-  << "+ Random seed:\t" << m_options->seed << endl
+  << "+ Random seed:\t" << m_options->seed << endl;
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+  oss
   << "+ Cutoff depth:\t" << m_options->cutoff_depth << endl
   << "+ Cutoff size:\t" << m_options->cutoff_size << endl
   << "+ Max. workers:\t" << m_options->threads << endl
-  << "+ Run tag:\t" << m_options->runTag << endl
+  << "+ Run tag:\t" << m_options->runTag << endl;
 #else
-  << "+ rotate:\t" << ((m_options->rotate) ? "on" : "off") << endl
+  if (m_options->rotate)
+    oss << "+ rotate:\ton (" << m_options->rotateLimit << ")" << endl;
+  else
+    oss << "+ rotate:\toff" << endl;
 #endif
-  ;
 
  cout << oss.str();
  return true;
