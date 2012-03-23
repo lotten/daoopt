@@ -616,7 +616,9 @@ void Problem::updateSolution(double cost,
 
   if (ISNAN(costCheck) || (!ISNAN(m_curCost) && costCheck <= m_curCost)) { // TODO costCheck =?= ELEM_ZERO )
     oss ss; ss << "Warning: Discarding solution with cost " << costCheck << ", reported: " << cost;
+#ifndef NO_ASSIGNMENT
     DIAG(ss << " " << sol.size() << " " << sol;)
+#endif
     ss << endl; myprint(ss.str());
     return;
   }
