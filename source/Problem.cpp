@@ -57,6 +57,17 @@ void Problem::removeEvidence() {
     }
   }
 
+  // Identify variables not covered by any function
+  vector<bool> covered(m_n, false);
+  BOOST_FOREACH(Function * f, m_functions) {
+    BOOST_FOREACH(int i, f->getScopeVec()) {
+      covered.at(i) = true;
+    }
+  }
+  for (size_t i=0; i<m_n; ++i) {
+    if (!covered.at(i)) eliminateVar.at(i) = true;
+  }
+
   // Project functions to account for evidence
   m_globalConstant = ELEM_ONE;
   new_r = 0; // max. arity
@@ -616,7 +627,9 @@ void Problem::updateSolution(double cost,
 
   if (ISNAN(costCheck) || (!ISNAN(m_curCost) && costCheck <= m_curCost)) { // TODO costCheck =?= ELEM_ZERO )
     oss ss; ss << "Warning: Discarding solution with cost " << costCheck << ", reported: " << cost;
+#ifndef NO_ASSIGNMENT
     DIAG(ss << " " << sol.size() << " " << sol;)
+#endif
     ss << endl; myprint(ss.str());
     return;
   }

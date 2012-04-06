@@ -252,12 +252,14 @@ bool Main::runSLS() {
     return true;  // no SLS in case of subproblem processing
   if (m_options->slsIter <= 0)
     return true;
-  cout << "Running SLS " << m_options->slsIter << " times for "
-       << m_options->slsTime << " seconds" << endl;
+  oss ss;
+  ss << "Running SLS " << m_options->slsIter << " times for "
+     << m_options->slsTime << " seconds" << endl;
+  myprint(ss.str());
   m_slsWrapper.reset(new SLSWrapper());
   m_slsWrapper->init(m_problem.get(), m_options->slsIter, m_options->slsTime);
   m_slsWrapper->run();
-  cout << "SLS finished" << endl;
+  myprint("SLS finished.\n");
 #endif
   return true;
 }
@@ -597,6 +599,8 @@ bool Main::outputStats() const {
 
   // Output cache statistics
   m_space->cache->printStats();
+  // Output search stats
+  m_search->printStats();
 
   cout << endl << "--------- Search done ---------" << endl;
   cout << "Problem name:  " << m_problem->getName() << endl;
@@ -722,16 +726,19 @@ bool Main::outputInfo() const {
   << "+ Memory limit:\t" << m_options->memlimit << endl
   << "+ Suborder:\t" << m_options->subprobOrder << " ("
   << subprob_order[m_options->subprobOrder] <<")"<< endl
-  << "+ Random seed:\t" << m_options->seed << endl
+  << "+ Random seed:\t" << m_options->seed << endl;
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+  oss
   << "+ Cutoff depth:\t" << m_options->cutoff_depth << endl
   << "+ Cutoff size:\t" << m_options->cutoff_size << endl
   << "+ Max. workers:\t" << m_options->threads << endl
-  << "+ Run tag:\t" << m_options->runTag << endl
+  << "+ Run tag:\t" << m_options->runTag << endl;
 #else
-  << "+ rotate:\t" << ((m_options->rotate) ? "on" : "off") << endl
+  if (m_options->rotate)
+    oss << "+ rotate:\ton (" << m_options->rotateLimit << ")" << endl;
+  else
+    oss << "+ rotate:\toff" << endl;
 #endif
-  ;
 
  cout << oss.str();
  return true;

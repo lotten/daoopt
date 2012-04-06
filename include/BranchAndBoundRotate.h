@@ -45,9 +45,17 @@ public:
 
 class BranchAndBoundRotate: public Search {
 protected:
+  // to differentiate rotation events
+  static int HAS_CHILDREN;
+  static int STACK_EMPTY;
+  static int LIMIT_REACHED;
+
+protected:
   size_t m_stackCount;        // counter for current stack
   size_t m_stackLimit;        // expansion limit for stack rotation
   MyStack* m_rootStack;       // the root stack
+  vector<size_t> m_rotateCnt; // counts expansions per rotation
+  vector<size_t> m_reasonCnt; // counts how often rotation occured for three conditions
   queue<MyStack*> m_stacks;   // the queue of active stacks
 
 protected:
@@ -56,6 +64,11 @@ protected:
   void reset(SearchNode* p);
   SearchNode* nextNode();
   bool isMaster() const { return false; }
+
+  // resets the rotate count (after storing its value)
+  void resetRotateCount(int reason);
+  // outputs rotation stats
+  void printStats() const;
 
 public:
   void setStackLimit(size_t s) { m_stackLimit = s; }
@@ -82,6 +95,17 @@ inline void BranchAndBoundRotate::reset(SearchNode* p) {
   m_rootStack = new MyStack(NULL);
   m_rootStack->push(p);
   m_stacks.push(m_rootStack);
+}
+
+
+inline void BranchAndBoundRotate::resetRotateCount(int reason) {
+  if (m_stackCount) {  // keep track for stats
+    if (m_rotateCnt.size() <= m_stackCount)
+      m_rotateCnt.resize(m_stackCount+1, 0);
+    m_rotateCnt[m_stackCount] += 1;
+    m_reasonCnt[reason] += 1;
+  }
+  m_stackCount = 0;  // reset count
 }
 
 #endif /* BRANCHANDBOUNDROTATE_H_ */

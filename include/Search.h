@@ -80,12 +80,12 @@ public:
   /* returns true iff the search is complete */
   virtual bool isDone() const = 0;
 
-//  count_t getNoNodesOR() const { return m_nodesOR; }
-//  count_t getNoNodesAND() const { return m_nodesAND; }
+  /* allows to print stats particular to the algorithm */
+  virtual void printStats() const { /* default empty */ }
+
 #ifdef PARALLEL_DYNAMIC
   count_t getSubCount() const { return m_space->getTrueRoot()->getSubCount(); }
 #endif
-//  pair<count_t,count_t> getNoNodes() const { return make_pair(m_nodesOR, m_nodesAND); }
   virtual count_t getSubproblemCount() const { assert(false); return NONE; }
 
   const vector<count_t>& getNodeProfile() const { return m_nodeProfile; }
