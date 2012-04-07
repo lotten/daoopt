@@ -240,10 +240,9 @@ template<> struct hash<std::string> {
 /* END FIX */
 #endif
 
-
-/* Windows-specific definitions */
-#ifdef WINDOWS
-#define uint unsigned int
+/* might not be needed anymore? */
+#ifdef __APPLE__
+#include <sys/types.h>
 #endif
 
 /* for debugging */

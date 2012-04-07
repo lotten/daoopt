@@ -38,7 +38,7 @@ void Problem::removeEvidence() {
   // Declare aux. variables.
   int idx, i, new_r, new_n;
   val_t k, new_k;
-  //map<uint,uint> evidence(m_evidence);
+  //map<unsigned int, unsigned int> evidence(m_evidence);
   vector<val_t> new_domains;
   vector<Function*> new_funs;
 
@@ -329,7 +329,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   string s;
   int x,y;
   val_t xs;
-  uint z;
+  unsigned int z;
 
   in >> s; // Problem type
   if (s == "BAYES") {
