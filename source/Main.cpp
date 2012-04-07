@@ -252,12 +252,14 @@ bool Main::runSLS() {
     return true;  // no SLS in case of subproblem processing
   if (m_options->slsIter <= 0)
     return true;
-  cout << "Running SLS " << m_options->slsIter << " times for "
-       << m_options->slsTime << " seconds" << endl;
+  oss ss;
+  ss << "Running SLS " << m_options->slsIter << " times for "
+     << m_options->slsTime << " seconds" << endl;
+  myprint(ss.str());
   m_slsWrapper.reset(new SLSWrapper());
   m_slsWrapper->init(m_problem.get(), m_options->slsIter, m_options->slsTime);
   m_slsWrapper->run();
-  cout << "SLS finished" << endl;
+  myprint("SLS finished.\n");
 #endif
   return true;
 }
