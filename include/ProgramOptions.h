@@ -35,6 +35,7 @@ namespace po = boost::program_options;
 struct ProgramOptions {
 public:
   bool nosearch; // abort before starting the actual search
+  bool nocaching; // disable caching
   bool autoCutoff; // enable automatic cutoff
   bool autoIter; // enable adaptive ordering limit
   bool orSearch; // use OR search (builds pseudo tree as chain)
@@ -90,7 +91,7 @@ public:
 ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
-		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),
+		      nosearch(false), nocaching(false), autoCutoff(false), autoIter(false), orSearch(false),
 		      par_preOnly(false), par_postOnly(false), rotate(false),
 		      ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), order_timelimit(0),

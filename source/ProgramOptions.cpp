@@ -84,6 +84,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
       ("seed", po::value<int>(), "seed for random number generator, time() otherwise")
       ("or", "use OR search (build pseudo tree as chain)")
+      ("nocaching", "disable context-based caching during search")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
 #if not (defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC)
       ("reduce", po::value<string>(), "path to output the reduced network to (removes evidence and unary variables)")
@@ -204,10 +205,15 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     else
       opt->orSearch = false;
 
-    if(vm.count("nosearch"))
+    if (vm.count("nosearch"))
       opt->nosearch = true;
     else
       opt->nosearch = false;
+
+    if (vm.count("nocaching"))
+      opt->nocaching = true;
+    else
+      opt->nocaching = false;
 
     if (vm.count("rotate"))
       opt->rotate = true;

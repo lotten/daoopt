@@ -67,9 +67,9 @@ set(FILES
   ./source/BranchAndBoundMaster.cpp
   ./source/BranchAndBoundRotate.cpp
   ./source/BranchAndBoundSampler.cpp
+  ./source/CacheTable.cpp
   ./source/Function.cpp
   ./source/Graph.cpp
-  ./source/hash.cpp
   ./source/LearningEngine.cpp
   ./source/LimitedDiscrepancy.cpp
   ./source/Main.cpp

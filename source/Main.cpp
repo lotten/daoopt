@@ -579,7 +579,7 @@ bool Main::runSearchStatic() {
 
 /* sequential mode or worker mode for distributed execution */
 bool Main::runSearchWorker() {
-  BoundPropagator prop(m_problem.get(), m_space.get());
+  BoundPropagator prop(m_problem.get(), m_space.get(), !m_options->nocaching);
   SearchNode* n = m_search->nextLeaf();
   while (n) {
     prop.propagate(n, true); // true = report solutions

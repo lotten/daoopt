@@ -29,28 +29,21 @@
 
 int memoryusage();
 
-#include <malloc.h>
-
-#ifdef WINDOWS
-
+#if defined WINDOWS || defined __APPLE__
 inline int memoryusage() {
   return -1;
 }
-
 #else
+#include <malloc.h>
 inline int memoryusage() {
-
   struct mallinfo info;
   info = mallinfo();
-
   cout
     << info.arena << '\t'
     << info.uordblks << '\t'
     << info.fordblks << '\t'
     << info.hblkhd << endl;
-
   return info.arena;
-
 }
 #endif
 
@@ -59,13 +52,13 @@ void myerror(std::string s);
 void err_txt(std::string s);
 
 ostream& operator <<(ostream& os, const vector<int>& s);
-ostream& operator <<(ostream& os, const vector<uint>& s);
+ostream& operator <<(ostream& os, const vector<unsigned int>& s);
 
 ostream& operator <<(ostream& os, const vector<signed short>& s);
 ostream& operator <<(ostream& os, const vector<signed char>& s);
 
 ostream& operator <<(ostream& os, const set<int>& s);
-ostream& operator <<(ostream& os, const set<uint>& s);
+ostream& operator <<(ostream& os, const set<unsigned int>& s);
 
 ostream& operator <<(ostream& os, const vector<double>& s);
 

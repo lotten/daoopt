@@ -65,9 +65,9 @@ ostream& operator <<(ostream& os, const vector<int>& s) {
   return os;
 }
 
-ostream& operator <<(ostream& os, const vector<uint>& s) {
+ostream& operator <<(ostream& os, const vector<unsigned int>& s) {
   os << '[';
-  for (vector<uint>::const_iterator it = s.begin(); it != s.end(); ) {
+  for (vector<unsigned int>::const_iterator it = s.begin(); it != s.end(); ) {
     os << *it;
     if (++it != s.end()) os << ',';
   }
@@ -115,9 +115,9 @@ ostream& operator <<(ostream& os, const set<int>& s) {
   return os;
 }
 
-ostream& operator <<(ostream& os, const set<uint>& s) {
+ostream& operator <<(ostream& os, const set<unsigned int>& s) {
   os << '{';
-  for (set<uint>::const_iterator it = s.begin(); it != s.end(); ) {
+  for (set<unsigned int>::const_iterator it = s.begin(); it != s.end(); ) {
     os << *it;
     if (++it != s.end()) os << ',';
   }
