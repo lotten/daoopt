@@ -7,6 +7,7 @@ Bound for combinatorial optimization problems expressed as MPE
 networks.
 
 Also implements the following:
+
 * full context-based caching.
 * mini-buckets for heuristic generation.
 * minfill algorithm to find variable orderings.
