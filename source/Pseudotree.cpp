@@ -89,7 +89,7 @@ void Pseudotree::addDomainInfo(const vector<val_t>& domains) {
 }
 
 /* computes an elimination order into 'elim' and returns its tree width */
-int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
+int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit, int tolerance) {
 
   int width = UNKNOWN;
   int n = G.getStatNodes();
@@ -114,27 +114,56 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
   }
 
   int nextNode = NONE;
-  nCost minScore = UNKNOWN;
+
+  // keeps track of minimal score nodes
+  vector<vector<int>* > candidates(tolerance+1, NULL);
+  for (int i=0; i<=tolerance; ++i)
+    candidates[i] = new vector<int>;
+  vector<nCost> candScore(tolerance+1, numeric_limits<nCost>::max());
+  vector<int> simplicial; // simplicial nodes (score 0)
 
   // eliminate nodes until all gone
   while (G.getStatNodes() != 0) {
 
-    // keeps track of minimal score nodes
-    vector<int> minCand; // minimal score of 1 or higher
-    vector<int> simplicial; // simplicial nodes (score 0)
-
-    minScore = numeric_limits<nCost>::max();
+    for (int i=0; i<=tolerance; ++i) {
+      candidates[i]->clear();
+      candScore[i] = numeric_limits<nCost>::max();
+    }
+    simplicial.clear();
 
     // find node to eliminate
     for (int i=0; i<n; ++i) {
       if (scores[i] == 0) { // score 0
         simplicial.push_back(i);
-      } else if (scores[i] < minScore) { // new, lower score (but greater 0)
-        minScore = scores[i];
-        minCand.clear();
-        minCand.push_back(i);
-      } else if (scores[i] == minScore) { // current min. found again
-        minCand.push_back(i);
+      } else {
+        if (tolerance == 0) {
+          if (scores[i] == candScore[0])
+            candidates[0]->push_back(i);
+          else if (scores[i] < candScore[0]) {
+            candidates[0]->clear();
+            candidates[0]->push_back(i);
+            candScore[0] = scores[i];
+          }
+        } else {
+          for (int j=0; j<=tolerance; ++j) {
+            if (scores[i] == candScore[j]) {
+              candidates[j]->push_back(i);
+              break;
+            }
+            else if (scores[i] < candScore[j]) {
+              candidates[tolerance]->clear();
+              vector<int>* temp = candidates[tolerance];
+              for (int k=tolerance; k>j; --k) {  // move back candidate lists
+                candidates[k] = candidates[k-1];
+                candScore[k] = candScore[k-1];
+              }
+              candidates[j] = temp;
+              candidates[j]->push_back(i);
+              candScore[j] = scores[i];
+              break;
+            }
+          }
+        }
       }
     }
 
@@ -147,12 +176,32 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
     }
 
     // anything left to eliminate? If not, we are done!
-    if (minScore == numeric_limits<nCost>::max())
+    if (candScore[0] == numeric_limits<nCost>::max()) {
+      for (int i=0; i<=tolerance; ++i)
+        delete candidates[i];
       return width;
+    }
 
     // Pick one of the minimal score nodes (with score >= 1),
     // breaking ties randomly
-    nextNode = minCand[rand::next(minCand.size())];
+    if (tolerance == 0) {
+      nextNode = candidates[0]->at(rand::next(candidates[0]->size()));
+    } else {
+      size_t candTotal = 0;
+      for (int i=0; i<=tolerance; ++i) {
+        if (candScore[i] == numeric_limits<nCost>::max())
+          break;
+        candTotal += candidates[i]->size();
+      }
+      size_t choice = rand::next(candTotal);
+      for (int i=0; i<=tolerance; ++i) {
+        if (choice < candidates[i]->size()) {
+          nextNode = candidates[i]->at(choice);
+          break;  // for loop
+        } else
+          choice -= candidates[i]->size();
+      }
+    }
     elim.push_back(nextNode);
 
     // remember it's neighbors, to be used later
@@ -162,8 +211,11 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
     width = max(width, (int) neighbors.size());
 
     // early termination condition: width above given limit
-    if (width > limit)
+    if (width > limit) {
+      for (int i=0; i<=tolerance; ++i)
+        delete candidates[i];
       return INT_MAX;
+    }
 
     // connect neighbors in primal graph
     G.addClique(neighbors);
@@ -186,8 +238,9 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit) {
     }
   }
 
+  for (int i=0; i<=tolerance; ++i)
+    delete candidates[i];
   return width;
-
 }
 
 

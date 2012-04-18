@@ -71,7 +71,7 @@ public:
   /* computes an elimination order into 'elim' and returns its induced width
    * if 'limit' is given, will terminate early if new order is worse than limit
    * and return INT_MAX */
-  int eliminate(Graph G, vector<int>& elim, int limit=INT_MAX);
+  int eliminate(Graph G, vector<int>& elim, int limit=INT_MAX, int tolerance=0);
 
   /* builds the pseudo tree according to order 'elim' */
   void build(Graph G, const vector<int>& elim, const int cachelimit = NONE);

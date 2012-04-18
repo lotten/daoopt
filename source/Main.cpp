@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "1.0"
+#define VERSIONINFO "1.0.1"
 
 time_t _time_start, _time_pre;
 
@@ -150,7 +150,7 @@ bool Main::findOrLoadOrdering() {
 
     vector<int> elimCand;  // new ordering candidate
     bool improved = false;  // improved in this iteration?
-    int new_w = m_pseudotree->eliminate(g,elimCand,w);
+    int new_w = m_pseudotree->eliminate(g, elimCand, w, m_options->order_tolerance);
     if (new_w < w) {
       elim = elimCand; w = new_w; improved = true;
       m_pseudotree->build(g, elimCand, m_options->cbound);

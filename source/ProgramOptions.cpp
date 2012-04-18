@@ -54,6 +54,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #endif
       ("orderIter,t", po::value<int>()->default_value(25), "iterations for finding ordering")
       ("orderTime", po::value<int>()->default_value(-1), "maximum time for finding ordering")
+      ("orderTolerance", po::value<int>()->default_value(0), "allowed deviation from minfill suggested optimal")
       ("max-width", po::value<int>(), "max. induced width to process, abort otherwise")
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
@@ -153,6 +154,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       opt->order_iterations = vm["orderIter"].as<int>();
     if (vm.count("orderTime"))
       opt->order_timelimit = vm["orderTime"].as<int>();
+    if (vm.count("orderTolerance"))
+      opt->order_tolerance = vm["orderTolerance"].as<int>();
 
     if (vm.count("max-width"))
       opt->maxWidthAbort = vm["max-width"].as<int>();
