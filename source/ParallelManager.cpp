@@ -363,6 +363,78 @@ bool ParallelManager::findFrontier() {
 }
 
 
+bool ParallelManager::extSolveLocal() {
+  myprint("Solving external subproblems locally.\n");
+
+  writeStatsCSV(m_external);
+
+  Problem prob = *m_problem;  // implicit copy constructor
+  prob.setCopy();
+  prob.setSubprobOnly();
+
+  SearchSpace space(m_pseudotree, m_options);
+  BranchAndBound bab(&prob, m_pseudotree, &space, m_heuristic);
+  BoundPropagator prop(&prob, &space, !m_options->nocaching);
+
+  vector<val_t> assign(m_assignment.size(),NONE);
+  vector<double> pst;
+
+  vector<pair<count_t, count_t> > nodecounts;
+  nodecounts.reserve(m_external.size());
+
+  for (size_t i=0; i<m_external.size(); ++i) {
+    prob.resetSolution();
+
+    SearchNode* subprob = m_external.at(i);
+    { // extract node context assignment
+      const SearchNode* n2 = subprob;
+      while (n2->getParent()) {
+        n2 = n2->getParent(); // AND node
+        assign.at(n2->getVar()) = n2->getVal();
+        n2 = n2->getParent(); // OR node
+      }
+    }
+    subprob->getPST(pst);  // returns bottom-up PST
+    reverse(pst.begin(), pst.end());  // invert to make top-down
+
+    bab.restrictSubproblem(subprob->getVar(), assign, pst);
+    bab.finalizeHeuristic();
+
+    SearchNode* n = NULL;
+    while((n = bab.nextLeaf())) {
+      prop.propagate(n, true);
+    }
+
+    count_t numOR = space.stats.numOR, numAND = space.stats.numAND;
+
+    nodecounts.push_back(make_pair(numOR, numAND));
+    m_space->stats.numORext += numOR;
+    m_space->stats.numANDext += numAND;
+    // TODO: node and leaf profiles
+
+    subprob->setValue(prob.getSolutionCost());
+#ifndef NO_ASSIGNMENT
+    subprob->setOptAssig(prob.getSolutionAssg());
+#endif
+
+    oss ss;
+    ss << "Solution for subproblem " << i << " (" << *subprob << ") "
+        << numOR << " / " << numAND << " v:" << prob.getSolutionCost() << endl;
+    myprint(ss.str());
+  }
+
+  // propagate results
+  for (size_t i=0; i<m_external.size(); ++i) {
+    m_prop.propagate(m_external[i], true, m_external[i]);
+  }
+
+  myprint("Writing CSV stats.\n");
+  writeStatsCSV(m_external, &nodecounts);
+
+  return true;
+}
+
+
 bool ParallelManager::runCondor() const {
 
   // generates files for grid jobs and submits

@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "1.0.1"
+#define VERSIONINFO "1.1"
 
 time_t _time_start, _time_pre;
 
@@ -63,11 +63,13 @@ bool Main::loadProblem() {
        << " variables and " << m_problem->getC() << " functions." << endl;
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-  // Re-output problem file for parallel processing
-  m_options->out_reducedFile = string("temp_prob.") + m_options->problemName
-      + string(".") + m_options->runTag + string(".gz");
-  m_problem->writeUAI(m_options->out_reducedFile);
-  cout << "Saved problem to file " << m_options->out_reducedFile << endl;
+  if (!m_options->par_solveLocal) {
+    // Re-output problem file for parallel processing
+    m_options->out_reducedFile = string("temp_prob.") + m_options->problemName
+        + string(".") + m_options->runTag + string(".gz");
+    m_problem->writeUAI(m_options->out_reducedFile);
+    cout << "Saved problem to file " << m_options->out_reducedFile << endl;
+  }
 #else
   // Output reduced network?
   if (!m_options->out_reducedFile.empty()) {
@@ -191,7 +193,7 @@ bool Main::findOrLoadOrdering() {
   }
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 #if defined PARALLEL_STATIC
-  if (!m_options->par_postOnly) // no need to write ordering in post processing
+  if (!m_options->par_solveLocal && !m_options->par_postOnly) // no need to write ordering
 #endif
   {
     m_options->in_orderingFile = string("temp_elim.") + m_options->problemName
@@ -542,27 +544,32 @@ bool Main::runSearchDynamic() {
 #ifdef PARALLEL_STATIC
 /* static master mode for distributed execution */
 bool Main::runSearchStatic() {
-  bool success = true;
-  bool preOnly = m_options->par_preOnly, postOnly = m_options->par_postOnly;
+  bool preOnly = m_options->par_preOnly, postOnly = m_options->par_postOnly,
+        local = m_options->par_solveLocal;
 
-  if (!postOnly) { // full or pre-only mode
+  bool success = true;
+  if (!postOnly) {
     success = success && m_search->doLearning();
+  }
+  if (true) {  // TODO
     /* find frontier from scratch */
     success = success && m_search->findFrontier();
+  }
+  if (!postOnly && !local) {
     /* generate files for subproblems */
     success = success && m_search->writeJobs();
     if (m_search->getSubproblemCount()==0) m_solved = true;
-  } else { // post-only mode
-    /* restore frontier from file */
-    success = success && m_search->findFrontier(); // TODO
-    //success = success && search.restoreFrontier();
   }
-  if (!preOnly && !postOnly) { // full mode
+  if (local) {
+    /* solve external subproblems locally */
+    success = success && m_search->extSolveLocal();
+  }
+  if (!local && !preOnly && !postOnly) {
     /* run Condor and wait for results */
     success = success && m_search->runCondor();
   }
-  if (!preOnly) { // full or post-only mode
-    /* reads external results */
+  if (!local && !preOnly) {
+    /* read external results */
     success = success && m_search->readExtResults();
   }
 

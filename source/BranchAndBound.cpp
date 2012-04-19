@@ -32,6 +32,24 @@
 typedef PseudotreeNode PtNode;
 
 
+
+void BranchAndBound::reset(SearchNode* p) {
+  if (!p) {
+    p = m_space->getTrueRoot();
+    if (p->getChildren())
+      p = p->getChildren()[0];
+  }
+#ifdef ANYTIME_DEPTH
+  while (!m_stackDive.empty())
+    m_stackDive.pop();
+#endif
+  while (!m_stack.empty())
+      m_stack.pop();
+  m_stack.push(p);
+}
+
+
+
 SearchNode* BranchAndBound::nextNode() {
   SearchNode* n = NULL;
 #ifdef ANYTIME_DEPTH

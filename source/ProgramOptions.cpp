@@ -62,6 +62,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^5)")
       ("local-size,u", po::value<int>()->default_value(-1), "minimum subproblem size (* 10^5)")
       ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^5) for local initialization")
+      ("local", "solve all parallel subproblems locally")
       ("noauto", "don't determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(-1), "max. number of concurrent subproblem processes")
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
@@ -229,6 +230,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     if (vm.count("tag"))
       opt->runTag = vm["tag"].as<string>();
 
+    if (vm.count("local"))
+      opt->par_solveLocal = true;
     if (vm.count("pre"))
       opt->par_preOnly = true;
     else if (vm.count("post"))

@@ -42,9 +42,6 @@ class Search {
 
 protected:
 
-//  count_t m_nodesOR;             // Keeps track of the number of OR nodes
-//  count_t m_nodesAND;            // Keeps track of the number of AND nodes
-
   Problem* m_problem;           // The problem instance
   Pseudotree* m_pseudotree;     // Pseudo tree
   SearchSpace* m_space;         // Search space (incl. cache table)

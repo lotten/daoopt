@@ -588,10 +588,16 @@ void Problem::updateSolution(double cost,
   double costCheck = ELEM_ZERO;
 #ifndef NO_ASSIGNMENT
   // check for complete assignment first
-  BOOST_FOREACH(val_t v, sol) {
-    if (v == NONE) {
+  for (size_t i = 0; i < sol.size(); ++i) {
+    if (sol[i] == NONE) {
       oss ss; ss << "Warning: skipping incomplete solution, reported " << cost;
       DIAG(ss << " " << sol.size() << " " << sol;)
+      ss << endl; myprint(ss.str());
+      return;
+    }
+    if (!m_subprobOnly && sol[i] >= m_domains[i]) {
+      oss ss; ss << "Warning: value " << (int)sol[i] << " outside of variable " << i
+                 << " domain " << (int)m_domains[i];
       ss << endl; myprint(ss.str());
       return;
     }
@@ -620,10 +626,9 @@ void Problem::updateSolution(double cost,
 		 << ", reported " << cost << endl;
       myprint(ss.str());
     }
-  }
-#else
-  costCheck = cost;
+  } else
 #endif
+  costCheck = cost;
 
   if (ISNAN(costCheck) || (!ISNAN(m_curCost) && costCheck <= m_curCost)) { // TODO costCheck =?= ELEM_ZERO )
     oss ss; ss << "Warning: Discarding solution with cost " << costCheck << ", reported: " << cost;
@@ -664,6 +669,14 @@ void Problem::updateSolution(double cost,
     ss << endl;
     myprint(ss.str());
   }
+}
+
+
+void Problem::resetSolution() {
+  m_curCost = ELEM_NAN;
+#ifndef NO_ASSIGNMENT
+  m_curSolution.clear();
+#endif
 }
 
 

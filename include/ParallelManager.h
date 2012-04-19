@@ -122,6 +122,8 @@ public:
   bool doLearning();
   /* computes the parallel frontier and , returns true iff successful */
   bool findFrontier();
+  /* solves external subproblems locally */
+  bool extSolveLocal();
   /* writes subproblem information to disk */
   bool writeJobs() const;
   /* initiates parallel subproblem computation through Condor */

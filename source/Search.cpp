@@ -626,8 +626,12 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
   int depth = m_pseudotree->restrictSubproblem(rootVar);
 
   // resize node count vectors for subproblem
+  m_nodeProfile.clear();
   m_nodeProfile.resize(m_pseudotree->getHeightCond()+1);
+  m_nodeProfile.clear();
   m_leafProfile.resize(m_pseudotree->getHeightCond()+1);
+  // reset search stats
+  m_space->stats = SearchStats();
 
   // set context assignment
   const vector<int>& context = m_pseudotree->getNode(rootVar)->getFullContextVec();

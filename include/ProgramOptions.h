@@ -39,6 +39,7 @@ public:
   bool autoCutoff; // enable automatic cutoff
   bool autoIter; // enable adaptive ordering limit
   bool orSearch; // use OR search (builds pseudo tree as chain)
+  bool par_solveLocal; // solve all parallel subproblems locally
   bool par_preOnly; // static parallel: preprocessing only (generate subproblems)
   bool par_postOnly; // static parallel: postprocessing only (read solution files)
   bool rotate; // enables breadth-rotating AOBB
@@ -93,7 +94,7 @@ ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
 		      nosearch(false), nocaching(false), autoCutoff(false), autoIter(false), orSearch(false),
-		      par_preOnly(false), par_postOnly(false), rotate(false),
+		      par_solveLocal(false), par_preOnly(false), par_postOnly(false), rotate(false),
 		      ibound(0), cbound(0), cbound_worker(0),
 		      threads(0), order_iterations(0), order_timelimit(0), order_tolerance(0),
 		      cutoff_depth(NONE), cutoff_width(NONE),

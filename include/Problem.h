@@ -36,6 +36,8 @@ class Problem {
 
 protected:
 
+  bool m_is_copy;        // true iff object instance is copy
+
   bool m_subprobOnly;    // Solving only a conditioned subproblem
   bool m_hasDummy;       // is last variable a dummy variable?
 
@@ -68,6 +70,8 @@ protected:
   vector<val_t> m_curSolution;       // Current best solution
 
 public:
+  void setCopy() { m_is_copy = true; }
+
   val_t getDomainSize(int i) const;
   double globalConstInfo() const;
 
@@ -125,6 +129,9 @@ public:
       const SearchStats* nodestats = NULL,
       bool output = true);
 
+  /* resets current optimal solution cost and assignment */
+  void resetSolution();
+
   /* outputs the solution to the screen and, if file!="", writes it to file
    * (for subproblem solving, only relevant variables will be output)
    *  - cost is the MPE tuple value
@@ -164,6 +171,7 @@ inline double Problem::globalConstInfo() const {
 }
 
 inline Problem::Problem() :
+    m_is_copy(false),
     m_subprobOnly(false),
     m_hasDummy(false),
     m_prob(UNKNOWN),
@@ -180,9 +188,9 @@ inline Problem::Problem() :
 
 inline Problem::~Problem() {
   // delete functions
-  for (vector<Function*>::iterator it = m_functions.begin(); it!= m_functions.end(); ++it) {
-    if (*it) delete (*it);
-  }
+  if (!m_is_copy)
+    for (vector<Function*>::iterator it = m_functions.begin(); it!= m_functions.end(); ++it)
+      if (*it) delete (*it);
 }
 
 
