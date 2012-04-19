@@ -541,7 +541,7 @@ bool ParallelManager::readExtResults() {
     }
 
     // Check external tuple size, but allow zero (from NaN solutions)
-    size_t subsize = m_pseudotree->getNode(node->getVar())->getSubprobVars().size();
+    size_t subsize = m_pseudotree->getNode(node->getVar())->getSubprobSize();
     if (tup.size() > 0 && tup.size() != subsize) {
       oss ss;
       ss << "Solution file " << id << " length mismatch, got " << tup.size()
@@ -840,7 +840,7 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
         continue; // skip to next
       }
       // Apply AOBB to sample dynamic features
-      if (applyAOBB(*it, m_options->aobbLookahead)) {
+      if (applyAOBB(*it, m_options->aobbLookahead * m_problem->getN())) {
         m_prop.propagate(*it, true);
         continue;
       }
