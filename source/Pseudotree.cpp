@@ -694,6 +694,10 @@ void Pseudotree::computeSubprobStats() {
 //  cout << * m_root->getSubprobStats() << endl;
 }
 
+double Pseudotree::getStateSpaceCond() const {
+  return m_root->getSubprobStats()->getStateSpaceCond();
+}
+
 void PseudotreeNode::computeStatsCluster(vector<int>& result) {
   result.clear();
   vector<int> chi;
@@ -734,19 +738,25 @@ void PseudotreeNode::computeStatsDomain(vector<int>& result) {
 
 void PseudotreeNode::computeStatsClusterCond() {
   vector<int> result;
-  this->computeStatsClusterCondSub(m_contextS, result);
+  double twbCond = this->computeStatsClusterCondSub(m_contextS, result);
   m_subprobStats->setClusterCondStats(result);
+  m_subprobStats->setStateSpaceCond(twbCond);
 }
 
-void PseudotreeNode::computeStatsClusterCondSub(
+double PseudotreeNode::computeStatsClusterCondSub(
     const set<int>& cond, vector<int>& result) const {
   set<int> context_cond;
   set_difference(m_contextS.begin(), m_contextS.end(), cond.begin(), cond.end(),
                  inserter(context_cond, context_cond.begin()));
+  double twb = m_domain;
+  BOOST_FOREACH(int v, context_cond) {
+    twb *= m_tree->getNode(v)->getDomain();
+  }
   result.push_back(context_cond.size());
   BOOST_FOREACH( PseudotreeNode* pt, m_children ) {
-    pt->computeStatsClusterCondSub(cond, result);
+    twb += pt->computeStatsClusterCondSub(cond, result);
   }
+  return twb;
 }
 
 #endif

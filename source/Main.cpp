@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "1.1"
+#define VERSIONINFO "1.1.1"
 
 time_t _time_start, _time_pre;
 
@@ -323,6 +323,9 @@ bool Main::initDataStructs() {
        << " / " << m_pseudotree->getHeight() << endl;
   cout << "Problem variables:\t" << m_pseudotree->getSizeCond()
        <<  " / " << m_pseudotree->getSize() << endl;
+#ifdef PARALLEL_STATIC
+  cout << "State space bound:\t" << m_pseudotree->getStateSpaceCond() << endl;
+#endif
   cout << "Disconn. components:\t" << m_pseudotree->getComponentsCond()
        << " / " << m_pseudotree->getComponents() << endl;
 
