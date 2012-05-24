@@ -104,6 +104,10 @@ protected:
   /* writes subproblem statistics to CSV file, solution node counts optional */
   void writeStatsCSV(const vector<SearchNode*>& subprobs,
                      const vector<pair<count_t, count_t> >* nodecounts = NULL) const;
+  /* tries to read node counts from existing CSV file, saved into referenced
+   * vector (as numeral strings). Returns true in case of success, false otherwise. */
+  bool readCountsFromCSV(const string& filename,
+                         vector<pair<string, string> >& counts) const;
 
   /* clear stack for local solving */
   void resetLocalStack(SearchNode* node = NULL);

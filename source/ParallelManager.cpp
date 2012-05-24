@@ -673,6 +673,59 @@ bool ParallelManager::readExtResults() {
 }
 
 
+bool ParallelManager::readCountsFromCSV(const string& filename,
+                                        vector<pair<string, string> >& counts) const {
+  counts.clear();
+
+  ifstream csvIn(filename.c_str(), ios_base::in);
+  if (!csvIn)
+    return false;
+
+  string line, word;
+
+  // parse legend first
+  getline(csvIn, line);
+  istringstream iss(trim(line));
+  vector<string> legend;
+  int iAnd = -1, iOr = -1;
+  for (int i = 0; iss.good(); ++i) {
+    iss >> word;
+    if (word.size())
+      legend.push_back(word);
+    if (word == "and")
+      iAnd = i;
+    else if (word == "or")
+      iOr = i;
+  }
+
+  if (iOr == -1 || iAnd == -1)
+    return false;
+
+  while (csvIn.good()) {
+    getline(csvIn, line);
+    trim(line);
+    if (line.empty())
+      continue;
+    iss.clear();
+    iss.str(line);
+    string wordOr, wordAnd;
+    for (int i = 0; iss.good(); ++i) {
+      iss >> word;
+      if (i == iOr)
+        wordOr = word;
+      else if (i == iAnd)
+        wordAnd = word;
+    }
+    if (wordOr.size() && wordAnd.size()) {
+      counts.push_back(make_pair(wordOr, wordAnd));
+    }
+  }
+
+  csvIn.close();
+  return true;
+}
+
+
 void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
                                     const vector<pair<count_t, count_t> >* counts) const {
   if (counts) {
@@ -688,6 +741,14 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
 
   // open CSV file for stats
   string csvfile = filename(PREFIX_STATS,".csv");
+
+  // check if file exists and store node counts, if present
+  vector<pair<string, string> > prevCounts;
+
+  if (readCountsFromCSV(csvfile, prevCounts))
+    cout << "Recovered " << prevCounts.size() << " stats from csv file." << endl;
+  bool usePrevCounts = prevCounts.size() == subprobs.size();
+
   ofstream csv(csvfile.c_str(), ios_base::out | ios_base::trunc);
 
   csv // << "idx" << '\t'
@@ -700,7 +761,7 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     csv << '\t' << s;
   }
   csv << '\t' << "est";
-  if (counts) {
+  if (counts || usePrevCounts) {
     csv << '\t' << "or" << '\t' << "and";
   }
   csv << endl;
@@ -747,8 +808,10 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
             << '\t' << itCnt->second;  // AND nodes
         ++itCnt;
       }
+    } else if (usePrevCounts) {
+      csv << '\t' << prevCounts.at(i).first
+          << '\t' << prevCounts.at(i).second;
     }
-
     csv << endl;
   }
   csv.close();
