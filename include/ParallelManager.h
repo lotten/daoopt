@@ -130,6 +130,8 @@ public:
   bool extSolveLocal();
   /* writes subproblem information to disk */
   bool writeJobs() const;
+  /* writes CSV with subproblem stats */
+  bool writeSubprobStats() const;
   /* initiates parallel subproblem computation through Condor */
   bool runCondor() const;
   /* parses the results from external subproblems */

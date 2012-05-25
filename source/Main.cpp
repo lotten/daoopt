@@ -558,12 +558,16 @@ bool Main::runSearchStatic() {
     /* find frontier from scratch */
     success = success && m_search->findFrontier();
   }
+  if (!postOnly) {
+    /* writes CSV with subproblem stats */
+    success = success && m_search->writeSubprobStats();
+  }
   if (!postOnly && !local) {
     /* generate files for subproblems */
     success = success && m_search->writeJobs();
     if (m_search->getSubproblemCount()==0) m_solved = true;
   }
-  if (local) {
+  if (local && !preOnly) {
     /* solve external subproblems locally */
     success = success && m_search->extSolveLocal();
   }

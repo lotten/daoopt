@@ -366,8 +366,6 @@ bool ParallelManager::findFrontier() {
 bool ParallelManager::extSolveLocal() {
   myprint("Solving external subproblems locally.\n");
 
-  writeStatsCSV(m_external);
-
   Problem prob = *m_problem;  // implicit copy constructor
   prob.setCopy();
   prob.setSubprobOnly();
@@ -457,6 +455,13 @@ bool ParallelManager::runCondor() const {
 }
 
 
+bool ParallelManager::writeSubprobStats() const {
+  // CSV file with subproblem stats
+  writeStatsCSV(m_external);
+  return true;
+}
+
+
 bool ParallelManager::writeJobs() const {
 
 //  const vector<SearchNode*>& nodes = m_external;
@@ -495,9 +500,6 @@ bool ParallelManager::writeJobs() const {
   }
   file << jobstr.str();
   file.close();
-
-  // CSV file with subproblem stats
-  writeStatsCSV(m_external);
 
   return true;
 }
