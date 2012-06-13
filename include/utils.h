@@ -64,6 +64,22 @@ ostream& operator <<(ostream& os, const vector<double>& s);
 
 string str_replace(string& s, const string& x, const string& y);
 
+/* trim string from start (found on stackoverflow.com) */
+static inline string& ltrim(string& s) {
+  s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace))));
+  return s;
+}
+/* trim string from end (found on stackoverflow.com) */
+static inline string& rtrim(string& s) {
+  s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end());
+  return s;
+}
+/* trim string from both ends (found on stackoverflow.com) */
+static inline string& trim(string& s) {
+  return ltrim(rtrim(s));
+}
+
+
 /*
  * increments the tuple value, up to each entry's limit. Returns false
  * iff no more tuples can be generated

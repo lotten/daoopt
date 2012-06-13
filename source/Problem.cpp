@@ -553,7 +553,7 @@ void Problem::assignmentForOutput(vector<val_t>& assg) const {
 }
 
 void Problem::assignmentForOutput(const vector<val_t>& inAssg, vector<val_t>& outAssg) const {
-  if (m_subprobOnly) {
+  if (m_subprobOnly || inAssg.empty()) {
     outAssg = inAssg;
     // update: no need to remove dummy anymore
   } else {

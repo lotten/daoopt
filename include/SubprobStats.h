@@ -56,13 +56,14 @@ public:
 protected:
   double m_varCount;          // Number of variables in subproblem.
   double m_leafCount;         // Number of pseudotree leaves below this node.
+  double m_stateSpaceCond;    // Conditioned subproblem state space size ("twb")
   double* m_clusterSize;      // Statistics regarding unconditioned clusters.
   double* m_clusterSizeCond;  // Statistics regarding clusters below
-                              // conditioned on this node's context.
+                               // conditioned on this node's context.
   double* m_leafDepth;        // Statistics regarding the depth of the
-                              // different pseudotree leaves.
+                               // different pseudotree leaves.
   double* m_domainSize;       // Statistics regarding the domain sizes of
-                              // variables in the pseudo tree below.
+                               // variables in the pseudo tree below.
 
   /* generic helper functions */
   void computeStats(const vector<int>&, double*&);
@@ -72,6 +73,7 @@ public:
   SubprobStats();
   ~SubprobStats();
 
+  void setStateSpaceCond(double twbCond) { m_stateSpaceCond = twbCond; }
   void setClusterStats(const vector<int>& sizes);
   void setClusterCondStats(const vector<int>& sizes);
   void setDepthStats(const vector<int>& depths);
@@ -84,6 +86,7 @@ public:
 
   double getVarCount() const { return m_varCount; }
   double getLeafCount() const { return m_leafCount; }
+  double getStateSpaceCond() const { return m_stateSpaceCond; }
 
   /* appends all available features to the given vector */
   void getAll(vector<double>&) const;
@@ -141,8 +144,8 @@ inline vector<double> SubprobStats::getAll() const {
 }
 
 inline SubprobStats::SubprobStats() :
-    m_varCount(UNKNOWN), m_leafCount(UNKNOWN), m_clusterSize(NULL),
-    m_clusterSizeCond(NULL), m_leafDepth(NULL), m_domainSize(NULL)
+    m_varCount(UNKNOWN), m_leafCount(UNKNOWN), m_stateSpaceCond(UNKNOWN),
+    m_clusterSize(NULL), m_clusterSizeCond(NULL), m_leafDepth(NULL), m_domainSize(NULL)
 { /* nothing */ }
 
 inline SubprobStats::~SubprobStats() {

@@ -165,6 +165,8 @@ static boost::mutex mtx_io;
 #include <limits>
 #include <sstream>
 #include <algorithm>
+#include <functional>
+#include <locale>
 
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>

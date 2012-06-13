@@ -23,7 +23,7 @@
 
 #include "Main.h"
 
-#define VERSIONINFO "1.1"
+#define VERSIONINFO "1.1.2"
 
 time_t _time_start, _time_pre;
 
@@ -323,6 +323,9 @@ bool Main::initDataStructs() {
        << " / " << m_pseudotree->getHeight() << endl;
   cout << "Problem variables:\t" << m_pseudotree->getSizeCond()
        <<  " / " << m_pseudotree->getSize() << endl;
+#ifdef PARALLEL_STATIC
+  cout << "State space bound:\t" << m_pseudotree->getStateSpaceCond() << endl;
+#endif
   cout << "Disconn. components:\t" << m_pseudotree->getComponentsCond()
        << " / " << m_pseudotree->getComponents() << endl;
 
@@ -555,12 +558,16 @@ bool Main::runSearchStatic() {
     /* find frontier from scratch */
     success = success && m_search->findFrontier();
   }
+  if (!postOnly) {
+    /* writes CSV with subproblem stats */
+    success = success && m_search->writeSubprobStats();
+  }
   if (!postOnly && !local) {
     /* generate files for subproblems */
     success = success && m_search->writeJobs();
     if (m_search->getSubproblemCount()==0) m_solved = true;
   }
-  if (local) {
+  if (local && !preOnly) {
     /* solve external subproblems locally */
     success = success && m_search->extSolveLocal();
   }

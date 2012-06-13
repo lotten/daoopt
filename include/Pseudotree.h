@@ -118,6 +118,7 @@ public:
 
 #ifdef PARALLEL_STATIC
   void computeSubprobStats();
+  double getStateSpaceCond() const;
 #endif
 
   const vector<Function*>& getFunctions(int i) const;
@@ -271,8 +272,9 @@ public:
   void computeStatsDomain(vector<int>&);
   void computeStatsClusterCond();
 protected:
-  /* appends cluster sizes of all descendants, conditioned on set */
-  void computeStatsClusterCondSub(const set<int>&, vector<int>&) const;
+  /* appends cluster sizes of all descendants, conditioned on set.
+   * Also computes and returns conditioned subproblem state space. */
+  double computeStatsClusterCondSub(const set<int>&, vector<int>&) const;
 #endif
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
