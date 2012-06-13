@@ -405,11 +405,11 @@ bool ParallelManager::extSolveLocal() {
       prop.propagate(n, true);
     }
 
-    count_t numOR = space.stats.numOR, numAND = space.stats.numAND;
+    count_t numExpOR = space.stats.numExpOR, numExpAND = space.stats.numExpAND;
 
-    nodecounts.push_back(make_pair(numOR, numAND));
-    m_space->stats.numORext += numOR;
-    m_space->stats.numANDext += numAND;
+    nodecounts.push_back(make_pair(numExpOR, numExpAND));
+    m_space->stats.numORext += numExpOR;
+    m_space->stats.numANDext += numExpAND;
     // TODO: node and leaf profiles
 
     subprob->setValue(prob.getSolutionCost());
@@ -419,7 +419,7 @@ bool ParallelManager::extSolveLocal() {
 
     oss ss;
     ss << "Solution for subproblem " << i << " (" << *subprob << ") "
-        << numOR << " / " << numAND << " v:" << prob.getSolutionCost() << endl;
+        << numExpOR << " / " << numExpAND << " v:" << prob.getSolutionCost() << endl;
     myprint(ss.str());
   }
 
@@ -1074,7 +1074,7 @@ bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
   while (n) {
     m_prop.propagate(n, true, node);
     n = this->nextLeaf();
-    countProc = currStats.numProcessed - startStats.numProcessed;
+    countProc = currStats.numProcOR + currStats.numProcAND - startStats.numProcOR - startStats.numProcAND;
     if (countProc > countLimit)
       break;
   }

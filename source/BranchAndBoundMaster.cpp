@@ -83,9 +83,9 @@ bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
     }
 
-  } while ( (sp.stats.numAND < limitN) || (maxSubCount==0) ) ;
+  } while ( (sp.stats.numExpAND < limitN) || (maxSubCount==0) ) ;
 
-  limitN = sp.stats.numAND;
+  limitN = sp.stats.numExpAND;
 
   // initialize stats using max. subproblem except for full leaf profile
   m_spaceMaster->avgStats->init(maxSubRootDepth, maxSubRootHeight, maxSubCount, maxSubLeaves, maxSubLeafD, lbound, ubound);

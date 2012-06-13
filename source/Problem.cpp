@@ -504,8 +504,8 @@ void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodes
     BINWRITE(out, m_curCost); // mpe solution cost
     count_t countOR = 0, countAND = 0;
     if (nodestats) {
-      countOR = nodestats->numOR;
-      countAND = nodestats->numAND;
+      countOR = nodestats->numExpOR;
+      countAND = nodestats->numExpAND;
     }
     BINWRITE(out, countOR);
     BINWRITE(out, countAND);
@@ -644,7 +644,7 @@ void Problem::updateSolution(double cost,
   if (output) {
     ss << "u ";
     if (nodestats)
-      ss << nodestats->numOR << ' ' <<  nodestats->numAND << ' ';
+      ss << nodestats->numExpOR << ' ' <<  nodestats->numExpAND << ' ';
     else
       ss << "0 0 ";
     ss << SCALE_LOG(costCheck) ;

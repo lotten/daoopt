@@ -72,6 +72,7 @@ void Search::finalizeHeuristic() {
 bool Search::doProcess(SearchNode* node) {
   assert(node);
   if (node->getType() == NODE_AND) {
+    m_space->stats.numProcAND += 1;
     // 0-labeled nodes should not get generated in the first place
     assert(node->getLabel() != ELEM_ZERO);  // if this fires, something is wrong!
     DIAG( ostringstream ss; ss << *node << " (l=" << node->getLabel() << ")\n"; myprint(ss.str()) );
@@ -79,11 +80,10 @@ bool Search::doProcess(SearchNode* node) {
     int val = node->getVal();
     m_assignment[var] = val; // record assignment
   } else { // NODE_OR
+    m_space->stats.numProcOR += 1;
     DIAG( ostringstream ss; ss << *node << "\n"; myprint(ss.str()) );
   }
-
   return false; // default
-
 }
 
 
@@ -187,7 +187,6 @@ SearchNode* Search::nextLeaf() {
 
   SearchNode* node = this->nextNode();
   while (node) {
-    m_space->stats.numProcessed += 1;
     if (doProcess(node)) // initial processing
       { return node; }
     if (doCaching(node)) // caching?
@@ -274,7 +273,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->stats.numAND += 1;
+  m_space->stats.numExpAND += 1;
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
@@ -359,7 +358,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->stats.numOR += 1;
+  m_space->stats.numExpOR += 1;
 
   int var = n->getVar();
   int depth = n->getDepth();

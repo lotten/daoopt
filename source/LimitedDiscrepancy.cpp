@@ -68,7 +68,7 @@ bool LimitedDiscrepancy::doExpand(SearchNode* node) {
     // generate only successors whose total discrepancy is not higher
     // than the global limit
 
-    m_space->stats.numOR += 1; // count node expansion
+    m_space->stats.numExpOR += 1; // count node expansion
 
     // actually create new AND children
     double* heur = node->getHeurCache();

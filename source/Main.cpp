@@ -443,7 +443,7 @@ bool Main::runLDS() {
       propLDS.propagate(n,true); // true = report solution
       n = lds.nextLeaf();
     }
-    cout << "LDS: explored " << spaceLDS->stats.numOR << '/' << spaceLDS->stats.numAND
+    cout << "LDS: explored " << spaceLDS->stats.numExpOR << '/' << spaceLDS->stats.numExpAND
          << " OR/AND nodes" << endl;
     cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
 
@@ -614,13 +614,14 @@ bool Main::outputStats() const {
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   cout << "Condor jobs:   " << m_search->getSubproblemCount() << endl;
 #endif
-  cout << "OR nodes:      " << m_space->stats.numOR << endl;
-  cout << "AND nodes:     " << m_space->stats.numAND << endl;
+  cout << "OR nodes:      " << m_space->stats.numExpOR << endl;
+  cout << "AND nodes:     " << m_space->stats.numExpAND << endl;
 #if defined PARALLEL_STATIC
   cout << "OR external:   " << m_space->stats.numORext << endl;
   cout << "AND external:  " << m_space->stats.numANDext << endl;
 #endif
-  cout << "Proc. nodes:   " << m_space->stats.numProcessed << endl;
+  cout << "OR processed:  " << m_space->stats.numProcOR << endl;
+  cout << "AND processed: " << m_space->stats.numProcAND << endl;
   cout << "Leaf nodes:    " << m_space->stats.numLeaf << endl;
   cout << "Pruned nodes:  " << m_space->stats.numPruned << endl;
   cout << "Deadend nodes: " << m_space->stats.numDead << endl;
