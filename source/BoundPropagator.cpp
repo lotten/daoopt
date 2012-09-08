@@ -211,8 +211,10 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
     }
 
     // don't delete anything higher than upperLimit
-    if (upperLimit == cur)
+    if (del && upperLimit == cur) {
+      highestDelete = make_pair(cur, prev);
       del = false;
+    }
 
     // move pointers up in search space
     if (prop || del) {
