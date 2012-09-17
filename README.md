@@ -1,10 +1,10 @@
 DAOOPT: Distributed AND/OR Optimization
 =======================================
 
-An implementation of sequential and distributed AND/OR Branch and
-Bound for combinatorial optimization problems expressed as MPE
-(max-product) queries over graphical models like Bayes and Markov
-networks.
+An implementation of sequential and distributed AND/OR Branch-and-Bound
+and its Breadth-Rotating AND/OR Branch-and-Bound enhancement for
+combinatorial optimization problems expressed as MPE (max-product)
+queries over graphical models like Bayes and Markov networks.
 
 Also implements the following:
 
@@ -91,11 +91,13 @@ directory these will be used automatically.
 Background / References
 -----------------------
 
-### AND/OR Branch and Bound
+### AND/OR Branch-and-Bound
 
-AND/OR Branch and Bound (AOBB) is a search framework developed in
+AND/OR Branch-and-Bound (AOBB) is a search framework developed in
 [Rina Dechter's](http://www.ics.uci.edu/~dechter/) research group at
-[UC Irvine](http://www.uci.edu/). Relevant publications:
+[UC Irvine](http://www.uci.edu/), most recently enhanced through
+Breadth-Rotating AND/OR Branch-and-Bound (BRAOBB). Relevant
+publications:
 
 * Rina Dechter and Robert Mateescu. "AND/OR Search Spaces for
   Graphical Models". In Artificial Intelligence, Volume 171 (2-3),
@@ -106,8 +108,11 @@ AND/OR Branch and Bound (AOBB) is a search framework developed in
 * Radu Marinescu and Rina Dechter. "Memory Intensive AND/OR Search
   for Combinatorial Optimization in Graphical Models." In Artificial
   Intelligence, Volume 173 (16-17), pages 1492-1524, 2009.
+* Lars Otten and Rina Dechter. "Anytime AND/OR Depth-first Search for
+  Combinatorial Optimization." In AI Communications, Volume 25 (3), pages
+  211-227, 2012.
 
-### Distributed AND/OR Branch and Bound
+### Distributed AND/OR Branch-and-Bound
 
 A recent expansion of the AOBB framework to allow using the parallel
 resources of a computational grid; it is still the focus of ongoing
@@ -122,6 +127,9 @@ research. Some relevant publications:
 * Lars Otten and Rina Dechter. "Learning Subproblem Complexities in
   Distributed Branch and Bound". In DISCML'11 Workshop, at NIPS'11,
   Granada, Spain, December 2011.
+* Lars Otten and Rina Dechter. "A Case Study in Complexity Estimation:
+  Towards Parallel Branch-and-Bound over Graphical Models." In Proceedings
+  of UAI'12, Catalina Island, CA, U.S.A, August 2012.
 
 ### Acknowledgments
 
