@@ -582,9 +582,9 @@ bool ParallelManager::readExtResults() {
       inTemp.close();
       if (inTemp.fail()) {
         ostringstream ss;
-        ss << "Solution file " << id << " unavailable: " << solutionFile << endl;
+        ss << "Error: solution file " << id << " unavailable: " << solutionFile << endl;
         myerror(ss.str());
-        node->setErrExt();  // to suppress CSV output
+        node->setErrExt();  // don't count for CSV outout check
         success = false;
         continue; // skip rest of loop
       }
@@ -1008,6 +1008,7 @@ double ParallelManager::evaluate(SearchNode* node) const {
   const SubprobFeatures* feats = node->getSubprobFeatures();
 
   // "dynamic subproblem features
+  double ibnd = m_options->ibound;
   double ub = node->getHeur(),
          lb = node->getInitialBound();
   double rPruned = feats->ratioPruned,

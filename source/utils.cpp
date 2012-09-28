@@ -39,7 +39,7 @@ void myerror(std::string s) {
   double T = difftime(now, _time_start);
   {
     GETLOCK(mtx_io, lk);
-    std::cerr << '[' << T << "] " << s << std::flush;
+    std::cerr << '[' << (int)T << "] " << s << std::flush;
   }
 }
 
