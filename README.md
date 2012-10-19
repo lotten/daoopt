@@ -1,19 +1,22 @@
 DAOOPT: Distributed AND/OR Optimization
 =======================================
 
-An implementation of sequential and distributed AND/OR Branch-and-Bound
-and its Breadth-Rotating AND/OR Branch-and-Bound enhancement for
-combinatorial optimization problems expressed as MPE (max-product)
-queries over graphical models like Bayes and Markov networks.
+An implementation of **sequential** as well as **distributed AND/OR
+Branch-and-Bound** and its **Breadth-Rotating AND/OR
+Branch-and-Bound** enhancement for combinatorial optimization problems
+expressed as MPE (max-product) queries over graphical models like
+Bayes and Markov networks.
 
 Also implements the following:
 
 * full context-based caching.
 * mini-buckets for heuristic generation.
-* minfill algorithm to find variable orderings.
+* minfill heuristic to find variable orderings.
 * limited discrepancy search to quickly find initial solution.
 * stochastic local search to quickly find initial solution (via GLS+
   code by Frank Hutter).
+
+See references at the bottom for details and algorithm analysis.
 
 *By Lars Otten, University of California, Irvine. Main AOBB source
  code under GPL, included libraries vary -- see LICENSE.txt for
