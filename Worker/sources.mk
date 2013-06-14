@@ -27,7 +27,5 @@ source \
 lib/zlib \
 lib/sls4mpe \
 lib \
-lib/boost.src/program_options/src \
 include \
-. \
 

@@ -26,9 +26,11 @@ Compilation
 -----------
 
 A recent set of [Boost library](http://www.boost.org) headers is
-required to compile the solver, either in the system-wide include path
-or copied/symlinked into `./lib/boost` locally (confirmed to work is
-version 1.47.0).
+required to compile the solver (confirmed to work is version 1.53.0),
+either in the system-wide include path or copied/symlinked into
+`./lib/boost` locally. In addition, all solver variants need the Boost
+program_options library for linking; the dynamic parallel master also
+needs the Boost thread and system library.
 
 ### CMake
 
@@ -54,7 +56,7 @@ In addition, the following two Makefiles are provided
 * `Debug` -- Compiles any of the above (through preprocessor defines)
   with debug flags.
 * `Windows` -- Windows executable of the sequential solver using MinGW
-  compiler (not tested in a while and probably broken).
+  compiler (not tested in a while and almost certainly broken).
 
 By default, the *ccache* compiler cache is used by the makefiles. To
 disable it, simply run the supplied script `ccache-deactivate.sh` from

@@ -57,7 +57,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
 #endif
 
   // going all the way to the root, if we have to
-  do {
+  while (cur) { // until cur==NULL, i.e. 'parent' of root
     DIAG( ostringstream ss; ss << "PROP  " << prev <<": " << *prev << " + " << cur << ": " << *cur << endl; myprint(ss.str()); )
 
     if (cur->getType() == NODE_AND) {
@@ -224,7 +224,7 @@ SearchNode* BoundPropagator::propagate(SearchNode* n, bool reportSolution, Searc
       break;
     }
 
-  } while (cur); // until cur==NULL, i.e. 'parent' of root
+  }
 
   // propagated up to root node, update tuple as well
   if (prop && !cur) {

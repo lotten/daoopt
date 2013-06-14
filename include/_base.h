@@ -63,6 +63,12 @@
 
 /* Boost thread libraries */
 #include "boost/thread.hpp"
+
+#include <boost/version.hpp>
+  #if BOOST_VERSION < 105000
+  #define TIME_UTC_ TIME_UTC
+#endif
+
 //#include "boost/thread/shared_mutex.hpp"
 
 #define GETLOCK(X,Y) boost::mutex::scoped_lock Y ( X )

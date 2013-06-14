@@ -99,7 +99,7 @@ inline SubproblemCondor::SubproblemCondor(SearchSpaceMaster* p, Subproblem* n, s
 /* puts the submission engine to sleep for s seconds */
 inline void CondorSubmissionEngine::mysleep(size_t s) {
   boost::xtime xt;
-  boost::xtime_get(&xt, boost::TIME_UTC);
+  boost::xtime_get(&xt, boost::TIME_UTC_);
   xt.sec += s;
   boost::thread::sleep(xt);
 }

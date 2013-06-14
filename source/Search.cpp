@@ -161,7 +161,7 @@ bool Search::doPruning(SearchNode* node) {
     node->setPruned();
     if (node->getType() == NODE_AND) {
       // count 1 leaf AND node
-      m_leafProfile.at(depth) += 1;
+      if (depth >= 0) m_leafProfile.at(depth) += 1;
 #if defined PARALLEL_DYNAMIC
       node->setSubLeaves(1);
 #endif
@@ -169,7 +169,7 @@ bool Search::doPruning(SearchNode* node) {
       if ( ISNAN(node->getValue()) ) // value could be set by LDS
         node->setValue(ELEM_ZERO);
       // assume all AND children would have been created and pruned
-      m_leafProfile.at(depth) += m_problem->getDomainSize(var);
+      if (depth >= 0) m_leafProfile.at(depth) += m_problem->getDomainSize(var);
 #if defined PARALLEL_DYNAMIC
       node->addSubLeaves(m_problem->getDomainSize(var));
 #endif

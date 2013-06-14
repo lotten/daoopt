@@ -21,21 +21,6 @@ along with DAOOPT.  If not, see <http://www.gnu.org/licenses/>.
 EXCLUDED CODE: The files described below, in the lib/ folder, are not
 covered by the above license:
 
-* Files: lib/boost.src/program_options/*
-  Boost program options library, Boost Software License 1.0.
-  Copyright (C) 2002-2004 Vladimir Prus
-    http://www.boost.org/
-
-* Files: lib/boost.src/thread/*
-  Boost thread library, Boost Software License 1.0.
-  Copyright (C) 2007-2008 Anthony Williams
-    http://www.boost.org/
-
-* File: lib/boost.src/detail/utf8_codecvt_facet.cpp
-  Boost Software License 1.0
-  Copyright (C) 2001 Ronald Garcia
-    http://www.boost.org/
-
 * Files: lib/gzstream.*
   gzstream library, LGPL 2.1 license.
   Copyright (C) 2001  Deepak Bandyopadhyay, Lutz Kettner
