@@ -116,7 +116,7 @@ int Pseudotree::eliminate(Graph G, vector<int>& elim, int limit, int tolerance) 
   int nextNode = NONE;
 
   // keeps track of minimal score nodes
-  vector<vector<int>* > candidates(tolerance+1, NULL);
+  vector<vector<int>* > candidates(tolerance+1);
   for (int i=0; i<=tolerance; ++i)
     candidates[i] = new vector<int>;
   vector<nCost> candScore(tolerance+1, numeric_limits<nCost>::max());
