@@ -45,10 +45,12 @@
 //#define SETCLASS unordered_set
 #define SETCLASS hash_set
 
+#include "_base.h"
+
+namespace daoopt {
+
 /* node elimination cost */
 typedef int nCost;
-
-#include "_base.h"
 
 #ifdef USE_EDGE_LIST
 typedef pair<int,int> Edge;
@@ -286,6 +288,6 @@ inline void Graph::addClique(const set<int>& s) {
   }
 }
 
-
+}  // namespace daoopt
 
 #endif /* GRAPH_H_ */

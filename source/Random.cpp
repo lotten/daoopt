@@ -23,11 +23,13 @@
 
 #include "_base.h"
 
+namespace daoopt {
 /*
  * Random number generator is static, implemented in _base.h.
  * Here only the static member variables are initialized.
  */
+
 int rand::state = 1;
 boost::minstd_rand rand::_r;
 
-
+}  // namespace daoopt

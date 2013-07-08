@@ -25,6 +25,8 @@
 
 #ifdef PARALLEL_STATIC
 
+namespace daoopt {
+
 const int SubprobStats::MIN = 0;
 const int SubprobStats::MAX = 1;
 const int SubprobStats::AVG = 2;
@@ -103,6 +105,7 @@ ostream& operator << (ostream& os, const SubprobStats& stats) {
   return os;
 }
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_STATIC */
 

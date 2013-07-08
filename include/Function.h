@@ -31,6 +31,8 @@
 #include "utils.h"
 //#include "Problem.h"
 
+namespace daoopt {
+
 class Problem;
 
 class Function {
@@ -187,5 +189,6 @@ inline ostream& operator << (ostream& os, const Function& f) {
   return os;
 }
 
+}  // namespace daoopt
 
 #endif /* FUNCTION_H_ */

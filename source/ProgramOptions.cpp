@@ -23,9 +23,11 @@
 
 #include "ProgramOptions.h"
 
-using namespace std;
+namespace daoopt {
 
 ProgramOptions* parseCommandLine(int ac, char** av) {
+
+  using std::string;
 
   ProgramOptions* opt = new ProgramOptions;
 
@@ -285,3 +287,4 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 
 }
 
+}  // namespace daoopt

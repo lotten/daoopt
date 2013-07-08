@@ -26,6 +26,7 @@
 
 #include "Search.h"
 
+namespace daoopt {
 
 /* Branch and Bound search, implements pure virtual functions
  * from Search.h */
@@ -60,5 +61,7 @@ inline bool BranchAndBound::isDone() const {
   return m_stack.empty();
 #endif
 }
+
+}  // namespace daoopt
 
 #endif /* BRANCHANDBOUND_H_ */

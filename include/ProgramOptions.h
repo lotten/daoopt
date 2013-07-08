@@ -32,6 +32,8 @@ namespace po = boost::program_options;
 #include <string>
 #include <iostream>
 
+namespace daoopt {
+
 struct ProgramOptions {
 public:
   bool nosearch; // abort before starting the actual search
@@ -105,5 +107,7 @@ inline ProgramOptions::ProgramOptions() :
 		      maxWidthAbort(NONE), slsIter(0), slsTime(5),
 		      aobbLookahead(0),
 		      initialBound(ELEM_NAN) {}
+
+}  // namespace daoopt
 
 #endif /* PROGRAMOPTIONS_H_ */

@@ -30,6 +30,8 @@
 #include <vector>
 #include <string>
 
+namespace daoopt {
+
 //typedef hash_map <context_t, double> context_hash_map;
 #ifndef NO_ASSIGNMENT
 typedef hash_map <const context_t, const pair<const double, const vector<val_t> > > context_hash_map;
@@ -241,5 +243,7 @@ inline int CacheTable::memused() const {
   return m;
 }
 #endif
+
+}  // namespace daoopt
 
 #endif /* CACHETABLE_H_ */

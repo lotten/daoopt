@@ -26,15 +26,19 @@
 
 #include "_base.h"
 
-
+namespace daoopt {
 int memoryusage();
+}
 
 #if defined WINDOWS || defined __APPLE__
+namespace daoopt {
 inline int memoryusage() {
   return -1;
 }
+}
 #else
 #include <malloc.h>
+namespace daoopt {
 inline int memoryusage() {
   struct mallinfo info;
   info = mallinfo();
@@ -45,7 +49,10 @@ inline int memoryusage() {
     << info.hblkhd << endl;
   return info.arena;
 }
+}
 #endif
+
+namespace daoopt {
 
 void myprint(std::string s);
 void myerror(std::string s);
@@ -241,5 +248,6 @@ void print_hex(const _T* d) {
     printf("%X", ar[i]);
 }
 
+}  // namespace daoopt
 
 #endif /* UTILS_H_ */

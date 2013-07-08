@@ -26,6 +26,8 @@
 
 #include "Search.h"
 
+namespace daoopt {
+
 #ifdef PARALLEL_DYNAMIC
 
 #include "SubproblemHandler.h"
@@ -94,5 +96,7 @@ inline SearchMaster::SearchMaster(Problem* prob, Pseudotree* pt, SearchSpaceMast
 
 
 #endif /* PARALLEL_DYNAMIC */
+
+}  // namespace daoopt
 
 #endif /* SEARCHMASTER_H_ */

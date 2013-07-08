@@ -6,7 +6,9 @@
 #define _SLS4MPE_GLOBAL_H_
 
 #include "DEFINES.h"
-class SLSWrapper;
+namespace daoopt {
+  class SLSWrapper;
+}
 #ifdef ENABLE_SLS
 
 namespace sls4mpe {
@@ -182,7 +184,7 @@ extern int externalInitValues[NUM_BP_VARS];
 
 extern bool verbose;
 
-extern SLSWrapper* slsWrapper;
+extern daoopt::SLSWrapper* slsWrapper;
 
 }  // sls4mpe
 

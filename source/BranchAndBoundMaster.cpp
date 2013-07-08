@@ -27,6 +27,8 @@
 
 #ifdef PARALLEL_DYNAMIC
 
+namespace daoopt {
+
 bool BranchAndBoundMaster::findInitialParams(count_t& limitN) const {
 
   assert(limitN > 0 && m_space->root );
@@ -140,4 +142,7 @@ void BranchAndBoundMaster::solveLocal(SearchNode* node) const {
 
 }
 
+}  // namespace daoopt
+
 #endif /* PARALLEL_DYNAMIC */
+

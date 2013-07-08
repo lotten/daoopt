@@ -29,8 +29,9 @@
 #undef DEBUG
 #endif
 
-typedef PseudotreeNode PtNode;
+namespace daoopt {
 
+typedef PseudotreeNode PtNode;
 
 
 void BranchAndBound::reset(SearchNode* p) {
@@ -126,3 +127,4 @@ BranchAndBound::BranchAndBound(Problem* prob, Pseudotree* pt, SearchSpace* space
   }
 }
 
+}  // namespace daoopt

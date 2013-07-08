@@ -25,6 +25,8 @@
 
 #define VERSIONINFO "1.1.2"
 
+namespace daoopt {
+
 time_t _time_start, _time_pre;
 
 bool Main::parseOptions(int argc, char** argv) {
@@ -759,5 +761,6 @@ bool Main::outputInfo() const {
  return true;
 }
 
+}  // namespace daoopt
 
 // EoF

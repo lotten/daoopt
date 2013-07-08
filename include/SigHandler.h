@@ -29,6 +29,8 @@
 #include <csignal>
 #include "_base.h"
 
+namespace daoopt {
+
 #ifdef PARALLEL_DYNAMIC
 
 /* watches for signals like SIGINT and SIGTERM, catches them
@@ -60,5 +62,7 @@ public:
 };
 
 #endif /* PARALLEL_DYNAMIC */
+
+}  // namespace daoopt
 
 #endif /* SIGHANDLER_H_ */

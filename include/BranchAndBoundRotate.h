@@ -26,6 +26,8 @@
 
 #include "Search.h"
 
+namespace daoopt {
+
 /*
  * Minor extension of STL stack class, used by AOBB for the 'stack tree'
  */
@@ -107,5 +109,7 @@ inline void BranchAndBoundRotate::resetRotateCount(int reason) {
   }
   m_stackCount = 0;  // reset count
 }
+
+}  // namespace daoopt
 
 #endif /* BRANCHANDBOUNDROTATE_H_ */

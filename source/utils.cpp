@@ -23,6 +23,8 @@
 
 #include "utils.h"
 
+namespace daoopt {
+
 extern time_t _time_start;  // from Main.cpp
 
 void myprint(std::string s) {
@@ -159,3 +161,4 @@ double mylog10(bigint a) {
  #endif
 #endif
 
+}  // namespace daoopt

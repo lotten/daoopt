@@ -26,6 +26,8 @@
 #include "Search.h"
 #include "ProgramOptions.h"
 
+namespace daoopt {
+
 Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
     m_problem(prob), m_pseudotree(pt), m_space(s), m_heuristic(h)
 #ifdef PARALLEL_DYNAMIC
@@ -824,4 +826,4 @@ bool Search::restrictSubproblem(string file) {
   return true; // success
 }
 
-
+}  // namespace daoopt

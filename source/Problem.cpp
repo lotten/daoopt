@@ -26,6 +26,8 @@
 #include <sstream>
 #include <fstream>
 
+namespace daoopt {
+
 //extern time_t time_start;
 
 void Problem::removeEvidence() {
@@ -751,3 +753,4 @@ bool Problem::isEliminated(int i) const {
 }
 #endif
 
+}  // namespace daoopt

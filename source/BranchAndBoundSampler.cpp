@@ -25,6 +25,8 @@
 
 #include "BranchAndBoundSampler.h"
 
+namespace daoopt {
+
 bool BranchAndBoundSampler::doExpand(SearchNode* n) {
   assert(n);
   m_expand.clear();
@@ -73,3 +75,4 @@ bool BranchAndBoundSampler::doExpand(SearchNode* n) {
   return false; // default false
 }
 
+}  // namespace daoopt

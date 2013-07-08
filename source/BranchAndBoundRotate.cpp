@@ -25,6 +25,8 @@
 
 #include "BranchAndBoundRotate.h"
 
+namespace daoopt {
+
 typedef PseudotreeNode PtNode;
 
 int BranchAndBoundRotate::HAS_CHILDREN = 0;
@@ -145,3 +147,4 @@ BranchAndBoundRotate::BranchAndBoundRotate(Problem* prob, Pseudotree* pt, Search
   }
 }
 
+}  // namespace daoopt

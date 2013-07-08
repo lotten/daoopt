@@ -32,6 +32,8 @@
 
 #include "BoundPropagator.h"
 
+namespace daoopt {
+
 /* Branch and Bound for master process, inherits:
  *  - operator () from SearchMaster
  *  - BaB functionality from BranchAndBound
@@ -55,6 +57,7 @@ public:
 inline BranchAndBoundMaster::BranchAndBoundMaster(Problem* prob, Pseudotree* pt, SearchSpaceMaster* space, Heuristic* heur) :
     Search(prob, pt,space, heur), SearchMaster(prob,pt,space,heur), BranchAndBound(prob,pt,space,heur) {}
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_DYNAMIC */
 

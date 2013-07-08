@@ -25,6 +25,7 @@
 
 #undef DEBUG
 
+namespace daoopt {
 
 /* checks whether a function 'fits' in this MB */
 bool MiniBucket::allowsFunction(Function* f) {
@@ -172,5 +173,4 @@ Function* MiniBucket::eliminate(bool buildTable) {
   return new FunctionBayes(-m_bucketVar,m_problem,scope,newTable,tablesize);
 }
 
-
-
+}  // namespace daoopt

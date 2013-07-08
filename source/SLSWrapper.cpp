@@ -24,6 +24,8 @@
 #include "SLSWrapper.h"
 #ifdef ENABLE_SLS
 
+namespace daoopt {
+
 bool SLSWrapper::init(Problem* prob, int iter, int time) {
 
   assert(prob);
@@ -116,5 +118,6 @@ double SLSWrapper::getSolution(vector<val_t>* tuple) const {
 #endif
 }
 
-#endif  /* ENABLE_SLS */
+}  // namespace daoopt
 
+#endif  /* ENABLE_SLS */

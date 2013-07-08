@@ -21,7 +21,6 @@
  *      Author: Lars Otten <lotten@ics.uci.edu>
  */
 
-
 /* for easier debugging output and nicer code,
  * redefined for every file that includes _base.h */
 #ifdef DIAG
@@ -79,7 +78,9 @@
 #define DECREASE(X) --( X )
 
 /* static IO mutex for console output */
-static boost::mutex mtx_io;
+namespace daoopt {
+  static boost::mutex mtx_io;
+}
 
 #else
 
@@ -181,7 +182,9 @@ using boost::scoped_ptr;
 using boost::scoped_array;
 
 /* shorthand for convenience */
-typedef std::ostringstream oss;
+namespace daoopt {
+  typedef std::ostringstream oss;
+}
 
 /* which hashtable to use? define only *one*  */
 #define HASH_BOOST
@@ -191,15 +194,19 @@ typedef std::ostringstream oss;
 //#define HASH_GOOGLE_SPARSE
 
 /* type for storing contexts in binary */
-typedef std::vector<val_t> context_t;
+namespace daoopt {
+  typedef std::vector<val_t> context_t;
+}
 
 #ifdef HASH_SGI
 /* SGI hash set and map */
 #include <backward/hash_set> // deprecated!
 #include <backward/hash_map> // deprecated!
 
+namespace daoopt {
 using __gnu_cxx::hash_set;
 using __gnu_cxx::hash_map;
+}
 #endif
 
 #ifdef HASH_TR1
@@ -266,13 +273,17 @@ typedef uint64_t count_t;
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
  #ifdef USE_GMP
  #include <gmpxx.h>
+namespace daoopt {
  typedef mpz_class bigint;
  typedef mpf_class bigfloat;
  typedef mpq_class bigfrac;
+}
  #else
+namespace daoopt {
  typedef unsigned long int bigint;
  typedef double bigfloat;
  typedef double bigfrac;
+}
  #endif
 #endif
 
@@ -281,7 +292,9 @@ typedef uint64_t count_t;
 /* Boost lexical cast (for version string) */
 #include <boost/lexical_cast.hpp>
 
+namespace daoopt {
 using namespace std;
+}
 
 /*////////////////////////////////*/
 /*////// MACRO DEFINITIONS ///////*/
@@ -314,15 +327,18 @@ using namespace std;
 #define NODE_AND 1
 #define NODE_OR 2
 
+namespace daoopt {
 const int SUBPROB_WIDTH_INC = 0;
 const int SUBPROB_WIDTH_DEC = 1;
 const int SUBPROB_HEUR_INC = 2;
 const int SUBPROB_HEUR_DEC = 3;
 const string subprob_order[4]
   = {"width-inc","width-dec","heur-inc","heur-dec"};
+}
 
 /*//////////////////////////////////////////////////////////////*/
 
+namespace daoopt {
 /* static random number generator */
 class rand {
 private:
@@ -339,6 +355,7 @@ public:
   }
 
 };
+}  // namespace daoopt
 
 /*//////////////////////////////*/
 
@@ -351,6 +368,8 @@ public:
 /* NOTE: Taking out the void* casts produces the gcc warning
  * "dereferencing type-punned pointer will break strict-aliasing rules"
  */
+
+namespace daoopt {
 
 /* floating point equality comparison (modulo floating point precision) */
 inline bool fpEq(double A, double B, int64_t maxDist=2) {
@@ -401,6 +420,8 @@ inline bool fpLEq(double A, double B, int64_t maxDist=2) {
   return true;
 }
 
+}  // namespace daoopt
+
 #endif
 /*//////////////////////////////////////////////////////////////*/
 
@@ -417,6 +438,7 @@ inline bool fpLEq(double A, double B, int64_t maxDist=2) {
 
 
 #ifdef false
+namespace daoopt {
 /* encode doubles to 64 bit integers (and back) */
 typedef int64_t int64bit;
 inline std::string encodeDoubleAsInt(double d) {
@@ -432,7 +454,10 @@ inline double decodeDoubleFromString(std::string s) {
   ss >> x;
   return *(double*)(void*)&x;
 }
+}  // namespace daoopt
 #endif /* false */
+
+namespace daoopt {
 
 inline std::string encodeDoubleAsInt(double d) {
   std::ostringstream ss;
@@ -447,10 +472,11 @@ inline double decodeDoubleFromString(std::string s) {
   return x;
 }
 
+}  // namespace daoopt
 
 /*///////////////////////////////////////////////////////////*/
 
-
+namespace daoopt {
 inline double mylog10(unsigned long a) {
   return log10(a);
 }
@@ -461,6 +487,7 @@ inline double mylog10(unsigned long a) {
  #endif
 #endif
 
+}  // namespace daoopt
 
 /*///////////////////////////////////////////////////////////*/
 

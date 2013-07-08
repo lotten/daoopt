@@ -29,6 +29,8 @@
 
 #ifdef PARALLEL_DYNAMIC
 
+namespace daoopt {
+
 /* Suppress condor output if not in debug mode */
 #ifndef DEBUG
 #define SILENT_MODE
@@ -566,6 +568,7 @@ string CondorSubmissionEngine::encodeJob(CondorSubmission* P) {
 
 }
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_DYNAMIC */
 

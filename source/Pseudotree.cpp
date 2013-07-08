@@ -25,6 +25,8 @@
 
 #undef DEBUG
 
+namespace daoopt {
+
 int Pseudotree::restrictSubproblem(int i) {
 
   assert(m_root && i<(int)m_nodes.size() && m_nodes[i]);
@@ -846,7 +848,7 @@ bigint PseudotreeNode::computeSubCompDet(const set<int>& cond, const vector<val_
 
 #ifdef DEBUG
   cout << " Functions : " ;
-  for (list<Function*>::iterator itFu=funcs.begin(); itFu!= funcs.end(); ++itFu)
+  for (vector<Function*>::iterator itFu=funcs.begin(); itFu!= funcs.end(); ++itFu)
     cout << (*(*itFu)) << ", " ;
   cout << endl;
 #endif
@@ -946,4 +948,6 @@ void Pseudotree::outputToFile(string of_name) const {
   of << oss.str() << endl;
   of.close();
 }
+
+}  // namespace daoopt
 

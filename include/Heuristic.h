@@ -29,6 +29,8 @@
 #include <string>
 #include <vector>
 
+namespace daoopt {
+
 /* forward class declarations */
 class ProgramOptions;
 class Problem;
@@ -122,5 +124,6 @@ public:
   virtual ~UnHeuristic() {}
 };
 
+}  // namespace daoopt
 
 #endif /* HEURISTIC_H_ */

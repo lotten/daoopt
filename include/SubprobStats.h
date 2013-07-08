@@ -28,6 +28,8 @@
 
 #ifdef PARALLEL_STATIC
 
+namespace daoopt {
+
 /* stores dynamic subproblem features (associated with specific search node) */
 struct SubprobFeatures {
   double ratioPruned;  // ratio of heuristically pruned nodes
@@ -154,6 +156,8 @@ inline SubprobStats::~SubprobStats() {
   if (m_leafDepth) delete[] m_leafDepth;
   if (m_domainSize) delete[] m_domainSize;
 }
+
+}  // namespace daoopt
 
 #endif /* PARALLEL_STATIC */
 #endif /* SUBPROBSTATS_H_ */

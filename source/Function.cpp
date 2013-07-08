@@ -26,6 +26,8 @@
 
 #undef DEBUG
 
+namespace daoopt {
+
 /* Constructor */
 Function::Function(const int& id, Problem* p, const set<int>& scope, double* T, const size_t& size) :
   m_id(id), m_problem(p), m_table(T), m_tableSize(size),
@@ -438,3 +440,4 @@ double Function::getAverage(const vector<int>& cond, const vector<val_t>& assig)
 }
 #endif /* PARALLEL_DYNAMIC */
 
+}  // namespace daoopt

@@ -31,6 +31,8 @@
 // forward declaration
 #include "SearchNode.h"
 
+namespace daoopt {
+
 /* simple container for an external subproblem and its attributes (for parallelization) */
 struct Subproblem {
 protected:
@@ -62,6 +64,8 @@ public:
   bool isSolved() const { return solved; }
 
 };
+
+}  // namespace daoopt
 
 #endif /* PARALLEL_DYNAMIC */
 

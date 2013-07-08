@@ -27,6 +27,7 @@
 #include "Function.h"
 #include "Problem.h"
 
+namespace daoopt {
 
 /* A single minibucket, i.e. a collection of functions */
 class MiniBucket {
@@ -66,5 +67,6 @@ inline void MiniBucket::addFunction(Function* f) {
 inline MiniBucket::MiniBucket(int v, int b, Problem* p) :
   m_bucketVar(v), m_ibound(b), m_problem(p) {}
 
+}  // namespace daoopt
 
 #endif /* MINIBUCKET_H_ */

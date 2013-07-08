@@ -23,6 +23,8 @@
 
 #include "BestFirst.h"
 
+namespace daoopt {
+
 typedef PseudotreeNode PtNode;
 
 
@@ -309,5 +311,4 @@ BestFirst::BestFirst(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristi
   m_queue.push(first);
 }
 
-
-
+}  // namespace daoopt

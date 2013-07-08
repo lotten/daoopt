@@ -36,6 +36,8 @@
 #include "LearningEngine.h"
 #include "utils.h"
 
+namespace daoopt {
+
 class ParallelManager : virtual public Search {
 
 protected:
@@ -115,7 +117,7 @@ protected:
   void solveLocal(SearchNode*);
 
   /* computes the average depth of nodes / leaves, minus the given offset */
-  double computeAvgDepth(const vector<size_t>&, const vector<size_t>&, int offset);
+  double computeAvgDepth(const vector<count_t>&, const vector<count_t>&, int offset);
 
 public:
   /* stores the lower bound to file for subsequent retrieval */
@@ -161,6 +163,8 @@ inline void ParallelManager::reset(SearchNode* n) {
   m_local.clear();
   m_external.push_back(n);
 }
+
+}  // namespace daoopt
 
 #endif /* PARALLEL_STATIC */
 

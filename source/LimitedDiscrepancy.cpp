@@ -29,6 +29,7 @@
 #undef DEBUG
 #endif
 
+namespace daoopt {
 
 bool LimitedDiscrepancy::doExpand(SearchNode* node) {
   assert(node);
@@ -137,3 +138,5 @@ LimitedDiscrepancy::LimitedDiscrepancy(Problem* prob, Pseudotree* pt, SearchSpac
     m_space->cache = new UnCacheTable();
 
 }
+
+}  // namespace daoopt

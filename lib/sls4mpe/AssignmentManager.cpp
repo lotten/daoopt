@@ -9,7 +9,7 @@
 
 namespace sls4mpe {
 
-SLSWrapper* slsWrapper;  // for reporting solutions back
+daoopt::SLSWrapper* slsWrapper;  // for reporting solutions back
 
 void AssignmentManager::outputCurrentAssignment(FILE* outfile){
 	copyAssignment(tmpAssignment);

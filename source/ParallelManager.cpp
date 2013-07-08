@@ -27,6 +27,8 @@
 
 #ifdef PARALLEL_STATIC
 
+namespace daoopt {
+
 /* parameters that can be modified */
 #define MAX_SUBMISSION_TRIES 6
 #define SUBMISSION_FAIL_DELAY_BASE 2.0
@@ -1124,14 +1126,14 @@ SearchNode* ParallelManager::nextNode() {
 }
 
 
-bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
+bool ParallelManager::applyAOBB(SearchNode* node, count_t countLimit) {
   assert(node);
   bool complete = false;
 
   this->resetLocalStack(node);
   // copy current node profiles and search stats
-  vector<size_t> startNodeP = m_nodeProfile;
-  vector<size_t> startLeafP = m_leafProfile;
+  vector<count_t> startNodeP = m_nodeProfile;
+  vector<count_t> startLeafP = m_leafProfile;
   SearchStats startStats = m_space->stats;
 
   SearchNode* n = this->nextLeaf();
@@ -1209,7 +1211,7 @@ string ParallelManager::filename(const char* pre, const char* ext, int count) co
 }
 
 
-double ParallelManager::computeAvgDepth(const vector<size_t>& before, const vector<size_t>& after, int offset) {
+double ParallelManager::computeAvgDepth(const vector<count_t>& before, const vector<count_t>& after, int offset) {
   size_t leafCount = 0;
   for (size_t d = offset; d < before.size(); ++d)
     leafCount += after[d] - before[d];
@@ -1249,6 +1251,8 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* spa
   m_learner.reset(new LinearRegressionLearner(m_options));
 
 }
+
+}  // namespace daoopt
 
 #endif /* PARALLEL_STATIC */
 
