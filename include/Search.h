@@ -37,13 +37,12 @@
 #include "SubproblemCondor.h"
 #endif
 
+namespace daoopt {
+
 /* All search algorithms should inherit from this */
 class Search {
 
 protected:
-
-//  count_t m_nodesOR;             // Keeps track of the number of OR nodes
-//  count_t m_nodesAND;            // Keeps track of the number of AND nodes
 
   Problem* m_problem;           // The problem instance
   Pseudotree* m_pseudotree;     // Pseudo tree
@@ -80,12 +79,12 @@ public:
   /* returns true iff the search is complete */
   virtual bool isDone() const = 0;
 
-//  count_t getNoNodesOR() const { return m_nodesOR; }
-//  count_t getNoNodesAND() const { return m_nodesAND; }
+  /* allows to print stats particular to the algorithm */
+  virtual void printStats() const { /* default empty */ }
+
 #ifdef PARALLEL_DYNAMIC
   count_t getSubCount() const { return m_space->getTrueRoot()->getSubCount(); }
 #endif
-//  pair<count_t,count_t> getNoNodes() const { return make_pair(m_nodesOR, m_nodesAND); }
   virtual count_t getSubproblemCount() const { assert(false); return NONE; }
 
   const vector<count_t>& getNodeProfile() const { return m_nodeProfile; }
@@ -221,6 +220,6 @@ inline const vector<val_t>& Search::getCurOptTuple() const {
 }
 #endif
 
-
+}  // namespace daoopt
 
 #endif /* SEARCH_H_ */

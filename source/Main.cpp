@@ -24,11 +24,13 @@
 #include "Main.h"
 
 #include "UAI2012.h"
-string UAI2012::filename = "";
+string daoopt::UAI2012::filename = "";
 
 #include "cvo/ARP/ARPall.hxx"
 
-#define VERSIONINFO "0.99.7g-UAI12"
+#define VERSIONINFO "1.1.2-UAI12"
+
+namespace daoopt {
 
 time_t _time_start, _time_pre;
 
@@ -72,11 +74,13 @@ bool Main::loadProblem() {
        << " variables and " << m_problem->getC() << " functions." << endl;
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
-  // Re-output problem file for parallel processing
-  m_options->out_reducedFile = string("temp_prob.") + m_options->problemName
-      + string(".") + m_options->runTag + string(".gz");
-  m_problem->writeUAI(m_options->out_reducedFile);
-  cout << "Saved problem to file " << m_options->out_reducedFile << endl;
+  if (!m_options->par_solveLocal) {
+    // Re-output problem file for parallel processing
+    m_options->out_reducedFile = string("temp_prob.") + m_options->problemName
+        + string(".") + m_options->runTag + string(".gz");
+    m_problem->writeUAI(m_options->out_reducedFile);
+    cout << "Saved problem to file " << m_options->out_reducedFile << endl;
+  }
 #else
   // Output reduced network?
   if (!m_options->out_reducedFile.empty()) {
@@ -111,6 +115,10 @@ bool Main::findOrLoadOrdering() {
 
   if (m_options->order_cvo) {
     vector< const vector<int>* > fn_signatures;
+//    vector<Function*>::const_iterator f;
+//    for (f = m_problem->getFunctions().begin(); f != m_problem->getFunctions().end(); ++f) {
+//      fn_signatures.push_back(& (*f)->getScopeVec());
+//    }
     BOOST_FOREACH( Function* f, m_problem->getFunctions() )
       { fn_signatures.push_back(& f->getScopeVec()); }
 
@@ -241,7 +249,7 @@ bool Main::findOrLoadOrdering() {
   }
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
 #if defined PARALLEL_STATIC
-  if (!m_options->par_postOnly) // no need to write ordering in post processing
+  if (!m_options->par_solveLocal && !m_options->par_postOnly) // no need to write ordering
 #endif
   {
     m_options->in_orderingFile = string("temp_elim.") + m_options->problemName
@@ -302,12 +310,14 @@ bool Main::runSLS() {
     return true;  // no SLS in case of subproblem processing
   if (m_options->slsIter <= 0)
     return true;
-  cout << "Running SLS " << m_options->slsIter << " times for "
-       << m_options->slsTime << " seconds" << endl;
+  oss ss;
+  ss << "Running SLS " << m_options->slsIter << " times for "
+     << m_options->slsTime << " seconds" << endl;
+  myprint(ss.str());
   m_slsWrapper.reset(new SLSWrapper());
   m_slsWrapper->init(m_problem.get(), m_options->slsIter, m_options->slsTime);
   m_slsWrapper->run();
-  cout << "SLS finished" << endl;
+  myprint("SLS finished.\n");
 #endif
   return true;
 }
@@ -378,6 +388,9 @@ bool Main::initDataStructs() {
        << " / " << m_pseudotree->getHeight() << endl;
   cout << "Problem variables:\t" << m_pseudotree->getSizeCond()
        <<  " / " << m_pseudotree->getSize() << endl;
+#ifdef PARALLEL_STATIC
+  cout << "State space bound:\t" << m_pseudotree->getStateSpaceCond() << endl;
+#endif
   cout << "Disconn. components:\t" << m_pseudotree->getComponentsCond()
        << " / " << m_pseudotree->getComponents() << endl;
 
@@ -526,7 +539,7 @@ bool Main::runLDS() {
       propLDS.propagate(n,true); // true = report solution
       n = lds.nextLeaf();
     }
-    cout << "LDS: explored " << spaceLDS->stats.numOR << '/' << spaceLDS->stats.numAND
+    cout << "LDS: explored " << spaceLDS->stats.numExpOR << '/' << spaceLDS->stats.numExpAND
          << " OR/AND nodes" << endl;
     cout << "LDS: solution cost " << lds.getCurOptValue() << endl;
 
@@ -627,27 +640,36 @@ bool Main::runSearchDynamic() {
 #ifdef PARALLEL_STATIC
 /* static master mode for distributed execution */
 bool Main::runSearchStatic() {
-  bool success = true;
-  bool preOnly = m_options->par_preOnly, postOnly = m_options->par_postOnly;
+  bool preOnly = m_options->par_preOnly, postOnly = m_options->par_postOnly,
+        local = m_options->par_solveLocal;
 
-  if (!postOnly) { // full or pre-only mode
+  bool success = true;
+  if (!postOnly) {
     success = success && m_search->doLearning();
+  }
+  if (true) {  // TODO
     /* find frontier from scratch */
     success = success && m_search->findFrontier();
+  }
+  if (!postOnly) {
+    /* writes CSV with subproblem stats */
+    success = success && m_search->writeSubprobStats();
+  }
+  if (!postOnly && !local) {
     /* generate files for subproblems */
     success = success && m_search->writeJobs();
     if (m_search->getSubproblemCount()==0) m_solved = true;
-  } else { // post-only mode
-    /* restore frontier from file */
-    success = success && m_search->findFrontier(); // TODO
-    //success = success && search.restoreFrontier();
   }
-  if (!preOnly && !postOnly) { // full mode
+  if (local && !preOnly) {
+    /* solve external subproblems locally */
+    success = success && m_search->extSolveLocal();
+  }
+  if (!local && !preOnly && !postOnly) {
     /* run Condor and wait for results */
     success = success && m_search->runCondor();
   }
-  if (!preOnly) { // full or post-only mode
-    /* reads external results */
+  if (!local && !preOnly) {
+    /* read external results */
     success = success && m_search->readExtResults();
   }
 
@@ -664,7 +686,7 @@ bool Main::runSearchStatic() {
 
 /* sequential mode or worker mode for distributed execution */
 bool Main::runSearchWorker() {
-  BoundPropagator prop(m_problem.get(), m_space.get());
+  BoundPropagator prop(m_problem.get(), m_space.get(), !m_options->nocaching);
   SearchNode* n = m_search->nextLeaf();
   while (n) {
     prop.propagate(n, true); // true = report solutions
@@ -684,19 +706,22 @@ bool Main::outputStats() const {
 
   // Output cache statistics
   m_space->cache->printStats();
+  // Output search stats
+  m_search->printStats();
 
   cout << endl << "--------- Search done ---------" << endl;
   cout << "Problem name:  " << m_problem->getName() << endl;
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
   cout << "Condor jobs:   " << m_search->getSubproblemCount() << endl;
 #endif
-  cout << "OR nodes:      " << m_space->stats.numOR << endl;
-  cout << "AND nodes:     " << m_space->stats.numAND << endl;
+  cout << "OR nodes:      " << m_space->stats.numExpOR << endl;
+  cout << "AND nodes:     " << m_space->stats.numExpAND << endl;
 #if defined PARALLEL_STATIC
   cout << "OR external:   " << m_space->stats.numORext << endl;
   cout << "AND external:  " << m_space->stats.numANDext << endl;
 #endif
-  cout << "Proc. nodes:   " << m_space->stats.numProcessed << endl;
+  cout << "OR processed:  " << m_space->stats.numProcOR << endl;
+  cout << "AND processed: " << m_space->stats.numProcAND << endl;
   cout << "Leaf nodes:    " << m_space->stats.numLeaf << endl;
   cout << "Pruned nodes:  " << m_space->stats.numPruned << endl;
   cout << "Deadend nodes: " << m_space->stats.numDead << endl;
@@ -809,20 +834,24 @@ bool Main::outputInfo() const {
   << "+ Memory limit:\t" << m_options->memlimit << endl
   << "+ Suborder:\t" << m_options->subprobOrder << " ("
   << subprob_order[m_options->subprobOrder] <<")"<< endl
-  << "+ Random seed:\t" << m_options->seed << endl
+  << "+ Random seed:\t" << m_options->seed << endl;
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
+  oss
   << "+ Cutoff depth:\t" << m_options->cutoff_depth << endl
   << "+ Cutoff size:\t" << m_options->cutoff_size << endl
   << "+ Max. workers:\t" << m_options->threads << endl
-  << "+ Run tag:\t" << m_options->runTag << endl
+  << "+ Run tag:\t" << m_options->runTag << endl;
 #else
-  << "+ rotate:\t" << ((m_options->rotate) ? "on" : "off") << endl
+  if (m_options->rotate)
+    oss << "+ rotate:\ton (" << m_options->rotateLimit << ")" << endl;
+  else
+    oss << "+ rotate:\toff" << endl;
 #endif
-  ;
 
  cout << oss.str();
  return true;
 }
 
+}  // namespace daoopt
 
 // EoF

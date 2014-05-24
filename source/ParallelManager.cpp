@@ -27,6 +27,8 @@
 
 #ifdef PARALLEL_STATIC
 
+namespace daoopt {
+
 /* parameters that can be modified */
 #define MAX_SUBMISSION_TRIES 6
 #define SUBMISSION_FAIL_DELAY_BASE 2.0
@@ -363,6 +365,76 @@ bool ParallelManager::findFrontier() {
 }
 
 
+bool ParallelManager::extSolveLocal() {
+  myprint("Solving external subproblems locally.\n");
+
+  Problem prob = *m_problem;  // implicit copy constructor
+  prob.setCopy();
+  prob.setSubprobOnly();
+
+  SearchSpace space(m_pseudotree, m_options);
+  BranchAndBound bab(&prob, m_pseudotree, &space, m_heuristic);
+  BoundPropagator prop(&prob, &space, !m_options->nocaching);
+
+  vector<val_t> assign(m_assignment.size(),NONE);
+  vector<double> pst;
+
+  vector<pair<count_t, count_t> > nodecounts;
+  nodecounts.reserve(m_external.size());
+
+  for (size_t i=0; i<m_external.size(); ++i) {
+    prob.resetSolution();
+
+    SearchNode* subprob = m_external.at(i);
+    { // extract node context assignment
+      const SearchNode* n2 = subprob;
+      while (n2->getParent()) {
+        n2 = n2->getParent(); // AND node
+        assign.at(n2->getVar()) = n2->getVal();
+        n2 = n2->getParent(); // OR node
+      }
+    }
+    subprob->getPST(pst);  // returns bottom-up PST
+    reverse(pst.begin(), pst.end());  // invert to make top-down
+
+    bab.restrictSubproblem(subprob->getVar(), assign, pst);
+    bab.finalizeHeuristic();
+
+    SearchNode* n = NULL;
+    while((n = bab.nextLeaf())) {
+      prop.propagate(n, true);
+    }
+
+    count_t numExpOR = space.stats.numExpOR, numExpAND = space.stats.numExpAND;
+
+    nodecounts.push_back(make_pair(numExpOR, numExpAND));
+    m_space->stats.numORext += numExpOR;
+    m_space->stats.numANDext += numExpAND;
+    // TODO: node and leaf profiles
+
+    subprob->setValue(prob.getSolutionCost());
+#ifndef NO_ASSIGNMENT
+    subprob->setOptAssig(prob.getSolutionAssg());
+#endif
+
+    oss ss;
+    ss << "Solution for subproblem " << i << " (" << *subprob << ") "
+        << numExpOR << " / " << numExpAND << " v:" << prob.getSolutionCost() << endl;
+    myprint(ss.str());
+  }
+
+  // propagate results
+  for (size_t i=0; i<m_external.size(); ++i) {
+    m_prop.propagate(m_external[i], true, m_external[i]);
+  }
+
+  myprint("Writing CSV stats.\n");
+  writeStatsCSV(m_external, &nodecounts);
+
+  return true;
+}
+
+
 bool ParallelManager::runCondor() const {
 
   // generates files for grid jobs and submits
@@ -382,6 +454,13 @@ bool ParallelManager::runCondor() const {
   }
 
   return true; // default: success
+}
+
+
+bool ParallelManager::writeSubprobStats() const {
+  // CSV file with subproblem stats
+  writeStatsCSV(m_external);
+  return true;
 }
 
 
@@ -423,9 +502,6 @@ bool ParallelManager::writeJobs() const {
   }
   file << jobstr.str();
   file.close();
-
-  // CSV file with subproblem stats
-  writeStatsCSV(m_external);
 
   return true;
 }
@@ -508,9 +584,9 @@ bool ParallelManager::readExtResults() {
       inTemp.close();
       if (inTemp.fail()) {
         ostringstream ss;
-        ss << "Solution file " << id << " unavailable: " << solutionFile << endl;
+        ss << "Error: solution file " << id << " unavailable: " << solutionFile << endl;
         myerror(ss.str());
-        node->setErrExt();  // to suppress CSV output
+        node->setErrExt();  // don't count for CSV outout check
         success = false;
         continue; // skip rest of loop
       }
@@ -541,7 +617,7 @@ bool ParallelManager::readExtResults() {
     }
 
     // Check external tuple size, but allow zero (from NaN solutions)
-    size_t subsize = m_pseudotree->getNode(node->getVar())->getSubprobVars().size();
+    size_t subsize = m_pseudotree->getNode(node->getVar())->getSubprobSize();
     if (tup.size() > 0 && tup.size() != subsize) {
       oss ss;
       ss << "Solution file " << id << " length mismatch, got " << tup.size()
@@ -601,6 +677,59 @@ bool ParallelManager::readExtResults() {
 }
 
 
+bool ParallelManager::readCountsFromCSV(const string& filename,
+                                        vector<pair<string, string> >& counts) const {
+  counts.clear();
+
+  ifstream csvIn(filename.c_str(), ios_base::in);
+  if (!csvIn)
+    return false;
+
+  string line, word;
+
+  // parse legend first
+  getline(csvIn, line);
+  istringstream iss(trim(line));
+  vector<string> legend;
+  int iAnd = -1, iOr = -1;
+  for (int i = 0; iss.good(); ++i) {
+    iss >> word;
+    if (word.size())
+      legend.push_back(word);
+    if (word == "and")
+      iAnd = i;
+    else if (word == "or")
+      iOr = i;
+  }
+
+  if (iOr == -1 || iAnd == -1)
+    return false;
+
+  while (csvIn.good()) {
+    getline(csvIn, line);
+    trim(line);
+    if (line.empty())
+      continue;
+    iss.clear();
+    iss.str(line);
+    string wordOr, wordAnd;
+    for (int i = 0; iss.good(); ++i) {
+      iss >> word;
+      if (i == iOr)
+        wordOr = word;
+      else if (i == iAnd)
+        wordAnd = word;
+    }
+    if (wordOr.size() && wordAnd.size()) {
+      counts.push_back(make_pair(wordOr, wordAnd));
+    }
+  }
+
+  csvIn.close();
+  return true;
+}
+
+
 void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
                                     const vector<pair<count_t, count_t> >* counts) const {
   if (counts) {
@@ -616,6 +745,14 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
 
   // open CSV file for stats
   string csvfile = filename(PREFIX_STATS,".csv");
+
+  // check if file exists and store node counts, if present
+  vector<pair<string, string> > prevCounts;
+
+  if (readCountsFromCSV(csvfile, prevCounts))
+    cout << "Recovered " << prevCounts.size() << " stats from csv file." << endl;
+  bool usePrevCounts = prevCounts.size() == subprobs.size();
+
   ofstream csv(csvfile.c_str(), ios_base::out | ios_base::trunc);
 
   csv // << "idx" << '\t'
@@ -628,7 +765,7 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
     csv << '\t' << s;
   }
   csv << '\t' << "est";
-  if (counts) {
+  if (counts || usePrevCounts) {
     csv << '\t' << "or" << '\t' << "and";
   }
   csv << endl;
@@ -675,8 +812,10 @@ void ParallelManager::writeStatsCSV(const vector<SearchNode*>& subprobs,
             << '\t' << itCnt->second;  // AND nodes
         ++itCnt;
       }
+    } else if (usePrevCounts) {
+      csv << '\t' << prevCounts.at(i).first
+          << '\t' << prevCounts.at(i).second;
     }
-
     csv << endl;
   }
   csv.close();
@@ -840,7 +979,7 @@ bool ParallelManager::deepenFrontier(SearchNode* n, vector<SearchNode*>& out) {
         continue; // skip to next
       }
       // Apply AOBB to sample dynamic features
-      if (applyAOBB(*it, m_options->aobbLookahead)) {
+      if (applyAOBB(*it, m_options->aobbLookahead * m_problem->getN())) {
         m_prop.propagate(*it, true);
         continue;
       }
@@ -871,6 +1010,7 @@ double ParallelManager::evaluate(SearchNode* node) const {
   const SubprobFeatures* feats = node->getSubprobFeatures();
 
   // "dynamic subproblem features
+  double ibnd = m_options->ibound;
   double ub = node->getHeur(),
          lb = node->getInitialBound();
   double rPruned = feats->ratioPruned,
@@ -986,14 +1126,14 @@ SearchNode* ParallelManager::nextNode() {
 }
 
 
-bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
+bool ParallelManager::applyAOBB(SearchNode* node, count_t countLimit) {
   assert(node);
   bool complete = false;
 
   this->resetLocalStack(node);
   // copy current node profiles and search stats
-  vector<size_t> startNodeP = m_nodeProfile;
-  vector<size_t> startLeafP = m_leafProfile;
+  vector<count_t> startNodeP = m_nodeProfile;
+  vector<count_t> startLeafP = m_leafProfile;
   SearchStats startStats = m_space->stats;
 
   SearchNode* n = this->nextLeaf();
@@ -1002,7 +1142,7 @@ bool ParallelManager::applyAOBB(SearchNode* node, size_t countLimit) {
   while (n) {
     m_prop.propagate(n, true, node);
     n = this->nextLeaf();
-    countProc = currStats.numProcessed - startStats.numProcessed;
+    countProc = currStats.numProcOR + currStats.numProcAND - startStats.numProcOR - startStats.numProcAND;
     if (countProc > countLimit)
       break;
   }
@@ -1071,7 +1211,7 @@ string ParallelManager::filename(const char* pre, const char* ext, int count) co
 }
 
 
-double ParallelManager::computeAvgDepth(const vector<size_t>& before, const vector<size_t>& after, int offset) {
+double ParallelManager::computeAvgDepth(const vector<count_t>& before, const vector<count_t>& after, int offset) {
   size_t leafCount = 0;
   for (size_t d = offset; d < before.size(); ++d)
     leafCount += after[d] - before[d];
@@ -1111,6 +1251,8 @@ ParallelManager::ParallelManager(Problem* prob, Pseudotree* pt, SearchSpace* spa
   m_learner.reset(new LinearRegressionLearner(m_options));
 
 }
+
+}  // namespace daoopt
 
 #endif /* PARALLEL_STATIC */
 

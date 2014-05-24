@@ -7,6 +7,8 @@
 
 #include "MiniBucketElimMplp.h"
 
+namespace daoopt {
+
 size_t MiniBucketElimMplp::limitSize(size_t memlimit, const vector<val_t> *assignment) {
   size_t ibound = m_options->ibound;
   _memlimit = memlimit;
@@ -151,3 +153,4 @@ MiniBucketElimMplp::MiniBucketElimMplp(Problem* p, Pseudotree* pt, ProgramOption
 
 }
 
+}  // namespace daoopt

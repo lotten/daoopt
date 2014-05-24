@@ -26,6 +26,7 @@
 
 #include "Search.h"
 
+namespace daoopt {
 
 /* Branch and Bound search, implements pure virtual functions
  * from Search.h */
@@ -61,20 +62,6 @@ inline bool BranchAndBound::isDone() const {
 #endif
 }
 
-inline void BranchAndBound::reset(SearchNode* p) {
-  if (!p) {
-    p = m_space->getTrueRoot();
-    if (p->getChildren())
-      p = p->getChildren()[0];
-  }
-#ifdef ANYTIME_DEPTH
-  while (!m_stackDive.empty())
-    m_stackDive.pop();
-#endif
-  while (!m_stack.empty())
-      m_stack.pop();
-  m_stack.push(p);
-}
-
+}  // namespace daoopt
 
 #endif /* BRANCHANDBOUND_H_ */

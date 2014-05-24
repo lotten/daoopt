@@ -25,25 +25,31 @@
 
 #include "BranchAndBoundRotate.h"
 
+namespace daoopt {
+
 typedef PseudotreeNode PtNode;
+
+int BranchAndBoundRotate::HAS_CHILDREN = 0;
+int BranchAndBoundRotate::STACK_EMPTY = 1;
+int BranchAndBoundRotate::LIMIT_REACHED = 2;
 
 
 SearchNode* BranchAndBoundRotate::nextNode() {
   SearchNode* n = NULL;
   while (m_stacks.size()) {
     MyStack* st = m_stacks.front();
-    if (st->getChildren()) {
+    if (st->getChildren()) {  // move on if this stack has child stacks
       m_stacks.push(st);
-      m_stackCount = 0;
-    } else if (st->empty()) {
+      resetRotateCount(HAS_CHILDREN);
+    } else if (st->empty()) {  // clean up empty stack
       if (st->getParent())
         st->getParent()->delChild();
       delete st;
-      m_stackCount = 0;
-    } else if (m_stackLimit && m_stackCount++ == m_stackLimit) {
+      resetRotateCount(STACK_EMPTY);
+    } else if (m_stackLimit > 0 && m_stackCount++ == m_stackLimit) {  // stack limit reached
       m_stacks.push(st);
-      m_stackCount = 0;
-    } else {
+      resetRotateCount(LIMIT_REACHED);
+    } else {  // remain in current stack
       n = st->top();
       st->pop();
       break; // while loop
@@ -97,8 +103,35 @@ bool BranchAndBoundRotate::doExpand(SearchNode* n) {
 }
 
 
+void BranchAndBoundRotate::printStats() const {
+  oss ss;
+  ss << "rotateCnt:";
+  BOOST_FOREACH(size_t n, m_rotateCnt) ss << ' ' << n;
+  ss << endl;
+  myprint (ss.str());
+  ss.str("");
+
+  ss << "reasonCnt:";
+  BOOST_FOREACH(size_t n, m_reasonCnt) ss << ' ' << n;
+  ss << endl;
+  myprint(ss.str());
+  ss.str("");
+
+  double avgRotate = 0;
+  size_t total = 0;
+  for (size_t i = 0; i < m_rotateCnt.size(); ++i) {
+    total += m_rotateCnt[i];
+    avgRotate += i * m_rotateCnt[i];
+  }
+  avgRotate /= total;
+  ss << "avgRotate: " << avgRotate << " maxRotate: " << m_rotateCnt.size()-1 << endl;
+  myprint(ss.str());
+  ss.str("");
+}
+
+
 BranchAndBoundRotate::BranchAndBoundRotate(Problem* prob, Pseudotree* pt, SearchSpace* space, Heuristic* heur) :
-   Search(prob,pt,space,heur) {
+   Search(prob,pt,space,heur), m_reasonCnt(3,0) {
 #ifndef NO_CACHING
   // Init context cache table
   if (!m_space->cache)
@@ -114,3 +147,4 @@ BranchAndBoundRotate::BranchAndBoundRotate(Problem* prob, Pseudotree* pt, Search
   }
 }
 
+}  // namespace daoopt

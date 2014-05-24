@@ -36,6 +36,8 @@
 #include "LearningEngine.h"
 #include "utils.h"
 
+namespace daoopt {
+
 class ParallelManager : virtual public Search {
 
 protected:
@@ -104,6 +106,10 @@ protected:
   /* writes subproblem statistics to CSV file, solution node counts optional */
   void writeStatsCSV(const vector<SearchNode*>& subprobs,
                      const vector<pair<count_t, count_t> >* nodecounts = NULL) const;
+  /* tries to read node counts from existing CSV file, saved into referenced
+   * vector (as numeral strings). Returns true in case of success, false otherwise. */
+  bool readCountsFromCSV(const string& filename,
+                         vector<pair<string, string> >& counts) const;
 
   /* clear stack for local solving */
   void resetLocalStack(SearchNode* node = NULL);
@@ -111,7 +117,7 @@ protected:
   void solveLocal(SearchNode*);
 
   /* computes the average depth of nodes / leaves, minus the given offset */
-  double computeAvgDepth(const vector<size_t>&, const vector<size_t>&, int offset);
+  double computeAvgDepth(const vector<count_t>&, const vector<count_t>&, int offset);
 
 public:
   /* stores the lower bound to file for subsequent retrieval */
@@ -122,8 +128,12 @@ public:
   bool doLearning();
   /* computes the parallel frontier and , returns true iff successful */
   bool findFrontier();
+  /* solves external subproblems locally */
+  bool extSolveLocal();
   /* writes subproblem information to disk */
   bool writeJobs() const;
+  /* writes CSV with subproblem stats */
+  bool writeSubprobStats() const;
   /* initiates parallel subproblem computation through Condor */
   bool runCondor() const;
   /* parses the results from external subproblems */
@@ -153,6 +163,8 @@ inline void ParallelManager::reset(SearchNode* n) {
   m_local.clear();
   m_external.push_back(n);
 }
+
+}  // namespace daoopt
 
 #endif /* PARALLEL_STATIC */
 

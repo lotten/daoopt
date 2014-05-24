@@ -32,12 +32,16 @@ namespace po = boost::program_options;
 #include <string>
 #include <iostream>
 
+namespace daoopt {
+
 struct ProgramOptions {
 public:
   bool nosearch; // abort before starting the actual search
+  bool nocaching; // disable caching
   bool autoCutoff; // enable automatic cutoff
   bool autoIter; // enable adaptive ordering limit
   bool orSearch; // use OR search (builds pseudo tree as chain)
+  bool par_solveLocal; // solve all parallel subproblems locally
   bool par_preOnly; // static parallel: preprocessing only (generate subproblems)
   bool par_postOnly; // static parallel: postprocessing only (read solution files)
   bool rotate; // enables breadth-rotating AOBB
@@ -53,6 +57,7 @@ public:
   int threads; // max. number of parallel subproblems
   int order_iterations; // no. of randomized order finding iterations
   int order_timelimit; // no. of seconds to look for variable ordering
+  int order_tolerance; // allowed range of deviation from suggested optimal minfill heuristic
   int cutoff_depth; // fixed cutoff depth for central search
   int cutoff_width; // fixed width for central cutoff
   int nodes_init; // number of nodes for local initialization (times 10^6)
@@ -96,11 +101,11 @@ public:
 ProgramOptions* parseCommandLine(int argc, char** argv);
 
 inline ProgramOptions::ProgramOptions() :
-		      nosearch(false), autoCutoff(false), autoIter(false), orSearch(false),
-		      par_preOnly(false), par_postOnly(false), rotate(false), order_cvo(false),
-                      mplp(-1), mplps(-1), jglp(-1), jglps(-1),
+		      nosearch(false), nocaching(false), autoCutoff(false), autoIter(false), orSearch(false),
+		      par_solveLocal(false), par_preOnly(false), par_postOnly(false), rotate(false),
+		      order_cvo(false), match(-1), mplp(-1), mplps(-1), jglp(-1), jglps(-1),
 		      ibound(0), cbound(0), cbound_worker(0),
-		      threads(0), order_iterations(0), order_timelimit(0),
+		      threads(0), order_iterations(0), order_timelimit(0), order_tolerance(0),
 		      cutoff_depth(NONE), cutoff_width(NONE),
 		      nodes_init(NONE), memlimit(NONE),
 		      cutoff_size(NONE), local_size(NONE), maxSubprob(NONE),
@@ -109,5 +114,7 @@ inline ProgramOptions::ProgramOptions() :
 		      maxWidthAbort(NONE), slsIter(0), slsTime(5),
 		      aobbLookahead(0),
 		      initialBound(ELEM_NAN) {}
+
+}  // namespace daoopt
 
 #endif /* PROGRAMOPTIONS_H_ */

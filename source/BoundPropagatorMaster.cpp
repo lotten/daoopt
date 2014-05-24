@@ -25,6 +25,8 @@
 
 #include "BoundPropagatorMaster.h"
 
+namespace daoopt {
+
 #ifdef PARALLEL_DYNAMIC
 
 void BoundPropagatorMaster::operator() () {
@@ -125,3 +127,5 @@ void BoundPropagatorMaster::operator() () {
 }
 
 #endif /* PARALLEL_DYNAMIC */
+
+}  // namespace daoopt

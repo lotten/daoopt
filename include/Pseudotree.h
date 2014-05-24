@@ -35,6 +35,8 @@
 #include "SubprobStats.h"
 #endif
 
+namespace daoopt {
+
 /* forward declaration */
 class PseudotreeNode;
 
@@ -71,7 +73,7 @@ public:
   /* computes an elimination order into 'elim' and returns its induced width
    * if 'limit' is given, will terminate early if new order is worse than limit
    * and return INT_MAX */
-  int eliminate(Graph G, vector<int>& elim, int limit=INT_MAX);
+  int eliminate(Graph G, vector<int>& elim, int limit=INT_MAX, int tolerance=0);
 
   /* builds the pseudo tree according to order 'elim' */
   void build(Graph G, const vector<int>& elim, const int cachelimit = NONE);
@@ -118,6 +120,7 @@ public:
 
 #ifdef PARALLEL_STATIC
   void computeSubprobStats();
+  double getStateSpaceCond() const;
 #endif
 
   const vector<Function*>& getFunctions(int i) const;
@@ -271,8 +274,9 @@ public:
   void computeStatsDomain(vector<int>&);
   void computeStatsClusterCond();
 protected:
-  /* appends cluster sizes of all descendants, conditioned on set */
-  void computeStatsClusterCondSub(const set<int>&, vector<int>&) const;
+  /* appends cluster sizes of all descendants, conditioned on set.
+   * Also computes and returns conditioned subproblem state space. */
+  double computeStatsClusterCondSub(const set<int>&, vector<int>&) const;
 #endif
 
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
@@ -394,5 +398,7 @@ inline PseudotreeNode::~PseudotreeNode()  {
     if (m_subprobStats) delete m_subprobStats;
 #endif
 }
+
+}  // namespace daoopt
 
 #endif /* PSEUDOTREE_H_ */

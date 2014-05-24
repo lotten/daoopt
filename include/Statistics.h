@@ -31,6 +31,8 @@
 #include "SearchNode.h"
 #include "Pseudotree.h"
 
+namespace daoopt {
+
 struct SubproblemStats {
 
   /* The following are all specific to the conditioned subproblem in question */
@@ -69,11 +71,15 @@ inline void SubproblemStats::update(SearchNode* n, PseudotreeNode* pt, count_t c
   subNodeCount = count;
 }
 
+}  // namespace daoopt
+
 #endif
 
 #ifdef PARALLEL_DYNAMIC
 
 #include "Subproblem.h"
+
+namespace daoopt {
 
 /**
  * keeps track of subproblem statistics, used for complexity estimates
@@ -141,6 +147,7 @@ inline AvgStatistics::AvgStatistics() :
     _alpha(1.0), _beta(0.5), _gamma(1.0)
 { /* intentionally empty */ }
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_DYNAMIC */
 

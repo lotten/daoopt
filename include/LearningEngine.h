@@ -30,6 +30,8 @@
 #include "ProgramOptions.h"
 #include "Statistics.h"
 
+namespace daoopt {
+
 class LearningEngine {
 protected:
   ProgramOptions* m_options;
@@ -61,5 +63,8 @@ public:
   LinearRegressionLearner(ProgramOptions* opt) : LearningEngine(opt) {}
 };
 
+}  // namespace daoopt
+
 #endif /* PARALLEL_STATIC */
+
 #endif /* LEARNINGENGINE_H_ */

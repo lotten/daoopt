@@ -28,8 +28,7 @@ lib/zlib \
 lib/sls4mpe \
 lib/mex \
 lib \
+lib/cvo \
 lib/cvo/ARP \
-lib/boost.src/program_options/src \
 include \
-. \
 

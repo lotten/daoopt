@@ -28,6 +28,7 @@
 
 #ifdef PARALLEL_DYNAMIC
 
+namespace daoopt {
 
 class BoundPropagatorMaster : public BoundPropagator {
 
@@ -48,6 +49,7 @@ public:
 
 };
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_DYNAMIC */
 

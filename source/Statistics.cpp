@@ -25,6 +25,8 @@
 
 #include "utils.h"
 
+namespace daoopt {
+
 #ifdef PARALLEL_STATIC
 
 ostream& operator << (ostream& os, const SubproblemStats& s) {
@@ -227,6 +229,6 @@ double AvgStatistics::normalize(double d) const {
 
 }
 
-
 #endif /* PARALLEL_DYNAMIC */
 
+}  // namespace daoopt

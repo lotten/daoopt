@@ -26,11 +26,12 @@
 /* disables DEBUG output */
 #undef DEBUG
 
+namespace daoopt {
 
 #ifdef DEBUG
 /* ostream operator for debugging */
-ostream& operator <<(ostream& os, const list<Function*>& l) {
-  list<Function*>::const_iterator it = l.begin();
+ostream& operator <<(ostream& os, const vector<Function*>& l) {
+  vector<Function*>::const_iterator it = l.begin();
   os << '[';
   while (it!=l.end()) {
     os << (**it);
@@ -40,7 +41,6 @@ ostream& operator <<(ostream& os, const list<Function*>& l) {
   return os;
 }
 #endif
-
 
 /* computes the augmented part of the heuristic estimate */
 double MiniBucketElim::getHeur(int var, const vector<val_t>& assignment) const {
@@ -451,4 +451,4 @@ bool MiniBucketElim::readFromFile(string fn) {
   return true;
 }
 
-
+}  // namespace daoopt

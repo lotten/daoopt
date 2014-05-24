@@ -26,6 +26,8 @@
 
 #include "Search.h"
 
+namespace daoopt {
+
 /* implements a limited discrepancy search, which explores every solution
  * that deviates from the heuristic preference at most k times */
 class LimitedDiscrepancy : virtual public Search {
@@ -84,5 +86,7 @@ inline void LimitedDiscrepancy::reset(SearchNode* n) {
     m_stack.pop();
   m_stack.push(make_pair(n,m_maxDisc));
 }
+
+}  // namespace daoopt
 
 #endif /* LIMITEDDISCREPANCY_H_ */

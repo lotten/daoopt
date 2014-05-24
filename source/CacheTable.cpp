@@ -23,11 +23,12 @@
 
 #include "CacheTable.h"
 
+namespace daoopt {
+
 #ifndef NO_ASSIGNMENT
   const pair<const double, const vector<val_t> > CacheTable::NOT_FOUND = make_pair(ELEM_NAN, vector<val_t>());
 #else
   const double CacheTable::NOT_FOUND = ELEM_NAN;
 #endif
 
-
-
+}  // namespace daoopt

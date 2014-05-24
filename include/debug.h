@@ -27,6 +27,10 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+namespace daoopt {
+
 /* nothing here currently */
+
+}  // namespace daoopt
 
 #endif /* DEBUG_H_ */

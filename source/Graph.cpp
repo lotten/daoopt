@@ -23,6 +23,7 @@
 
 #include "Graph.h"
 
+namespace daoopt {
 
 nCost Graph::scoreMinfill(const int& i) {
   MAPCLASS<int,set<int> >::iterator iti = m_neighbors.find(i);
@@ -96,3 +97,5 @@ size_t Graph::noComponents() {
   return connectedComponents(nodes).size();
 
 }
+
+}  // namespace daoopt

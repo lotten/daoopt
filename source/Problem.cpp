@@ -26,7 +26,11 @@
 #include <sstream>
 #include <fstream>
 
+
 #include "UAI2012.h"
+
+namespace daoopt {
+
 
 //extern time_t time_start;
 
@@ -40,7 +44,7 @@ void Problem::removeEvidence() {
   // Declare aux. variables.
   int idx, i, new_r, new_n;
   val_t k, new_k;
-  //map<uint,uint> evidence(m_evidence);
+  //map<unsigned int, unsigned int> evidence(m_evidence);
   vector<val_t> new_domains;
   vector<Function*> new_funs;
 
@@ -331,7 +335,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   string s;
   int x,y;
   val_t xs;
-  uint z;
+  unsigned int z;
 
   in >> s; // Problem type
   if (s == "BAYES") {
@@ -513,8 +517,8 @@ void Problem::outputAndSaveSolution(const string& file, const SearchStats* nodes
     BINWRITE(out, m_curCost); // mpe solution cost
     count_t countOR = 0, countAND = 0;
     if (nodestats) {
-      countOR = nodestats->numOR;
-      countAND = nodestats->numAND;
+      countOR = nodestats->numExpOR;
+      countAND = nodestats->numExpAND;
     }
     BINWRITE(out, countOR);
     BINWRITE(out, countAND);
@@ -562,7 +566,7 @@ void Problem::assignmentForOutput(vector<val_t>& assg) const {
 }
 
 void Problem::assignmentForOutput(const vector<val_t>& inAssg, vector<val_t>& outAssg) const {
-  if (m_subprobOnly) {
+  if (m_subprobOnly || inAssg.empty()) {
     outAssg = inAssg;
     // update: no need to remove dummy anymore
   } else {
@@ -597,10 +601,16 @@ void Problem::updateSolution(double cost,
   double costCheck = ELEM_ZERO;
 #ifndef NO_ASSIGNMENT
   // check for complete assignment first
-  BOOST_FOREACH(val_t v, sol) {
-    if (v == NONE) {
+  for (size_t i = 0; i < sol.size(); ++i) {
+    if (sol[i] == NONE) {
       oss ss; ss << "Warning: skipping incomplete solution, reported " << cost;
       DIAG(ss << " " << sol.size() << " " << sol;)
+      ss << endl; myprint(ss.str());
+      return;
+    }
+    if (!m_subprobOnly && sol[i] >= m_domains[i]) {
+      oss ss; ss << "Warning: value " << (int)sol[i] << " outside of variable " << i
+                 << " domain " << (int)m_domains[i];
       ss << endl; myprint(ss.str());
       return;
     }
@@ -629,14 +639,15 @@ void Problem::updateSolution(double cost,
 		 << ", reported " << cost << endl;
       myprint(ss.str());
     }
-  }
-#else
-  costCheck = cost;
+  } else
 #endif
+  costCheck = cost;
 
   if (ISNAN(costCheck) || (!ISNAN(m_curCost) && costCheck <= m_curCost)) { // TODO costCheck =?= ELEM_ZERO )
     oss ss; ss << "Warning: Discarding solution with cost " << costCheck << ", reported: " << cost;
+#ifndef NO_ASSIGNMENT
     DIAG(ss << " " << sol.size() << " " << sol;)
+#endif
     ss << endl; myprint(ss.str());
     return;
   }
@@ -646,7 +657,7 @@ void Problem::updateSolution(double cost,
   if (output) {
     ss << "u ";
     if (nodestats)
-      ss << nodestats->numOR << ' ' <<  nodestats->numAND << ' ';
+      ss << nodestats->numExpOR << ' ' <<  nodestats->numExpAND << ' ';
     else
       ss << "0 0 ";
     ss << SCALE_LOG(costCheck) ;
@@ -672,6 +683,14 @@ void Problem::updateSolution(double cost,
     ss << endl;
     myprint(ss.str());
   }
+}
+
+
+void Problem::resetSolution() {
+  m_curCost = ELEM_NAN;
+#ifndef NO_ASSIGNMENT
+  m_curSolution.clear();
+#endif
 }
 
 
@@ -746,3 +765,4 @@ bool Problem::isEliminated(int i) const {
 }
 #endif
 
+}  // namespace daoopt

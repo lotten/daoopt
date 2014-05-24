@@ -45,8 +45,12 @@ else()
   if(DAOOPT_MASTER_DYNAMIC AND NOT DAOOPT_MASTER_STATIC)
     add_definitions(-DPARALLEL_DYNAMIC)
     find_package(Threads)  # includes pthread
+    find_package( Boost REQUIRED COMPONENTS system )
   endif()
 endif()
+
+find_package( Boost REQUIRED COMPONENTS program_options thread )
+include_directories( ${Boost_INCLUDE_DIRS} )
 
 # Included folders for header files
 include_directories(
@@ -56,7 +60,7 @@ include_directories(
 
 # Libraries in the lib folder via recursive CMakeLists.txt
 add_subdirectory(lib)
-set(LIBS Gzstream Sls4mpe BoostProgOpt BoostThread)
+set(LIBS Gzstream Sls4mpe)
 
 # Main daoopt source files
 set(FILES
@@ -67,9 +71,9 @@ set(FILES
   ./source/BranchAndBoundMaster.cpp
   ./source/BranchAndBoundRotate.cpp
   ./source/BranchAndBoundSampler.cpp
+  ./source/CacheTable.cpp
   ./source/Function.cpp
   ./source/Graph.cpp
-  ./source/hash.cpp
   ./source/LearningEngine.cpp
   ./source/LimitedDiscrepancy.cpp
   ./source/Main.cpp
@@ -93,4 +97,4 @@ set(FILES
 
 # Main executable and library dependencies
 add_executable(daoopt daoopt.cpp ${FILES})
-target_link_libraries(daoopt ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(daoopt ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY} )

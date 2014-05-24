@@ -23,9 +23,11 @@
 
 #include "ProgramOptions.h"
 
-using namespace std;
+namespace daoopt {
 
 ProgramOptions* parseCommandLine(int ac, char** av) {
+
+  using std::string;
 
   ProgramOptions* opt = new ProgramOptions;
 
@@ -60,6 +62,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("cvo", "use CVO minfill library by Kalev Kask")
       ("orderIter,t", po::value<int>()->default_value(25), "iterations for finding ordering")
       ("orderTime", po::value<int>()->default_value(-1), "maximum time for finding ordering")
+      ("orderTolerance", po::value<int>()->default_value(0), "allowed deviation from minfill suggested optimal")
       ("max-width", po::value<int>(), "max. induced width to process, abort otherwise")
 #if defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC
       ("cutoff-depth,d", po::value<int>()->default_value(-1), "cutoff depth for central search")
@@ -67,6 +70,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("cutoff-size,l", po::value<int>()->default_value(-1), "subproblem size cutoff for central search (* 10^5)")
       ("local-size,u", po::value<int>()->default_value(-1), "minimum subproblem size (* 10^5)")
       ("init-nodes,x", po::value<int>()->default_value(-1), "number of nodes (*10^5) for local initialization")
+      ("local", "solve all parallel subproblems locally")
       ("noauto", "don't determine cutoff automatically")
       ("procs,p", po::value<int>()->default_value(-1), "max. number of concurrent subproblem processes")
       ("max-sub", po::value<int>()->default_value(-1), "only generate the first few subproblems (for testing)")
@@ -78,7 +82,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("sampledepth", po::value<int>()->default_value(10), "Randomness branching depth for initial sampling")
       ("samplesizes", po::value<string>(), "Sequence of sample sizes for complexity prediction (in 10^5 nodes)")
       ("samplerepeat", po::value<int>()->default_value(1), "Number of sample sequence repeats")
-      ("lookahead", po::value<int>()->default_value(5000), "Number of nodes for subproblem AOBB lookahead")
+      ("lookahead", po::value<int>()->default_value(5), "AOBB subproblem lookahead factor (multiplied by no. of problem variables)")
 #endif
       ("bound-file,b", po::value<string>(), "file with initial lower bound on solution cost")
       ("initial-bound", po::value<double>(), "initial lower bound on solution cost" )
@@ -90,6 +94,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       ("memlimit,m", po::value<int>()->default_value(-1), "approx. memory limit for mini buckets (in MByte)")
       ("seed", po::value<int>(), "seed for random number generator, time() otherwise")
       ("or", "use OR search (build pseudo tree as chain)")
+      ("nocaching", "disable context-based caching during search")
       ("nosearch,n", "perform preprocessing, output stats, and exit")
 #if not (defined PARALLEL_DYNAMIC || defined PARALLEL_STATIC)
       ("reduce", po::value<string>(), "path to output the reduced network to (removes evidence and unary variables)")
@@ -163,6 +168,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
       opt->order_iterations = vm["orderIter"].as<int>();
     if (vm.count("orderTime"))
       opt->order_timelimit = vm["orderTime"].as<int>();
+    if (vm.count("orderTolerance"))
+      opt->order_tolerance = vm["orderTolerance"].as<int>();
 
     if (vm.count("max-width"))
       opt->maxWidthAbort = vm["max-width"].as<int>();
@@ -215,10 +222,15 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     else
       opt->orSearch = false;
 
-    if(vm.count("nosearch"))
+    if (vm.count("nosearch"))
       opt->nosearch = true;
     else
       opt->nosearch = false;
+
+    if (vm.count("nocaching"))
+      opt->nocaching = true;
+    else
+      opt->nocaching = false;
 
     if (vm.count("rotate"))
       opt->rotate = true;
@@ -243,6 +255,8 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     if (vm.count("tag"))
       opt->runTag = vm["tag"].as<string>();
 
+    if (vm.count("local"))
+      opt->par_solveLocal = true;
     if (vm.count("pre"))
       opt->par_preOnly = true;
     else if (vm.count("post"))
@@ -296,3 +310,4 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 
 }
 
+}  // namespace daoopt

@@ -26,6 +26,8 @@
 #include "Search.h"
 #include "ProgramOptions.h"
 
+namespace daoopt {
+
 Search::Search(Problem* prob, Pseudotree* pt, SearchSpace* s, Heuristic* h) :
     m_problem(prob), m_pseudotree(pt), m_space(s), m_heuristic(h)
 #ifdef PARALLEL_DYNAMIC
@@ -81,6 +83,7 @@ void Search::finalizeHeuristic() {
 bool Search::doProcess(SearchNode* node) {
   assert(node);
   if (node->getType() == NODE_AND) {
+    m_space->stats.numProcAND += 1;
     // 0-labeled nodes should not get generated in the first place
     assert(node->getLabel() != ELEM_ZERO);  // if this fires, something is wrong!
     DIAG( ostringstream ss; ss << *node << " (l=" << node->getLabel() << ")\n"; myprint(ss.str()) );
@@ -88,11 +91,10 @@ bool Search::doProcess(SearchNode* node) {
     int val = node->getVal();
     m_assignment[var] = val; // record assignment
   } else { // NODE_OR
+    m_space->stats.numProcOR += 1;
     DIAG( ostringstream ss; ss << *node << "\n"; myprint(ss.str()) );
   }
-
   return false; // default
-
 }
 
 
@@ -170,7 +172,7 @@ bool Search::doPruning(SearchNode* node) {
     node->setPruned();
     if (node->getType() == NODE_AND) {
       // count 1 leaf AND node
-      m_leafProfile.at(depth) += 1;
+      if (depth >= 0) m_leafProfile.at(depth) += 1;
 #if defined PARALLEL_DYNAMIC
       node->setSubLeaves(1);
 #endif
@@ -178,7 +180,7 @@ bool Search::doPruning(SearchNode* node) {
       if ( ISNAN(node->getValue()) ) // value could be set by LDS
         node->setValue(ELEM_ZERO);
       // assume all AND children would have been created and pruned
-      m_leafProfile.at(depth) += m_problem->getDomainSize(var);
+      if (depth >= 0) m_leafProfile.at(depth) += m_problem->getDomainSize(var);
 #if defined PARALLEL_DYNAMIC
       node->addSubLeaves(m_problem->getDomainSize(var));
 #endif
@@ -196,7 +198,6 @@ SearchNode* Search::nextLeaf() {
 
   SearchNode* node = this->nextNode();
   while (node) {
-    m_space->stats.numProcessed += 1;
     if (doProcess(node)) // initial processing
       { return node; }
     if (doCaching(node)) // caching?
@@ -283,7 +284,7 @@ bool Search::generateChildrenAND(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->stats.numAND += 1;
+  m_space->stats.numExpAND += 1;
 
   int var = n->getVar();
   PseudotreeNode* ptnode = m_pseudotree->getNode(var);
@@ -368,7 +369,7 @@ bool Search::generateChildrenOR(SearchNode* n, vector<SearchNode*>& chi) {
     }
   }
 
-  m_space->stats.numOR += 1;
+  m_space->stats.numExpOR += 1;
 
   int var = n->getVar();
   int depth = n->getDepth();
@@ -635,8 +636,12 @@ int Search::restrictSubproblem(int rootVar, const vector<val_t>& assig, const ve
   int depth = m_pseudotree->restrictSubproblem(rootVar);
 
   // resize node count vectors for subproblem
+  m_nodeProfile.clear();
   m_nodeProfile.resize(m_pseudotree->getHeightCond()+1);
+  m_nodeProfile.clear();
   m_leafProfile.resize(m_pseudotree->getHeightCond()+1);
+  // reset search stats
+  m_space->stats = SearchStats();
 
   // set context assignment
   const vector<int>& context = m_pseudotree->getNode(rootVar)->getFullContextVec();
@@ -830,4 +835,4 @@ bool Search::restrictSubproblem(string file) {
   return true; // success
 }
 
-
+}  // namespace daoopt

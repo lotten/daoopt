@@ -53,7 +53,7 @@
 #endif
 
 #ifndef PARALLEL_STATIC
-//#define PARALLEL_STATIC
+#define PARALLEL_STATIC
 #endif
 
 /*****************************************************************/
@@ -86,6 +86,7 @@
 
 /*****************************************************************/
 
+namespace daoopt {
 /******************************************************************
  * alias for val_t, the data type for variable values: larger types
  * allow higher max. domain size but use more memory. Set to exactly
@@ -101,6 +102,7 @@ typedef short val_t;
 /* int = 32 bit, max. domain size is 2,147,483,647 */
 //typedef int val_t;
 
+}  // namespace daoopt
 /*****************************************************************/
 
 

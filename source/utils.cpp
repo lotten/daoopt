@@ -23,6 +23,8 @@
 
 #include "utils.h"
 
+namespace daoopt {
+
 extern time_t _time_start;  // from Main.cpp
 
 void myprint(std::string s) {
@@ -39,7 +41,7 @@ void myerror(std::string s) {
   double T = difftime(now, _time_start);
   {
     GETLOCK(mtx_io, lk);
-    std::cerr << '[' << T << "] " << s << std::flush;
+    std::cerr << '[' << (int)T << "] " << s << std::flush;
   }
 }
 
@@ -65,9 +67,9 @@ ostream& operator <<(ostream& os, const vector<int>& s) {
   return os;
 }
 
-ostream& operator <<(ostream& os, const vector<uint>& s) {
+ostream& operator <<(ostream& os, const vector<unsigned int>& s) {
   os << '[';
-  for (vector<uint>::const_iterator it = s.begin(); it != s.end(); ) {
+  for (vector<unsigned int>::const_iterator it = s.begin(); it != s.end(); ) {
     os << *it;
     if (++it != s.end()) os << ',';
   }
@@ -115,9 +117,9 @@ ostream& operator <<(ostream& os, const set<int>& s) {
   return os;
 }
 
-ostream& operator <<(ostream& os, const set<uint>& s) {
+ostream& operator <<(ostream& os, const set<unsigned int>& s) {
   os << '{';
-  for (set<uint>::const_iterator it = s.begin(); it != s.end(); ) {
+  for (set<unsigned int>::const_iterator it = s.begin(); it != s.end(); ) {
     os << *it;
     if (++it != s.end()) os << ',';
   }
@@ -159,3 +161,4 @@ double mylog10(bigint a) {
  #endif
 #endif
 
+}  // namespace daoopt

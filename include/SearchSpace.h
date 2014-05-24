@@ -45,15 +45,21 @@
 namespace boost {
   class thread;
 }
-struct CondorSubmission;
+namespace daoopt {
+  struct CondorSubmission;
+}
 #endif
 
 /* declare ProgramOptions */
 #ifdef PARALLEL_DYNAMIC
 #include "ProgramOptions.h"
 #else
-struct ProgramOptions;
+namespace daoopt {
+  struct ProgramOptions;
+}
 #endif
+
+namespace daoopt {
 
 /* forward declarations */
 class Pseudotree;
@@ -61,9 +67,10 @@ class Pseudotree;
 
 /* simple container to hold node statistics for search */
 struct SearchStats {
-  size_t numProcessed;        // number of nodes processed (total)
-  size_t numOR;               // number of OR nodes expanded
-  size_t numAND;              // number of AND nodes expanded
+  size_t numExpOR;               // number of OR nodes expanded
+  size_t numExpAND;              // number of AND nodes expanded
+  size_t numProcOR;           // number of OR nodes processed
+  size_t numProcAND;          // number of AND nodes processed
 #ifdef PARALLEL_STATIC
   size_t numORext;            // number of OR nodes from external problems
   size_t numANDext;           // number of OR nodes from external problems
@@ -72,13 +79,13 @@ struct SearchStats {
   size_t numPruned;           // number of nodes pruned by the heuristic
   size_t numDead;             // number of "dead end" nodes (probability 0)
   SearchStats() :
-    numProcessed(0), numOR(0), numAND(0),
+    numExpOR(0), numExpAND(0), numProcOR(0), numProcAND(0),
 #ifdef PARALLEL_STATIC
     numORext(0), numANDext(0),
 #endif
     numLeaf(0), numPruned(0), numDead(0) {}
   SearchStats(const SearchStats& ns) :
-    numProcessed(ns.numProcessed), numOR(ns.numOR), numAND(ns.numAND),
+    numExpOR(ns.numExpOR), numExpAND(ns.numExpAND), numProcOR(ns.numProcOR), numProcAND(ns.numProcAND),
 #ifdef PARALLEL_STATIC
     numORext(ns.numORext), numANDext(ns.numANDext),
 #endif
@@ -187,5 +194,6 @@ inline SearchSpaceMaster::~SearchSpaceMaster() {
 
 #endif /* PARALLEL_DYNAMIC */
 
+}  // namespace daoopt
 
 #endif /* SEARCHSPACE_H_ */

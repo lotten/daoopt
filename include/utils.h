@@ -26,50 +26,66 @@
 
 #include "_base.h"
 
-
+namespace daoopt {
 int memoryusage();
+}
 
-#include <malloc.h>
-
-#ifdef WINDOWS
-
+#if defined WINDOWS || defined __APPLE__
+namespace daoopt {
 inline int memoryusage() {
   return -1;
 }
-
+}
 #else
+#include <malloc.h>
+namespace daoopt {
 inline int memoryusage() {
-
   struct mallinfo info;
   info = mallinfo();
-
   cout
     << info.arena << '\t'
     << info.uordblks << '\t'
     << info.fordblks << '\t'
     << info.hblkhd << endl;
-
   return info.arena;
-
+}
 }
 #endif
+
+namespace daoopt {
 
 void myprint(std::string s);
 void myerror(std::string s);
 void err_txt(std::string s);
 
 ostream& operator <<(ostream& os, const vector<int>& s);
-ostream& operator <<(ostream& os, const vector<uint>& s);
+ostream& operator <<(ostream& os, const vector<unsigned int>& s);
 
 ostream& operator <<(ostream& os, const vector<signed short>& s);
 ostream& operator <<(ostream& os, const vector<signed char>& s);
 
 ostream& operator <<(ostream& os, const set<int>& s);
-ostream& operator <<(ostream& os, const set<uint>& s);
+ostream& operator <<(ostream& os, const set<unsigned int>& s);
 
 ostream& operator <<(ostream& os, const vector<double>& s);
 
 string str_replace(string& s, const string& x, const string& y);
+
+/* trim string from start (found on stackoverflow.com) */
+static inline string& ltrim(string& s) {
+  s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace))));
+  return s;
+}
+/* trim string from end (found on stackoverflow.com) */
+static inline string& rtrim(string& s) {
+  s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end());
+  return s;
+}
+/* trim string from both ends (found on stackoverflow.com) */
+static inline string& trim(string& s) {
+  return ltrim(rtrim(s));
+}
+
 
 /*
  * increments the tuple value, up to each entry's limit. Returns false
@@ -232,5 +248,6 @@ void print_hex(const _T* d) {
     printf("%X", ar[i]);
 }
 
+}  // namespace daoopt
 
 #endif /* UTILS_H_ */

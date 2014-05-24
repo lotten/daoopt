@@ -25,7 +25,7 @@
       /* os << (const char*)t; return os;                                */ \
     } \
   private:                                                   \
-    template<typename T> operator T() const;                 \
+    /* template<typename T> operator T() const;                */ \
     static char const* names(unsigned int i) {        \
       static char const str[] = { #v0 "," #__VA_ARGS__ ",\0" }; \
       char const* s=str; while (*s!=0 && i!=0) if (*(s++)==',') --i; \

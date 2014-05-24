@@ -19,6 +19,7 @@
 
 #include "mex/mbe.h"
 
+namespace daoopt {
 
 /* The overall minibucket elimination */
 class MiniBucketElimMplp : public Heuristic {
@@ -86,6 +87,6 @@ protected:
 
 };
 
-
+}  // namespace daoopt
 
 #endif /* MINIBUCKETELIM_H_ */

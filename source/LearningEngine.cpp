@@ -25,6 +25,8 @@
 
 #ifdef PARALLEL_STATIC
 
+namespace daoopt {
+
 void LearningEngine::statsToFile(const string& fn) const {
   ofstream of(fn.c_str(), ios_base::out | ios_base::trunc);
   of << "#id\troot\tdepth\tvars\tlb\tub\theight\twidth\tor\tand" << endl;
@@ -43,5 +45,7 @@ void LearningEngine::statsToFile(const string& fn) const {
   }
   of.close();
 }
+
+}  // namespace daoopt
 
 #endif  /* PARALLEL_STATIC */

@@ -26,6 +26,8 @@
 
 #include "BranchAndBound.h"
 
+namespace daoopt {
+
 class BranchAndBoundSampler : public BranchAndBound {
 protected:
   bool doExpand(SearchNode*);
@@ -41,5 +43,7 @@ inline BranchAndBoundSampler::BranchAndBoundSampler(Problem* prob, Pseudotree* p
     BranchAndBound(prob, pt, space, heur) {
   /* nothing here */
 }
+
+}  // namespace daoopt
 
 #endif /* BRANCHANDBOUNDSAMPLER_H_ */

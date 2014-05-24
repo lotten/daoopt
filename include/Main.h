@@ -55,6 +55,8 @@
 #include "BestFirst.h"
 #include "LimitedDiscrepancy.h"
 
+namespace daoopt {
+
 class Main {
 protected:
   bool m_solved;
@@ -127,5 +129,6 @@ inline bool Main::runSearch() {
 #endif
 }
 
+}  // namespace daoopt
 
 #endif /* MAIN_H_ */

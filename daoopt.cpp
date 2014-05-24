@@ -28,7 +28,7 @@
 
 int main(int argc, char** argv) {
 
-  Main main;
+  daoopt::Main main;
 
   if (!main.start())
     exit(1);

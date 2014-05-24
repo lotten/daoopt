@@ -25,6 +25,8 @@
 
 #ifdef PARALLEL_STATIC
 
+namespace daoopt {
+
 const int SubprobStats::MIN = 0;
 const int SubprobStats::MAX = 1;
 const int SubprobStats::AVG = 2;
@@ -33,7 +35,7 @@ const int SubprobStats::MED = 4;
 
 /* should match the fields returned by getAll */
 const string LEGEND[] =
-  { "Vars", "Leafs",
+  { "Vars", "Leafs", "Twb",
     "Wmin", "Wmax", "Wavg", "Wsdv", "Wmed",
     "WCmin", "WCmax", "WCavg", "WCsdv", "WCmed",
     "Kmin", "Kmax", "Kavg", "Ksdv", "Kmed",
@@ -83,6 +85,7 @@ void SubprobStats::computeStats(const vector<int>& xs, double*& target) {
 void SubprobStats::getAll(vector<double>& out) const {
   out.push_back(m_varCount);
   out.push_back(m_leafCount);
+  out.push_back(m_stateSpaceCond);
   double* ls[4] = { m_clusterSize, m_clusterSizeCond,
                     m_domainSize, m_leafDepth };
   BOOST_FOREACH( double* p, ls ) {
@@ -102,6 +105,7 @@ ostream& operator << (ostream& os, const SubprobStats& stats) {
   return os;
 }
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_STATIC */
 

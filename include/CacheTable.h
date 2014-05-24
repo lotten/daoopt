@@ -29,7 +29,8 @@
 
 #include <vector>
 #include <string>
-#include <malloc.h>
+
+namespace daoopt {
 
 //typedef hash_map <context_t, double> context_hash_map;
 #ifndef NO_ASSIGNMENT
@@ -223,12 +224,13 @@ inline CacheTable::~CacheTable() {
     if (*it) delete *it;
 }
 
-#ifdef WINDOWS
+#if defined WINDOWS or defined __APPLE__
 /* TODO? not supported under Windows */
 inline int CacheTable::memused() const {
   return -1;
 }
 #else
+#include <malloc.h>
 inline int CacheTable::memused() const {
 
   // read mem stats
@@ -241,5 +243,7 @@ inline int CacheTable::memused() const {
   return m;
 }
 #endif
+
+}  // namespace daoopt
 
 #endif /* CACHETABLE_H_ */

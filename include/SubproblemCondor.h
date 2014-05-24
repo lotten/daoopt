@@ -32,6 +32,8 @@
 
 #ifdef PARALLEL_DYNAMIC
 
+namespace daoopt {
+
 /* a container for information exchange between SubproblemCondor and
  * CondorSubmissionEngine (which in itself wraps around the
  * Subproblem container)  */
@@ -99,7 +101,7 @@ inline SubproblemCondor::SubproblemCondor(SearchSpaceMaster* p, Subproblem* n, s
 /* puts the submission engine to sleep for s seconds */
 inline void CondorSubmissionEngine::mysleep(size_t s) {
   boost::xtime xt;
-  boost::xtime_get(&xt, boost::TIME_UTC);
+  boost::xtime_get(&xt, boost::TIME_UTC_);
   xt.sec += s;
   boost::thread::sleep(xt);
 }
@@ -107,8 +109,8 @@ inline void CondorSubmissionEngine::mysleep(size_t s) {
 inline CondorSubmissionEngine::CondorSubmissionEngine(SearchSpaceMaster* p)
   : m_curBatch(0), m_nextProcess(0), m_spaceMaster(p) {}
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_DYNAMIC */
-
 
 #endif /* SUBPROBLEMCONDOR_H_ */

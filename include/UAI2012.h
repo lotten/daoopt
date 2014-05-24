@@ -26,6 +26,8 @@
 
 #include "_base.h"
 
+namespace daoopt {
+
 struct UAI2012 {
 
   static string filename;  // filename for solution output
@@ -51,5 +53,6 @@ struct UAI2012 {
 
 };
 
+}  // namespace daoopt
 
 #endif /* UAI2012_H_ */

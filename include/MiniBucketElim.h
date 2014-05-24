@@ -33,6 +33,7 @@
 
 #include "MiniBucket.h"
 
+namespace daoopt {
 
 /* The overall minibucket elimination */
 class MiniBucketElim : public Heuristic {
@@ -124,5 +125,7 @@ inline bool scopeIsLarger(Function* p, Function* q) {
   else
     return (p->getArity() > q->getArity());
 }
+
+}  // namespace daoopt
 
 #endif /* MINIBUCKETELIM_H_ */

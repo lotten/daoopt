@@ -27,6 +27,8 @@
 
 #ifdef PARALLEL_DYNAMIC
 
+namespace daoopt {
+
 bool SearchMaster::init() {
 
   myprint("Init: Beginning initialisation\n");
@@ -371,5 +373,6 @@ double SearchMaster::estimateIncrement(SearchNode* node) const {
 }
 #endif // false
 
+}  // namespace daoopt
 
 #endif /* PARALLEL_DYNAMIC */

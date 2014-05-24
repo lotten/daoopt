@@ -23,6 +23,7 @@
 
 #include "SearchNode.h"
 
+namespace daoopt {
 
 #if false
 double SearchNodeOR::getHeur() const {
@@ -99,3 +100,4 @@ string SearchNode::toString(const SearchNode* n) {
   return ss.str();
 }
 
+}  // namespace daoopt
