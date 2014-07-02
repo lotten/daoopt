@@ -28,7 +28,7 @@ string daoopt::UAI2012::filename = "";
 
 #include "cvo/ARP/ARPall.hxx"
 
-#define VERSIONINFO "1.1.2-UAI12"
+#define VERSIONINFO "1.1.2-UAI14"
 
 namespace daoopt {
 

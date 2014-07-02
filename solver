@@ -1,7 +1,9 @@
 #!/bin/bash
 #
-# Simple wrapper script for PASCAL Inference Challenge 2012.
-# by Lars Otten, December 2011
+# Simple wrapper script for UAI Inference Competition 2014.
+# by Lars Otten, July 2014
+
+# Note: $3 is ignored since we only care for MPE/MAP.
 
 if [ "$4" != "MPE" ] ; then
   echo "Expecting MPE task as fourth argument"
@@ -21,7 +23,7 @@ fi
 echo "Found time limit ${INF_TIME} and memory limit ${INF_MEMORY}."
 
 # Determine memory limit for mini buckets (to leave space for search)  
-MEMLIMIT=$((${INF_MEMORY}*1000-250))
+MEMLIMIT=$((${INF_MEMORY}*1000-350))
 
 # set/unset to enable/disable breadth-rotate AOBB 
 ROTATE=" --rotate"
@@ -37,7 +39,7 @@ MPLP20S="--mplps 2 --jglps 2"
 MPLP20M="--mplps 30 --jglps 30 --mplp 500 --jglp 250"
 MPLP60M="--mplps 60 --jglps 60 --mplp 2000 --jglp 1000"
 
-# fixed random seed (use $3 for competition one)
+# fixed random seed
 SEED=4242
 
 # 20 second timelimit

@@ -458,12 +458,15 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
   in.open(evid.c_str());
 
+  /*
+  // Not relevant for UAI'14.
   in >> x;  // Number of evidence samples
   if (x > 1) {
     myerror("Warning: Ignoring all but one evidence sample.\n");
   }
+  */
 
-  if (x > 0) {
+  //if (x > 0) {
     in >> x;
     m_e = x; // Number of evidence variables
 
@@ -478,7 +481,7 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
       }
       m_evidence.insert(make_pair(x,xs));
     }
-  }  // else: x == 0, no evidence
+  //}  // else: x == 0, no evidence
 
   in.close();
   return true;

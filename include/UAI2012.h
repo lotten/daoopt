@@ -37,7 +37,8 @@ struct UAI2012 {
 
     // generate the solution file contents first
     ostringstream ss;
-    ss <<  "MPE" << endl << "1" << endl;  // TODO: allow more than one evid. sample
+    ss <<  "MPE" << endl;
+    // ss << "1" << endl;  // TODO: allow more than one evid. sample
     ss << assignment.size();
     BOOST_FOREACH(val_t v, assignment) {
       ss << ' ' << (int) v;
