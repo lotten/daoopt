@@ -53,7 +53,11 @@ bool Main::parseOptions(int argc, char** argv) {
   m_options.reset(opt);
 
   size_t idx = m_options->in_problemFile.find_last_of('/');
-  UAI2012::filename = m_options->in_problemFile.substr(idx + 1) + ".MPE";
+  if (m_options->in_mmapFile.empty()) {
+    UAI2012::filename = m_options->in_problemFile.substr(idx + 1) + ".MPE";
+  } else {
+    UAI2012::filename = m_options->in_problemFile.substr(idx + 1) + ".MMAP";
+  }
 
   return true;
 }
@@ -63,7 +67,8 @@ bool Main::loadProblem() {
   m_problem.reset(new Problem);
 
   // load problem file
-  if (!m_problem->parseUAI(m_options->in_problemFile, m_options->in_evidenceFile))
+  if (!m_problem->parseUAI(m_options->in_problemFile, m_options->in_evidenceFile,
+                           m_options->in_mmapFile))
     return false;
   cout << "Created problem with " << m_problem->getN()
        << " variables and " << m_problem->getC() << " functions." << endl;
@@ -536,7 +541,7 @@ bool Main::runLDS() {
     lds.finalizeHeuristic();
     SearchNode* n = lds.nextLeaf();
     while (n) {
-      propLDS.propagate(n,true); // true = report solution
+      propLDS.propagate(n, true); // true = report solution
       n = lds.nextLeaf();
     }
     cout << "LDS: explored " << spaceLDS->stats.numExpOR << '/' << spaceLDS->stats.numExpAND

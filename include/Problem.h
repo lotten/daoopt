@@ -51,6 +51,7 @@ protected:
   int m_nOrg;            // No. of variables (before evidence was removed)
   val_t m_k;             // Max. domain size
   int m_e;               // No. of evidence
+  int m_m;               // No. of marginal query requested variables
 
   int m_c;               // No. of functions
   int m_r;               // Max. function arity
@@ -66,6 +67,8 @@ protected:
   vector<Function*> m_functions;  // List of functions
 
   map<int,val_t> m_evidence;      // List of evidence as <index,value>
+
+  set<int> m_mmap;                // List of marginal MAP query requested variables
 
   map<int,int> m_old2new;         // Translation of variable names after removing evidence
 
@@ -99,7 +102,7 @@ public:
 public:
 
   /* parses a UAI format input file */
-  bool parseUAI(const string& prob, const string& evid);
+  bool parseUAI(const string& prob, const string& evid, const string& mmap);
 
   /* writes the current problem to a UAI file */
   void writeUAI(const string& prob) const;

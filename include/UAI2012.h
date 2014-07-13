@@ -25,6 +25,7 @@
 #define UAI2012_H_
 
 #include "_base.h"
+#include <cstdio>
 
 namespace daoopt {
 
@@ -32,24 +33,41 @@ struct UAI2012 {
 
   static string filename;  // filename for solution output
 
-  static void outputSolutionValT(const vector<val_t>& assignment) {
+  static void outputSolutionValT(const vector<val_t>& assignment, const set<int>& mmap) {
     assert(filename != "");
 
-    // generate the solution file contents first
-    ostringstream ss;
-    ss <<  "MPE" << endl;
-    // ss << "1" << endl;  // TODO: allow more than one evid. sample
-    ss << assignment.size();
-    BOOST_FOREACH(val_t v, assignment) {
-      ss << ' ' << (int) v;
-    }
-    ss << endl;
+    string tempname = filename + ".temp";
 
-    // now write them to file
-    ofstream outfile;
-    outfile.open(filename.c_str(), ios::out | ios::trunc);
-    outfile << ss.str();
-    outfile.close();
+    stringstream ss;
+    string type;
+    if (mmap.empty()) {
+      // generate the solution file contents first
+      type = "MPE";
+      // ss << "1" << endl;  // TODO: allow more than one evid. sample
+      ss << assignment.size();
+      BOOST_FOREACH(val_t v, assignment) {
+        ss << ' ' << (int) v;
+      }
+      ss << endl << flush;
+    } else {
+      type = "MMAP";
+      ss << mmap.size();
+      BOOST_FOREACH(int idx, mmap) {
+        ss << ' ' << idx << ' ' << (int) assignment.at(idx);
+      }
+      ss << endl << flush;
+    }
+
+    // Quick sanity check
+    if (ss.tellp() < 2) {
+      cout << "Warning: UAI solution too short, skipping: " << ss.rdbuf() << flush;
+    } else {
+      // write them to file
+      ofstream outfile;
+      outfile.open(filename.c_str(), ios::out | ios::trunc);
+      outfile << type << endl << ss.rdbuf() << flush;
+      outfile.close();
+    }
   }
 
 };

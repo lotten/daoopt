@@ -3,11 +3,13 @@
 # Simple wrapper script for UAI Inference Competition 2014.
 # by Lars Otten, July 2014
 
-# Note: $3 is ignored since we only care for MPE/MAP.
+# Note: $3 is ignored for MPE.
 
 if [ "$4" != "MPE" ] ; then
-  echo "Expecting MPE task as fourth argument"
-  exit 1
+  if [ "$4" != "MMAP" ] ; then
+    echo "Expecting MPE or MMAP task as fourth argument"
+    exit 1
+  fi
 fi
 
 if [ "${INF_TIME}" == "" ] ; then
@@ -24,6 +26,10 @@ echo "Found time limit ${INF_TIME} and memory limit ${INF_MEMORY}."
 
 # Determine memory limit for mini buckets (to leave space for search)  
 MEMLIMIT=$((${INF_MEMORY}*1000-350))
+
+if [ "$4" == "MMAP" ] ; then
+  MMAP=" --mmap-file $3"
+fi
 
 # set/unset to enable/disable breadth-rotate AOBB 
 ROTATE=" --rotate"
@@ -44,15 +50,18 @@ SEED=4242
 
 # 20 second timelimit
 if [ ${INF_TIME} -eq 20 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 2 --slsT 2 -t500 --orderTime 3 -m125 -i15 -a1 ${ROTATE} ${MATCH} ${CVO} ${MPLP20S}
+  ./daooptW -f $1 -e $2 ${MMAP} --seed ${SEED} --slsX 2 --slsT 2 -t500 --orderTime 3 -m125 -i15 -a1 ${ROTATE} ${MATCH} ${CVO} ${MPLP20S}
+  rc=$?
 
 # 20 minute timelimit
 elif [ ${INF_TIME} -eq 1200 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 10 --slsT 6 -t10000 --orderTime 60 -m${MEMLIMIT} -i25 -a2 ${ROTATE} ${MATCH} ${CVO} ${MPLP20M}
-
+  ./daooptW -f $1 -e $2 ${MMAP} --seed ${SEED} --slsX 10 --slsT 6 -t10000 --orderTime 60 -m${MEMLIMIT} -i25 -a2 ${ROTATE} ${MATCH} ${CVO} ${MPLP20M}
+  rc=$?
+  
 # 1 hour timelimit
 elif [ ${INF_TIME} -eq 3600 ] ; then
-  ./daooptW -f $1 -e $2 --seed ${SEED} --slsX 20 --slsT 10 -t30000 --orderTime 180 -m${MEMLIMIT} -i35 -a2 ${ROTATE} ${MATCH} ${CVO} ${MPLP60M}
+  ./daooptW -f $1 -e $2 ${MMAP} --seed ${SEED} --slsX 20 --slsT 10 -t30000 --orderTime 180 -m${MEMLIMIT} -i35 -a2 ${ROTATE} ${MATCH} ${CVO} ${MPLP60M}
+  rc=$?
 
 # unknown timelimit
 else
@@ -60,3 +69,5 @@ else
   exit 1
 fi
 
+echo "Exited with return code ${rc}."
+exit ${rc}

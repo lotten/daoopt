@@ -40,6 +40,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
     desc.add_options()
       ("input-file,f", po::value<string>(), "path to problem file (required)")
       ("evid-file,e", po::value<string>(), "path to optional evidence file")
+      ("mmap-file", po::value<string>(), "path to optional marginal MAP variables file")
       ("ordering,o", po::value<string>(), "read elimination ordering from this file (first to last)")
       ("adaptive", "enable adaptive ordering scheme")
       ("minibucket", po::value<string>(), "path to read/store mini bucket heuristic")
@@ -122,6 +123,9 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 
     if (vm.count("evid-file"))
       opt->in_evidenceFile = vm["evid-file"].as<string>();
+
+    if (vm.count("mmap-file"))
+      opt->in_mmapFile = vm["mmap-file"].as<string>();
 
     if (vm.count("ordering"))
       opt->in_orderingFile = vm["ordering"].as<string>();

@@ -292,7 +292,7 @@ void Problem::saveOrdering(const string& file, const vector<int>& elim) const {
 
 
 
-bool Problem::parseUAI(const string& prob, const string& evid) {
+bool Problem::parseUAI(const string& prob, const string& evid, const string& mmap) {
   {
     ifstream inTemp(prob.c_str());
     inTemp.close();
@@ -308,6 +308,15 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
 
     if (inTemp.fail()) { // file not existent yet
       cerr << "Error reading evidence file " << evid << ", aborting." << endl;
+      return false;
+    }
+  }
+  if (!mmap.empty()) {
+    ifstream inTemp(mmap.c_str());
+    inTemp.close();
+
+    if (inTemp.fail()) { // file not existent yet
+      cerr << "Error reading evidence file " << mmap << ", aborting." << endl;
       return false;
     }
   }
@@ -451,39 +460,54 @@ bool Problem::parseUAI(const string& prob, const string& evid) {
   // Read evidence?
   if (evid.empty()) {
     m_e = 0;
-    return true; // No evidence, return
+  } else {
+    cout << "Reading evidence..." << endl;
+    in.open(evid.c_str());
+    /*
+    // Not relevant for UAI'14.
+    in >> x;  // Number of evidence samples
+    if (x > 1) {
+      myerror("Warning: Ignoring all but one evidence sample.\n");
+    }
+    */
+    //if (x > 0) {
+      in >> x;
+      m_e = x; // Number of evidence variables
+
+      for (int i=0; i<m_e; ++i) {
+        in >> x; // Variable index
+        in >> y; // Variable value
+        xs = (val_t) y;
+        if (xs >= m_domains[x]) {
+          cout << "Variable " << x << " has domain size " << (int) m_domains[x]
+               << ", evidence value " << y << " out of range." << endl;
+          in.close(); return false;
+        }
+        m_evidence.insert(make_pair(x,xs));
+      }
+    //}  // else: x == 0, no evidence
+    in.close();
   }
 
-  cout << "Reading evidence..." << endl;
-
-  in.open(evid.c_str());
-
-  /*
-  // Not relevant for UAI'14.
-  in >> x;  // Number of evidence samples
-  if (x > 1) {
-    myerror("Warning: Ignoring all but one evidence sample.\n");
-  }
-  */
-
-  //if (x > 0) {
+  if (mmap.empty()) {
+    m_m = 0;
+  } else {
+    cout << "Reading marginal query..." << endl;
+    in.open(mmap.c_str());
     in >> x;
-    m_e = x; // Number of evidence variables
-
-    for (int i=0; i<m_e; ++i) {
-      in >> x; // Variable index
-      in >> y; // Variable value
-      xs = (val_t) y;
-      if (xs >= m_domains[x]) {
-        cout << "Variable " << x << " has domain size " << (int) m_domains[x]
-             << ", evidence value " << y << " out of range." << endl;
+    m_m = x;
+    for (int i=0; i<m_m; ++i) {
+      in >> x;
+      if (x > m_n) {
+        cout << "Variable " << x << " requested for marginal MAP query, "
+             << "but index out of range." << endl;
         in.close(); return false;
       }
-      m_evidence.insert(make_pair(x,xs));
+      m_mmap.insert(x);
     }
-  //}  // else: x == 0, no evidence
+    assert (m_mmap.size() == m_m);
+  }
 
-  in.close();
   return true;
 }
 
@@ -678,7 +702,7 @@ void Problem::updateSolution(double cost,
     BOOST_FOREACH( int v, outputAssg ) {
       ss << ' ' << v;
     }
-    UAI2012::outputSolutionValT(outputAssg);
+    UAI2012::outputSolutionValT(outputAssg, m_mmap);
   }
 #endif
 

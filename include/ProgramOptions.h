@@ -86,6 +86,7 @@ public:
                            // comma-separated list of doubles.
   std::string in_problemFile; // problem file path
   std::string in_evidenceFile; // evidence file path
+  std::string in_mmapFile; // marginal MAP variables file path
   std::string in_orderingFile; // ordering file path
   std::string in_minibucketFile; // minibucket file path
   std::string in_subproblemFile; // subproblem file path
