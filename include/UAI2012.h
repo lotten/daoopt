@@ -36,38 +36,34 @@ struct UAI2012 {
   static void outputSolutionValT(const vector<val_t>& assignment, const set<int>& mmap) {
     assert(filename != "");
 
-    string tempname = filename + ".temp";
+    // Write solution output to temporary file first.
+    string tempname = filename + "-temp";
 
-    stringstream ss;
+    ofstream outfile;
+    outfile.open(tempname.c_str(), ios::out | ios::trunc);
     string type;
     if (mmap.empty()) {
       // generate the solution file contents first
-      type = "MPE";
+      outfile << "MPE" << endl;
       // ss << "1" << endl;  // TODO: allow more than one evid. sample
-      ss << assignment.size();
+      outfile << assignment.size();
       BOOST_FOREACH(val_t v, assignment) {
-        ss << ' ' << (int) v;
+        outfile << ' ' << (int) v;
       }
-      ss << endl << flush;
+      outfile << endl << flush;
     } else {
-      type = "MMAP";
-      ss << mmap.size();
+      outfile << "MMAP" << endl;
+      outfile << mmap.size();
       BOOST_FOREACH(int idx, mmap) {
-        ss << ' ' << idx << ' ' << (int) assignment.at(idx);
+        outfile << ' ' << idx << ' ' << (int) assignment.at(idx);
       }
-      ss << endl << flush;
+      outfile << endl << flush;
     }
+    outfile.close();
 
-    // Quick sanity check
-    if (ss.tellp() < 2) {
-      cout << "Warning: UAI solution too short, skipping: " << ss.rdbuf() << flush;
-    } else {
-      // write them to file
-      ofstream outfile;
-      outfile.open(filename.c_str(), ios::out | ios::trunc);
-      outfile << type << endl << ss.rdbuf() << flush;
-      outfile.close();
-    }
+    // Move temp. file to proper path.
+    remove(filename.c_str());
+    rename(tempname.c_str(), filename.c_str());
   }
 
 };

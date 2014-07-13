@@ -70,4 +70,3 @@ else
 fi
 
 echo "Exited with return code ${rc}."
-exit ${rc}
