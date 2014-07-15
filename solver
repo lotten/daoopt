@@ -5,6 +5,8 @@
 
 # Note: $3 is ignored for MPE.
 
+echo "Invoked as '$0 $*'"
+
 if [ "$4" != "MPE" ] ; then
   if [ "$4" != "MMAP" ] ; then
     echo "Expecting MPE or MMAP task as fourth argument"

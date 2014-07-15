@@ -73,6 +73,10 @@ bool Main::loadProblem() {
   cout << "Created problem with " << m_problem->getN()
        << " variables and " << m_problem->getC() << " functions." << endl;
 
+  if (!m_options->in_mmapFile.empty()) {
+    cout << "Read list of " << m_problem->getM() << " variables for MMAP query." << endl;
+  }
+
   // Remove evidence variables
   m_problem->removeEvidence();
   cout << "Removed evidence, now " << m_problem->getN()

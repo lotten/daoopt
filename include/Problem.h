@@ -51,7 +51,7 @@ protected:
   int m_nOrg;            // No. of variables (before evidence was removed)
   val_t m_k;             // Max. domain size
   int m_e;               // No. of evidence
-  int m_m;               // No. of marginal query requested variables
+  int m_m;               // No. of marginal MAP query requested variables
 
   int m_c;               // No. of functions
   int m_r;               // Max. function arity
@@ -86,6 +86,7 @@ public:
   int getE() const { return m_e; }
   int getC() const { return m_c; }
   int getR() const { return m_r; }
+  int getM() const { return m_m; }
 
   void setSubprobOnly() { m_subprobOnly = true; }
   const string& getName() const { return m_name; }
@@ -185,6 +186,7 @@ inline Problem::Problem() :
     m_nOrg(UNKNOWN),
     m_k(UNKNOWN),
     m_e(UNKNOWN),
+    m_m(UNKNOWN),
     m_c(UNKNOWN),
     m_r(UNKNOWN),
     m_globalConstant(ELEM_NAN),

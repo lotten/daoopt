@@ -316,7 +316,7 @@ bool Problem::parseUAI(const string& prob, const string& evid, const string& mma
     inTemp.close();
 
     if (inTemp.fail()) { // file not existent yet
-      cerr << "Error reading evidence file " << mmap << ", aborting." << endl;
+      cerr << "Error reading mmap query file " << mmap << ", aborting." << endl;
       return false;
     }
   }
