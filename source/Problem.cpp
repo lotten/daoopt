@@ -498,7 +498,7 @@ bool Problem::parseUAI(const string& prob, const string& evid, const string& mma
     m_m = x;
     for (int i=0; i<m_m; ++i) {
       in >> x;
-      if (x > m_n) {
+      if (x >= m_n) {
         cout << "Variable " << x << " requested for marginal MAP query, "
              << "but index out of range." << endl;
         in.close(); return false;
@@ -506,6 +506,7 @@ bool Problem::parseUAI(const string& prob, const string& evid, const string& mma
       m_mmap.insert(x);
     }
     assert (m_mmap.size() == m_m);
+    in.close();
   }
 
   return true;
