@@ -462,7 +462,7 @@ bool Problem::parseUAI(const string& prob, const string& evid, const string& mma
     m_e = 0;
   } else {
     cout << "Reading evidence..." << endl;
-    in.open(evid.c_str());
+    igzstream in2(evid.c_str());
     /*
     // Not relevant for UAI'14.
     in >> x;  // Number of evidence samples
@@ -471,42 +471,42 @@ bool Problem::parseUAI(const string& prob, const string& evid, const string& mma
     }
     */
     //if (x > 0) {
-      in >> x;
+      in2 >> x;
       m_e = x; // Number of evidence variables
 
       for (int i=0; i<m_e; ++i) {
-        in >> x; // Variable index
-        in >> y; // Variable value
+        in2 >> x; // Variable index
+        in2 >> y; // Variable value
         xs = (val_t) y;
         if (xs >= m_domains[x]) {
           cout << "Variable " << x << " has domain size " << (int) m_domains[x]
                << ", evidence value " << y << " out of range." << endl;
-          in.close(); return false;
+          in2.close(); return false;
         }
         m_evidence.insert(make_pair(x,xs));
       }
     //}  // else: x == 0, no evidence
-    in.close();
+    in2.close();
   }
 
   if (mmap.empty()) {
     m_m = 0;
   } else {
     cout << "Reading marginal query..." << endl;
-    in.open(mmap.c_str());
-    in >> x;
+    igzstream in3(mmap.c_str());
+    in3 >> x;
     m_m = x;
     for (int i=0; i<m_m; ++i) {
-      in >> x;
+      in3 >> x;
       if (x >= m_n) {
         cout << "Variable " << x << " requested for marginal MAP query, "
              << "but index out of range." << endl;
-        in.close(); return false;
+        in3.close(); return false;
       }
       m_mmap.insert(x);
     }
     assert (m_mmap.size() == m_m);
-    in.close();
+    in3.close();
   }
 
   return true;
