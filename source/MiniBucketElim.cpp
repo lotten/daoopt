@@ -201,7 +201,7 @@ size_t MiniBucketElim::build(const vector<val_t> * assignment, bool computeTable
       for (vector<Function*>::iterator itB = itA->begin(); itB!=itA->end(); ++itB)
         delete *itB;
     m_augmented.clear();
-    m_augmented.clear();
+    m_intermediate.clear();
   }
 
   return memSize;
