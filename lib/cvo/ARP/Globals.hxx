@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <string>
 
-//#include "Mutex.h"
-
 #ifdef LINUX
 typedef int64_t __int64;
 typedef unsigned int DWORD;
@@ -73,7 +71,6 @@ namespace ARE
 #define VAR_ELIMINATION_TYPE_SUM_MAX 2
 
 extern FILE *fpLOG ;
-//extern ARE::utils::RecursiveMutex LOGMutex ;
 
 extern const double neg_infinity ;
 extern       double pos_infinity ;

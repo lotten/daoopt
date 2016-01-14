@@ -5,13 +5,9 @@
 #include <stdio.h>
 #include <string>
 #include <set>
+#include <vector>
 
-//#include "Heap.hxx"
-//#include "AVLtreeSimple.hxx"
-//#include "AVLtree.hxx"
 #include "MersenneTwister.h"
-
-//#include "Problem.hxx"
 
 class CMauiAVLTreeSimple ;
 class CMauiAVLTree ;

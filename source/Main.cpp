@@ -124,10 +124,6 @@ bool Main::findOrLoadOrdering() {
 
   if (m_options->order_cvo) {
     vector< const vector<int>* > fn_signatures;
-//    vector<Function*>::const_iterator f;
-//    for (f = m_problem->getFunctions().begin(); f != m_problem->getFunctions().end(); ++f) {
-//      fn_signatures.push_back(& (*f)->getScopeVec());
-//    }
     BOOST_FOREACH( Function* f, m_problem->getFunctions() )
       { fn_signatures.push_back(& f->getScopeVec()); }
 

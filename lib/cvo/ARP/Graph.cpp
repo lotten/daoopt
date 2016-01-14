@@ -9,6 +9,7 @@
 
 #include "Problem.hxx"
 #include "Graph.hxx"
+using namespace std;
 
 bool AdjustDomainSizes = false ;
 
@@ -16,8 +17,8 @@ ARE::Graph::Graph(ARP *Problem)
 	: 
 	_Problem(Problem), 
 	_nNodes(0), 
-	_nEdges(0), 
 	_Nodes(NULL), 
+	_nEdges(0), 
 	_StaticAdjVarTotalList(NULL), 
 	_VarElimOrderWidth(0), 
 	_MaxVarElimComplexity(0.0), 
@@ -131,30 +132,11 @@ static int iSum = 0, iN = 0, idone = 0 ; static MTRand rg(4244) ;
 		if (AdjustDomainSizes && domain_size > 1) {
 			if (idone == 0) { idone = 1 ; rg.seed(97) ; }
 			double x1 = rg.rand() ;
-			double x2 = rg.rand() ;
-/*
-			if (x1 < 0.5) {
-				domain_size = 2 ;
-			} else {
-				domain_size = 30 ;
-				}
-*/
 			if (x1 < 0.6667) {
 				domain_size = 2 ;
 			} else {
 				domain_size = 30 ;
 				}
-/*
-			if (x1 < 0.33) {
-//				domain_size = 2 + 2.0*x2 ;
-				domain_size = 2 ;
-			} else if (x1 < 0.6666) {
-//				domain_size = 18 + 2.0*x2 ;
-				domain_size = 15 ;
-			} else {
-				domain_size = 30 ;
-				}
-*/
 			++iN ;
 			iSum += domain_size ;
 			}
@@ -290,34 +272,8 @@ move_on :
 		_Nodes[i]._MinFillScore >>= 1 ; // we have double-counted the min-fill-score, but counting each edge twice
 		_Nodes[i]._EliminationScore = ComputeEliminationComplexity(i) ;
 
-/*
-		// TEST
-		int score = 0 ;
-		for (AdjVar *av_u = _Nodes[i]._Neighbors ; NULL != av_u ; av_u = av_u->_NextAdjVar) {
-			int u = av_u->_V ;
-			for (AdjVar *av_v = _Nodes[i]._Neighbors ; NULL != av_v ; av_v = av_v->_NextAdjVar) {
-				int v = av_v->_V ;
-				if (u == v) continue ;
-				// check if u and v are adjacent
-				for (av = _Nodes[u]._Neighbors ; NULL != av ; av = av->_NextAdjVar) {
-					if (av->_V == v) 
-						break ;
-					}
-				if (NULL == av) 
-					score++ ;
-				}
-			}
-		score >>= 1 ;
-		if (score != _Nodes[i]._MinFillScore) 
-			printf("\nERROR Var %d minfillscore not correct; apparent=%d, real=%d", i, _Nodes[i]._MinFillScore, score) ;
-		else {
-// DEBUGGG
-//			printf("\nSUCCS Var %d minfillscore     correct; apparent=%d, real=%d", i, _Nodes[i]._MinFillScore, score) ;
-			}
-*/
 		}
 // DEBUGGG
-//	printf("\nMinFill/Elimination scores computed for all variables ...") ;
 
 	// split nodes into : trivial, MinFillScore=0, RemainingNodes, mutually exclusive lists.
 	for (i = 0 ; i < _nNodes ; i++) {
@@ -339,18 +295,6 @@ move_on :
 			}
 		}
 
-/*
-	// fill in order computation heap
-	if (0 != _OrderCompHeap.AllocateMemory(1+_nNodes)) {
-		long *keys = new long[_nNodes] ;
-		if (NULL != keys) {
-			for (i = 0 ; i < _nNodes ; i++) 
-				keys[i] = (_Nodes[i]._MinFillScore << 16) + i ;
-			_OrderCompHeap.Import(_nNodes, keys) ;
-			delete [] keys ;
-			}
-		}
-*/
 	if (Test(1024) > 0) 
 		printf("\nGRAPH CONSTRUST errors ...") ;
 
@@ -398,7 +342,7 @@ int ARE::Graph::Create(int nNodes, const std::vector<const std::vector<int>* > &
 	// *************************************************************************************************
 
 	_nEdges = 0 ;
-	for (i = 0 ; i < fn_signatures.size() ; i++) {
+	for (size_t i = 0 ; i < fn_signatures.size() ; i++) {
 		const std::vector<int> & fn_signature = * fn_signatures[i] ;
 		n = (fn_signature.size() * (fn_signature.size() - 1)) ;
 		if (n <= 0) 
@@ -419,7 +363,7 @@ int ARE::Graph::Create(int nNodes, const std::vector<const std::vector<int>* > &
 	AdjVar *nextAdjVar = _StaticAdjVarTotalList, *av ;
 
 	n = 0 ;
-	for (i = 0 ; i < fn_signatures.size() ; i++) {
+	for (size_t i = 0 ; i < fn_signatures.size() ; i++) {
 		const std::vector<int> & fn_signature = * fn_signatures[i] ;
 		// enumerate all pairs of vars
 		for (vector<int>::const_iterator it1 = fn_signature.begin() ; it1 != fn_signature.end() ; it1++) {
@@ -475,7 +419,6 @@ int ARE::Graph::Create(int nNodes, const std::vector<const std::vector<int>* > &
 			if (NULL != av->_NextAdjVar) {
 				v = av->_NextAdjVar->_V ;
 				if (u >= v) {
-					int bug = 1 ;
 					printf("\nBUGGGGGG") ;
 					}
 				}
@@ -525,34 +468,7 @@ move_on :
 			}
 		_Nodes[i]._MinFillScore >>= 1 ; // we have double-counted the min-fill-score, but counting each edge twice
 
-/*
-		// TEST
-		int score = 0 ;
-		for (AdjVar *av_u = _Nodes[i]._Neighbors ; NULL != av_u ; av_u = av_u->_NextAdjVar) {
-			int u = av_u->_V ;
-			for (AdjVar *av_v = _Nodes[i]._Neighbors ; NULL != av_v ; av_v = av_v->_NextAdjVar) {
-				int v = av_v->_V ;
-				if (u == v) continue ;
-				// check if u and v are adjacent
-				for (av = _Nodes[u]._Neighbors ; NULL != av ; av = av->_NextAdjVar) {
-					if (av->_V == v) 
-						break ;
-					}
-				if (NULL == av) 
-					score++ ;
-				}
-			}
-		score >>= 1 ;
-		if (score != _Nodes[i]._MinFillScore) 
-			printf("\nERROR Var %d minfillscore not correct; apparent=%d, real=%d", i, _Nodes[i]._MinFillScore, score) ;
-		else {
-// DEBUGGG
-//			printf("\nSUCCS Var %d minfillscore     correct; apparent=%d, real=%d", i, _Nodes[i]._MinFillScore, score) ;
-			}
-*/
 		}
-// DEBUGGG
-//	printf("\nMinFill/Elimination scores computed for all variables ...") ;
 
 	// *************************************************************************************************
 	// compute min-complexity score for all nodes
@@ -561,14 +477,6 @@ move_on :
 	if (NULL != _Problem) {
 		for (i = 0 ; i < _nNodes ; i++) {
 			_Nodes[i]._EliminationScore = ComputeEliminationComplexity(i) ;
-/*			_Nodes[i]._EliminationScore = _Problem->K(i) ;
-			for (av = _Nodes[i]._Neighbors ; NULL != av ; av = av->_NextAdjVar) {
-				int u = av->_V ;
-				_Nodes[i]._EliminationScore *= _Problem->K(u) ;
-				// don't let _Nodes[i]._EliminationScor get too large; otherwise we may get multiplication overflow
-				if (_Nodes[i]._EliminationScore > InfiniteSingleVarElimComplexity) 
-					_Nodes[i]._EliminationScore = InfiniteSingleVarElimComplexity ;
-				}*/
 			}
 		}
 
@@ -592,18 +500,6 @@ move_on :
 			}
 		}
 
-/*
-	// fill in order computation heap
-	if (0 != _OrderCompHeap.AllocateMemory(1+_nNodes)) {
-		long *keys = new long[_nNodes] ;
-		if (NULL != keys) {
-			for (i = 0 ; i < _nNodes ; i++) 
-				keys[i] = (_Nodes[i]._MinFillScore << 16) + i ;
-			_OrderCompHeap.Import(_nNodes, keys) ;
-			delete [] keys ;
-			}
-		}
-*/
 	if (Test(1024) > 0) 
 		printf("\nGRAPH CONSTRUCT errors ...") ;
 
@@ -1045,44 +941,6 @@ int ARE::Graph::Test(int MaxWidthAcceptableForSingleVariableElimination)
 			{ printf("\nMinFill Test FAIL : var=%d, is considered, but MinFillScore=%d is not accurate; real score=%d ...", (int) i, (int) _Nodes[i]._MinFillScore, (int) score) ; ret++ ; }
 		}
 
-	return ret ;
-
-/*
-	// TEST that current/original pointers in the heap are correct
-	for (i = 1 ; i <= _OrderCompHeap.GetSize() ; i++) {
-		_OrderCompHeap.GetIdx(i, key) ;
-		v = key & 0x0000FFFF ;
-		u = _OrderCompHeap.CurrentIdx2OriginalIdxMap(i) - 1 ;
-		if (u != v) 
-			{ printf("\nMinFill Test FAIL : heap idx=%d, v=%d, heap CurrentIdx2OriginalIdxMap=%d; should be equal ...", (int) i, (int) v, (int) u) ; ret++ ; }
-		if (v < 0 || v >= _nNodes) 
-			{ printf("\nMinFill Test FAIL : heap idx=%d, v=%d out of bounds", (int) i, (int) v) ; ret++ ; }
-		}
-
-	// TEST that heap scores and graph scores are equal
-	for (i = 0 ; i < _nNodes ; i++) {
-		j = _OrderCompHeap.OriginalIdx2CurrentIdxMap(i+1) ;
-		if (NULL != _PosOfVarInElimOrder ? _PosOfVarInElimOrder[i] < 0 : true) {
-			if (j < 1 || j > _OrderCompHeap.GetSize()) 
-				{ printf("\nMinFill Test FAIL : var=%d, heap OriginalIdx2CurrentIdxMap=%d, out of bounds (1<=idx<=size)...", (int) i, (int) j) ; ret++ ; }
-			_OrderCompHeap.GetIdx(j, key) ;
-			v = key & 0x0000FFFF ;
-			int score = key >> 16 ;
-			if (i != v) 
-				{ printf("\nMinFill Test FAIL : var=%d, is considered, but heap var at OriginalIdx2CurrentIdxMap=%d is %d ...", (int) i, (int) j, (int) v) ; ret++ ; }
-			if (_Nodes[i]._MinFillScore != score) 
-				{ printf("\nMinFill Test FAIL : var=%d, is considered, but heap score=%d is not equal graph score=%d ...", (int) i, (int) score, (int) _Nodes[i]._MinFillScore) ; ret++ ; }
-			}
-		else {
-			if (0 != j) 
-				{ printf("\nMinFill Test FAIL : var=%d, heap OriginalIdx2CurrentIdxMap=%d, out of bounds (0) ...", (int) i, (int) j) ; ret++ ; }
-			if (_Nodes[i]._Degree > 0) 
-				{ printf("\nMinFill Test FAIL : var=%d, is eliminated, but degree=%d, instead of 0 ...", (int) i, (int) _Nodes[i]._Degree) ; ret++ ; }
-			if (j > 0) 
-				{ printf("\nMinFill Test FAIL : var=%d, is eliminated, but heap OriginalIdx2CurrentIdxMap=%d, instead of 0 ...", (int) i, (int) j) ; ret++ ; }
-			}
-		}
-*/
 	return ret ;
 }
 

@@ -17,7 +17,6 @@
 
 #include "AVLtreeSimple.hxx"
 #include "Sort.hxx"
-#include "Array.hxx"
 
 // random number generator
 #include "MersenneTwister.h"
@@ -382,11 +381,9 @@ CMauiAVLTreeSimple::CMauiAVLTreeSimple(unsigned long tree_size /* number of keys
 	// we traverse the tree recursively, left subtree first
 	// every time the parent information is stored in the stack (Middle[], Left[], Right[])
 	// j is the stack pointer
-//print("j = %d, left = %d, middle = %d, right = %d\n",j,Left[j],Middle[j],Right[j]) ;
 		if (Left[j]) { // handle left side
 			i = (Middle[j] - Left[j]) >> 1 ;
 			i += Left[j] ;
-//print("iteration.1 = %d new middle = %d\n",j,i) ;
 			m_db_tree[Middle[j]].m_LC = i ; // a pointer from the parent to the left child
 			++j ;
 			Middle[j] = i ;
@@ -404,7 +401,6 @@ CMauiAVLTreeSimple::CMauiAVLTreeSimple(unsigned long tree_size /* number of keys
 		else if (Right[j]) { // handle right side
 			i = (Right[j] - Middle[j]) >> 1 ;
 			i += 1 + Middle[j] ;
-//print("iteration.2 = %d new middle = %d\n",j,i) ;
 			m_db_tree[Middle[j]].m_RC = i ;
 			++j ;
 			Middle[j] = i ;
@@ -647,7 +643,7 @@ backtrack_12_07_1994:
 			for (--k ; k >= 0 && Left[k] < 0 ; k--) {
 				++m ;
 				// right now: [k] points to a node; m is right child height, Right[k] is left child height
-				if ((m - Right[k]) != (long) m_db_tree[labs(Left[k])].m_balance) {
+				if ((m - Right[k]) != (unsigned long) m_db_tree[labs(Left[k])].m_balance) {
 					if (pErrorStr) {
 						j = labs(Left[k]) ;
 						sprintf_s(sCheckTree, SIZE_CHECK_TREE,"mismatch of balances real r=%ld l=%ld node=%ld h=%d known=%d LC h=%d RC h=%d",
@@ -659,7 +655,7 @@ backtrack_12_07_1994:
 					goto failure_12_09_1994 ;
 					}
 				if (Right[k] > (long)m) m = Right[k] ;
-				if (m != (long) m_db_tree[labs(Left[k])].m_height) {
+				if (m != (unsigned long) m_db_tree[labs(Left[k])].m_height) {
 					if (pErrorStr) {
 						sprintf_s(sCheckTree, SIZE_CHECK_TREE,"real height is not equal to what is known in db; 2--> k=%ld Right[k]=%ld Left[k]=%ld m_db_tree[Left[k]]=%d\n",k,Right[k],Left[k],m_db_tree[labs(Left[k])].m_height) ;
 						*pErrorStr = sCheckTree ;
@@ -1384,14 +1380,6 @@ long CMauiAVLTreeSimple::Remove(long id)
 			m_db_tree[m_db_tree[j].m_next_entity].m_prev_entity = m_db_tree[j].m_prev_entity ;
 		}
 
-/* old code
-	if (first == j) first = m_db_tree[j].m_next_entity ;
-	if (m_db_tree[j].m_prev_entity) 
-			m_db_tree[m_db_tree[j].m_prev_entity].m_next_entity = m_db_tree[j].m_next_entity ;
-	if (m_db_tree[j].m_next_entity) 
-		m_db_tree[m_db_tree[j].m_next_entity].m_prev_entity = m_db_tree[j].m_prev_entity ;
-*/
-
 	m_db_tree[j].m_next_entity = m_first_free_block ;
 	m_first_free_block = j ;
 	--m_size ;
@@ -1491,14 +1479,6 @@ switch_nodes_12_07_1994:
 	// everything is fine, the height did not change
 
 	BalanceDeleteTree() ;
-
-#ifdef DEBUG_AVL_new
-	if (! TestConsistency()) {
-//		(*this) << *_msTestAVLTree ;
-//		Remove(id, data) ;
-		int error = 999999 ;
-		}
-#endif // DEBUG_AVL_new
 
 	return m_first_free_block ;
 }
@@ -1765,7 +1745,6 @@ long CMauiAVLTreeSimple::TestTree(int numIterations, char **pErrorStr) // return
 				Remove(key) ;
 				++n ; // count operations
 				if (! CheckTree(pErrorStr)) {
-					int error = 1 ;
 					return 0 ;
 					}
 				}
@@ -1788,7 +1767,6 @@ long CMauiAVLTreeSimple::TestTree(int numIterations, char **pErrorStr) // return
 				Insert(key) ;
 				++n ; // count operations
 				if (! CheckTree(pErrorStr)) {
-					int error = 1 ;
 					return 0 ;
 					}
 				}

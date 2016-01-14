@@ -139,43 +139,6 @@ public :
 	}
 
 	// *******************************************************************************************************
-	// other function blocks that this function block is using; this also means that the other function blocks have this block as a user.
-	// when this function block is unloaded, it will tell input blocks that this block is no longer a user.
-	// if nobody is using the input block, it also can be unloaded.
-	// *******************************************************************************************************
-
-/*
-protected :
-	int _nInputs ;
-	int _InputsAllocatedSize ;
-	FunctionTableBlock **_Inputs ;
-public :
-	inline int nInputs(void) const { return _nInputs ; }
-	inline int AddInput(FunctionTableBlock & FTB)
-	{
-		if (_InputsAllocatedSize <= _nInputs) {
-			int newsize = _InputsAllocatedSize + 4 ;
-			FunctionTableBlock **newarray = new FunctionTableBlock*[newsize] ;
-			if (NULL == newarray) 
-				return 1 ;
-			memcpy(newarray, _Inputs, _nInputs*sizeof(FunctionTableBlock *)) ;
-			delete [] _Inputs ;
-			_Inputs = newarray ;
-			_InputsAllocatedSize = newsize ;
-			}
-		_Inputs[_nInputs++] = &FTB ;
-		return 0 ;
-	}
-	inline void RemoveInput(FunctionTableBlock & FTB)
-	{
-		for (int i = _nInputs-1 ; i >= 0 ; i--) {
-			if (&FTB == _Inputs[i]) 
-				_Inputs[i] = _Inputs[--_nInputs] ;
-			}
-	}
-*/
-
-	// *******************************************************************************************************
 	// A function keeps track of its FTBs that are in memory.
 	// When a parent function needs a FTB from an input function, it asks it to load it.
 	// The input function keeps track of FTBs that are loaded; when no longer needed, it can delete those FTBs that are not used.
@@ -189,20 +152,6 @@ protected :
 public :
 	inline FunctionTableBlock *NextFTBInFunction(void) const { return _NextFTBInFunction ; }
 	inline void AttachNextFTBInFunction(FunctionTableBlock *FTB) { _NextFTBInFunction = FTB ; }
-
-/*
-	// *******************************************************************************************************
-	// Function blocks may be organized as a set of tasks, each being "compute (fill in) a table block".
-	// BEEM workspace maintains a list of FTBs to be computed, for worker threads to handle.
-	// This ptr is used to create a list to tasks, e.g. when running BEEM algorithm, to create a list of table blocks to be computed.
-	// *******************************************************************************************************
-
-protected :
-	FunctionTableBlock *_NextInTaskQueue ;
-public :
-	inline FunctionTableBlock *NextInTaskQueue(void) const { return _NextInTaskQueue ; }
-	inline void AttachNextInTaskQueue(FunctionTableBlock *FTB) { _NextInTaskQueue = FTB ; }
-*/
 
 public :
 	int Initialize(Function *ReferenceFunction, __int64 IDX) ;
@@ -225,11 +174,7 @@ public :
 		_nUsers(0), 
 		_UsersAllocatedSize(0), 
 		_Users(NULL), 
-//		_nInputs(0), 
-//		_InputsAllocatedSize(0), 
-//		_Inputs(NULL), 
 		_NextFTBInFunction(NULL) 
-//		_NextInTaskQueue(NULL)
 	{
 	}
 	virtual ~FunctionTableBlock(void) ;
