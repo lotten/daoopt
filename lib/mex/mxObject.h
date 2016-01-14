@@ -1,3 +1,4 @@
+// (c) 2010 Alexander Ihler under the FreeBSD license; see license.txt for details.
 #ifndef __MEX_MXOBJECT_H
 #define __MEX_MXOBJECT_H
 /* How to use the mex class interface functions

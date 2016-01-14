@@ -1,3 +1,4 @@
+// (c) 2010 Alexander Ihler under the FreeBSD license; see license.txt for details.
 #if 0
 
 #include <assert.h>

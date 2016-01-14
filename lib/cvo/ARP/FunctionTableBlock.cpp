@@ -1,6 +1,10 @@
 #include <stdlib.h>
 #include <float.h>
 
+#ifdef __APPLE__
+#include <unistd.h>
+#endif
+
 #include "MersenneTwister.h"
 #include "Globals.hxx"
 #include "Problem.hxx"
@@ -901,7 +905,7 @@ int ARE::FunctionTableBlock::ComputeDataBEEM_SumMax_singleV(Function * & Missing
 				}
 			fprintf(ARE::fpLOG, "\n") ;
 			fflush(ARE::fpLOG) ;
-			_Exit(1) ;  // Changed from _exit(1) for Linux.
+			exit(1) ;
 			}
 
 		// go to next argument value combination

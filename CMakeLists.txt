@@ -60,7 +60,7 @@ include_directories(
 
 # Libraries in the lib folder via recursive CMakeLists.txt
 add_subdirectory(lib)
-set(LIBS Gzstream Sls4mpe)
+set(LIBS Gzstream Sls4mpe Mex Cvo)
 
 # Main daoopt source files
 set(FILES
@@ -79,6 +79,7 @@ set(FILES
   ./source/Main.cpp
   ./source/MiniBucket.cpp
   ./source/MiniBucketElim.cpp
+  ./source/MiniBucketElimMplp.cpp
   ./source/ParallelManager.cpp
   ./source/Problem.cpp
   ./source/ProgramOptions.cpp
@@ -97,4 +98,4 @@ set(FILES
 
 # Main executable and library dependencies
 add_executable(daoopt daoopt.cpp ${FILES})
-target_link_libraries(daoopt ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY} )
+target_link_libraries(daoopt ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY})

@@ -96,7 +96,6 @@ public :
 			return av ;
 		if (_nSpaceListCurrentUseIdx < _nSpaceList-1) 
 			return _SpaceList[++_nSpaceListCurrentUseIdx]->GetNextElement() ;
-do_allocate :
 		if (_nSpaceList >= 1024) 
 			return NULL ;
 		_SpaceList[_nSpaceList] = new AdjVarListHelper(_ReAllocationSize) ;

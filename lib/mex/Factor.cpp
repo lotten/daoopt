@@ -1,3 +1,4 @@
+// (c) 2010 Alexander Ihler under the FreeBSD license; see license.txt for details.
 /////////////////////////////////////////////////////////////////////////////////////
 // Factor.h  --  class definition for matlab-compatible factor class
 //
@@ -133,7 +134,7 @@ void Factor::writeUai10(std::ostream& os, const vector<Factor>& fs) {
     nvar=std::max(nvar,(size_t)(fs[f].vars().rbegin()->label()+1));
   
   vector<uint32_t> dims(nvar);                                  // collect all variable dimensions
-  for (size_t f=0,nvar=0;f<fs.size();++f) 
+  for (size_t f=0;f<fs.size();++f) 
     for (size_t v=0;v<fs[f].nvar();++v) { Var V=fs[f].vars()[v]; dims[V.label()] = V.states(); }
 
   os << "MARKOV\n";                                             // Markov Random Field:

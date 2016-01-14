@@ -1,3 +1,4 @@
+// (c) 2010 Alexander Ihler under the FreeBSD license; see license.txt for details.
 /////////////////////////////////////////////////////////////////////////////////////
 // Factor.h  --  class definition for matlab-compatible factor class
 //
@@ -245,7 +246,7 @@ class Factor : public virtual mxObject {
     for (size_t i=0;i<nrStates();i++) { 
 			Z += t_[i]; 
 			double L=std::log(t_[i]);
-			if (!isinf(L)) H -= t_[i]*L; //std::log(t_[i]); 
+			if (!std::isinf(L)) H -= t_[i]*L; //std::log(t_[i]); 
 		}
     H/=Z; H+=std::log(Z);
     return H;

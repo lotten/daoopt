@@ -1,0 +1,21 @@
+add_library(Cvo
+  ./ARP/AVLtree.cpp
+  ./ARP/AVLtreeSimple.cpp
+  ./ARP/Array.cpp
+  ./ARP/BEworkspace.cpp
+  ./ARP/Bucket.cpp
+  ./ARP/Function.cpp
+  ./ARP/FunctionTableBlock.cpp
+  ./ARP/Globals.cpp
+  ./ARP/Graph.cpp
+  ./ARP/Graph_MinFillOrderComputation.cpp
+  ./ARP/Graph_RemoveRedundantFillEdges.cpp
+  ./ARP/Heap.cpp
+  ./ARP/HeapBasic.cpp
+  ./ARP/HeapBasicReductionWithPermutationMapping.cpp
+  ./ARP/Mutex.cpp
+  ./ARP/Problem.cpp
+  ./ARP/VariableOrderComputation.cpp
+  ./ARP/Workspace.cpp
+  ./ARP/Sort.cxx
+)
