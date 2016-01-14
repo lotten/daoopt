@@ -15,6 +15,8 @@ Also implements the following:
 * limited discrepancy search to quickly find initial solution.
 * stochastic local search to quickly find initial solution (via GLS+
   code by Frank Hutter).
+* stochastic iterative greedy variable ordering (code by Kalev Kask)
+* join graph cost-shifting tehcniques (MPLP, JGLP, MBE-MM) (code by Alex Ihler)
 
 See references at the bottom for details and algorithm analysis.
 
@@ -42,25 +44,9 @@ flags, toggle static linking, and select one of the solver variants
 (see references below); the default choice is the release-optimized,
 dynamically linked, sequential solver.
 
-### Included makefiles
-
-Alternatively, makefiles for the different solver variants are
-provided directly in the following folders:
-
 * `Worker` -- Purely sequential AOBB solver.
 * `Static` -- Static master mode (also needs worker binaries).
 * `Dynamic` -- Dynamic master mode (also needs worker binaries).
-
-In addition, the following two Makefiles are provided
-
-* `Debug` -- Compiles any of the above (through preprocessor defines)
-  with debug flags.
-* `Windows` -- Windows executable of the sequential solver using MinGW
-  compiler (not tested in a while and almost certainly broken).
-
-By default, the *ccache* compiler cache is used by the makefiles. To
-disable it, simply run the supplied script `ccache-deactivate.sh` from
-within the respective build folder.
 
 Some features (such as computing the optimal tuple vs. only its cost)
 can be turned on/off by setting the respective preprocessor defines in
@@ -135,6 +121,27 @@ research. Some relevant publications:
 * Lars Otten and Rina Dechter. "A Case Study in Complexity Estimation:
   Towards Parallel Branch-and-Bound over Graphical Models." In Proceedings
   of UAI'12, Catalina Island, CA, U.S.A, August 2012.
+
+### Stochastic Greedy Variable Elimination
+
+The solver integrates an enhanced greedy variable ordering algorithm.
+Relevant publication:
+
+* Kalev Kask, Andrew E. Gelfand, Lars Otten, and Rina Dechter. "Pushing the
+  Power of Stochastic Greedy Ordering Schemes for Inference in Graphical Models"
+  In Proceedings of AAAI 2011, San Francisco, CA, USA, August 2011. 
+
+### Join Graph Linear Programming
+
+The standard mini-bucket heuristic is much improved with the use of 
+cost-shifting techniques. Some relevant publications:
+
+* Natalia Flerova, Alexander Ihler, Rina Dechter, and Lars Otten. "Mini-bucket
+  Elimination with Moment Matching" in DISCML 2011 Workshop, at NIPS 2011,
+  Granada, Spain, December 2011.
+* Alexander Ihler, Natalia Flerova, Rina Dechter, and Lars Otten. "Join-graph
+  based cost-shifting schemes" In Proceedings of UAI 2012, Catalina Island, CA,
+  USA, August 2012.
 
 ### Acknowledgments
 

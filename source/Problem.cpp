@@ -70,7 +70,7 @@ void Problem::removeEvidence() {
       covered.at(i) = true;
     }
   }
-  for (size_t i=0; i<m_n; ++i) {
+  for (int i=0; i<m_n; ++i) {
     if (!covered.at(i)) eliminateVar.at(i) = true;
   }
 
@@ -505,7 +505,7 @@ bool Problem::parseUAI(const string& prob, const string& evid, const string& mma
       }
       m_mmap.insert(x);
     }
-    assert (m_mmap.size() == m_m);
+    assert((int)m_mmap.size() == m_m);
     in3.close();
   }
 

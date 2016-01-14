@@ -54,7 +54,7 @@ ProgramOptions* parseCommandLine(int ac, char** av) {
 #else
       ("rotate,y", "use breadth-rotating AOBB")
       ("rotatelimit,z", po::value<int>()->default_value(1000), "nodes per subproblem stack rotation (0: disabled)")
-      ("match", po::value<int>()->default_value(-1), "use mini bucket moment matching")
+      ("match", po::value<int>()->default_value(1), "use mini bucket moment matching (on by default)")
       ("mplp", po::value<int>()->default_value(-1), "use MPLP mini buckets (#iter)")
       ("mplps", po::value<double>()->default_value(-1), "use MPLP mini buckets (sec)")
       ("jglp", po::value<int>()->default_value(-1), "use Join-Graph reparameterization (#iter)")

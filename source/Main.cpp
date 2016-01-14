@@ -26,7 +26,7 @@
 #include "UAI2012.h"
 string daoopt::UAI2012::filename = "";
 
-#include "cvo/ARP/ARPall.hxx"
+#include "cvo/ARPall.hxx"
 
 #define VERSIONINFO "1.1.2-UAI14"
 
