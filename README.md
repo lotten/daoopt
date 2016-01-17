@@ -15,8 +15,9 @@ Also implements the following:
 * limited discrepancy search to quickly find initial solution.
 * stochastic local search to quickly find initial solution (via GLS+
   code by Frank Hutter).
-* stochastic iterative greedy variable ordering (code by Kalev Kask)
-* join graph cost-shifting tehcniques (MPLP, JGLP, MBE-MM) (code by Alex Ihler)
+* stochastic iterative greedy variable ordering (code by Kalev Kask).
+* join graph cost-shifting techniques (MPLP, JGLP, MBE-MM) (code by
+  Alex Ihler).
 
 See references at the bottom for details and algorithm analysis.
 
