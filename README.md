@@ -149,6 +149,13 @@ cost-shifting techniques. Some relevant publications:
 This work has been partially supported by NIH grant 5R01HG004175-03 and
 NSF grants IIS-0713118 and IIS-1065618.
 
+Known issues
+------------
+
+Solutions may not be reported correctly when using the --rotate option. For a
+workaround, disable tuple generation by definining the NO_ASSIGNMENT flag in
+include/DEFINES.h.
+
 Disclaimer
 ----------
 
